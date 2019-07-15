@@ -26,6 +26,7 @@ import Queue
 import random
 import re
 import select
+import shutil
 import smtplib
 import socket
 import subprocess
@@ -33,10 +34,6 @@ import sys
 import threading
 import time
 import urllib2
-
-# pesudo usage to mute linter
-random, calendar, codecs, collections, fileinput, HTMLParser, BadStatusLine, json, Pool, operator, pickle, random, urllib2, MIMEMultipart, MIMEText, smtplib
-
 
 class Util:
     host_os = platform.system().lower()
@@ -156,6 +153,10 @@ class Util:
         return s.replace('\\', '/')
 
     @staticmethod
+    def use_backslash(s):
+        return s.replace('/', '\\')
+
+    @staticmethod
     def get_datetime(format='%Y%m%d%H%M%S'):
         return time.strftime(format, time.localtime())
 
@@ -226,6 +227,19 @@ class Util:
             script_path = os.getcwd() + '/' + sys.argv[0]
         return os.path.split(script_path)[0]
 
+    @staticmethod
+    def union_list(a, b):
+        return list(set(a).union(set(b)))
+
+    @staticmethod
+    def intersect_list(a, b):
+        return list(set(a).intersection(set(b)))
+
+    @staticmethod
+    def diff_list(a, b):
+        return list(set(a).difference(set(b)))
+
+
 class Timer():
     def __init__(self, microsecond=False):
         self.timer = [0, 0]
@@ -247,12 +261,14 @@ class MainRepo:
     while not os.path.exists(tmp_dir + '/.git'):
         tmp_dir = Util.get_dir(tmp_dir)
     root_dir = Util.use_slash(tmp_dir)
-
-    ignore_dir = root_dir + '/ignore'
-    ignore_log_dir = ignore_dir + '/log'
-    ignore_timestamp_dir = ignore_dir + '/timestamp'
-    ignore_chromium_dir = ignore_dir + '/chromium'
-    ignore_chromium_boto_file = ignore_chromium_dir + '/boto.conf'
+    tool_dir = '%s/tool' % root_dir
+    ignore_dir = '%s/ignore' % root_dir
+    ignore_log_dir = '%s/log' % ignore_dir
+    ignore_timestamp_dir = '%s/timestamp' % ignore_dir
+    ignore_chromium_dir = '%s/chromium' % ignore_dir
+    ignore_chromium_selfbuilt_dir = '%s/selfbuilt' % ignore_chromium_dir
+    ignore_chromium_download_dir = '%s/download' % ignore_chromium_dir
+    ignore_chromium_boto_file = '%s/boto.conf' % ignore_chromium_dir
 
 class Program():
     def __init__(self, parser):

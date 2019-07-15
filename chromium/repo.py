@@ -51,15 +51,13 @@ class Repo():
         self.info = [0, 0, {}, {}, {}]
         self.program = program
 
-    def get_head_rev(self):
-        Util.chdir(self.src_dir)
+    def get_working_dir_rev(self):
+        cmd = 'git log --shortstat -1'
+        return self._get_head_rev(cmd)
+
+    def get_local_repo_rev(self):
         cmd = 'git log --shortstat -1 origin/master'
-        result = self.program.execute(cmd, show_cmd=False, return_out=True)
-        lines = result[1].split('\n')
-        commit_info = {}
-        self._parse_lines(lines, commit_info)
-        for key in commit_info:
-            return key
+        return self._get_head_rev(cmd)
 
     def get_hash_from_rev(self, rev):
         info = self.info
@@ -88,7 +86,7 @@ class Repo():
 
     def _get_info(self, rev_min, rev_max):
         info = self.info
-        head_rev = self.get_head_rev()
+        head_rev = self.get_local_repo_rev()
         if rev_max > head_rev:
             Util.error('Revision %s is not ready' % rev_max)
         cmd = 'git log --shortstat origin/master~%s..origin/master~%s ' % (head_rev - rev_min + 1, head_rev - rev_max)
@@ -202,3 +200,12 @@ class Repo():
                 deletion_tmp = 0
 
         return (hash_tmp, author_tmp, date_tmp, subject_tmp, rev_tmp, insertion_tmp, deletion_tmp, is_roll_tmp)
+
+    def _get_head_rev(self, cmd):
+        Util.chdir(self.src_dir)
+        result = self.program.execute(cmd, show_cmd=False, return_out=True)
+        lines = result[1].split('\n')
+        commit_info = {}
+        self._parse_lines(lines, commit_info)
+        for key in commit_info:
+            return key

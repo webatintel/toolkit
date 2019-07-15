@@ -24,20 +24,19 @@ class Chromium():
                                         formatter_class=argparse.RawTextHelpFormatter,
                                         epilog='''
 examples:
-  python %(prog)s --sync --sync-rev 674968
+  python %(prog)s --sync --rev 674968
   python %(prog)s --sync --runhooks --makefile --build
 ''')
+        parser.add_argument('--rev', dest='rev', type=int, help='revision for sync')
+        parser.add_argument('--hash', dest='hash', help='hash of revision for sync')
         parser.add_argument('--target-arch', dest='target_arch', help='target arch', choices=['x86', 'arm', 'x86_64', 'arm64'], default='default')
         parser.add_argument('--target-os', dest='target_os', help='target os, choices can be android, linux, chromeos, windows', default='default')
         parser.add_argument('--out-dir', dest='out_dir', help='out dir')
 
         parser.add_argument('--sync', dest='sync', help='sync to a specific rev if designated, otherwise, sync to upstream', action='store_true')
         parser.add_argument('--sync-reset', dest='sync_reset', help='do a reset before syncing', action='store_true')
-        parser.add_argument('--sync-rev', dest='sync_rev', type=int, help='revision for sync')
-        parser.add_argument('--sync-hash', dest='sync_hash', help='hash of revision for sync')
         parser.add_argument('--runhooks', dest='runhooks', help='runhooks', action='store_true')
         parser.add_argument('--makefile', dest='makefile', help='generate makefile', action='store_true')
-
         parser.add_argument('--build', dest='build', help='build', action='store_true')
         parser.add_argument('--build-type', dest='build_type', help='build type', choices=['release', 'debug'], default='release')
         parser.add_argument('--build-nocomponent', dest='build_nocomponent', help='build with static library', action='store_true')
@@ -48,9 +47,11 @@ examples:
         parser.add_argument('--build-asan', dest='build_asan', help='enable asan by adding asan=1 into GYP_DEFINES', action='store_true')
         parser.add_argument('--build-warning-as-error', dest='build_warning_as_error', help='treat warning as error', action='store_true', default=True)
         parser.add_argument('--build-max-fail', dest='build_max_fail', help='build keeps going until N jobs fail', type=int, default=1)
-
-        parser.add_argument('--run', dest='run', help='run', action='store_true')
         parser.add_argument('--backup', dest='backup', help='backup', action='store_true')
+        parser.add_argument('--backup-nosymbol', dest='backup_nosymbol', help='backup without symbol', action='store_true')
+        parser.add_argument('--run', dest='run', help='run', action='store_true')
+        parser.add_argument('--run-extra-args', dest='run_extra_args', help='run with extra args', default='')
+        parser.add_argument('--download', dest='download', help='download', action='store_true')
 
         program = Program(parser)
 
@@ -76,13 +77,14 @@ examples:
             target_arch = 'x86_64'
 
         if program.args.out_dir:
-            relative_out_dir = program.args.out_dir
+            self.relative_out_dir = program.args.out_dir
         else:
-            relative_out_dir = self._get_relative_out_dir(target_arch, target_os, program.args.build_nocomponent, program.args.build_symbol, program.args.build_nojumbo)
+            self.relative_out_dir = self._get_relative_out_dir(target_arch, target_os, program.args.build_nocomponent, program.args.build_symbol, program.args.build_nojumbo)
 
         self.src_dir = program.root_dir + '/src'
-        self.out_dir = self.src_dir + '/' + relative_out_dir + '/' + program.args.build_type.capitalize()
+        self.out_dir = self.src_dir + '/' + self.relative_out_dir + '/' + program.args.build_type.capitalize()
         self.build_type = program.args.build_type
+        self.build_type_cap = self.build_type.capitalize()
         self.repo = Repo(self.src_dir, program)
         self.target_arch = target_arch
         self.target_os = target_os
@@ -95,6 +97,7 @@ examples:
         self.build()
         self.backup()
         self.run()
+        self.download()
 
     def sync(self, force=False):
         if not self.program.args.sync and not force:
@@ -105,10 +108,10 @@ examples:
         Util.chdir(self.repo.src_dir)
 
         tmp_hash = ''
-        if self.program.args.sync_hash:
-            tmp_hash = self.program.args.sync_hash
-        elif self.program.args.sync_rev:
-            tmp_hash = self.repo.get_hash_from_rev(self.program.args.sync_rev)
+        if self.program.args.hash:
+            tmp_hash = self.program.args.hash
+        elif self.program.args.rev:
+            tmp_hash = self.repo.get_hash_from_rev(self.program.args.rev)
         if tmp_hash:
             extra_cmd = '--revision src@' + tmp_hash
         else:
@@ -184,7 +187,7 @@ examples:
         if not os.path.exists(self.out_dir):
             self.makefile(force=True)
 
-        Util.info('Begin to build rev %s' % self.repo.get_head_rev())
+        Util.info('Begin to build rev %s' % self.repo.get_working_dir_rev())
         Util.chdir(self.src_dir + '/build/util')
         self.program.execute('python lastchange.py -o LASTCHANGE')
 
@@ -210,13 +213,117 @@ examples:
 
         self.program.execute(ninja_cmd, show_duration=True)
 
+    def backup(self, force=False):
+        if not self.program.args.backup:
+            return
+
+        rev = self.repo.get_working_dir_rev()
+        Util.info('Begin to backup rev %s' % rev)
+        backup_dir = '%s/%s' % (MainRepo.ignore_chromium_selfbuilt_dir, rev)
+        if os.path.exists(backup_dir):
+            Util.error('Backup folder "%s" alreadys exists' % backup_dir)
+
+        Util.chdir(self.src_dir)
+        chrome_files = self.program.execute('gn desc //%s/%s //chrome:chrome runtime_deps' % (self.relative_out_dir, self.build_type_cap), return_out=True)[1].rstrip('\n').split('\n')
+        chromedriver_files = self.program.execute('gn desc //%s/%s //chrome/test/chromedriver:chromedriver runtime_deps' % (self.relative_out_dir, self.build_type_cap), return_out=True)[1].rstrip('\n').split('\n')
+        origin_files = Util.union_list(chrome_files, chromedriver_files)
+        exclude_files = ['../', 'gen/', 'angledata/', 'pyproto/', './libVkLayer']
+        files = []
+        for file in origin_files:
+            if self.program.args.backup_nosymbol and file.endswith('.pdb'):
+                continue
+
+            for exclude_file in exclude_files:
+                if file.startswith(exclude_file):
+                    break
+            else:
+                files.append(file)
+
+        Util.chdir(self.out_dir)
+        for file in files:
+            if re.match(r'\./', file):
+                file = file[2:]
+
+            if re.match('initialexe/', file):
+                file = file[len('initialexe/'):]
+
+            dir_name = os.path.dirname(file)
+            dst_dir = '%s/%s' % (selfbuilt_dir, dir_name)
+            Util.ensure_dir(dst_dir)
+            shutil.copy(file, dst_dir)
+
     def run(self):
         if not self.program.args.run:
             return
 
-    def backup(self):
-        if not self.program.args.backup:
+        if self.program.args.rev:
+            Util.chdir('%s/%s' % (MainRepo.ignore_chromium_selfbuilt_dir, self.program.args.rev))
+        else:
+            Util.chdir(self.out_dir)
+
+        cmd = 'chrome'
+        if Util.host_os == 'windows':
+            cmd += '.exe'
+        cmd += ' %s' % self.program.args.run_extra_args
+        self.program.execute(cmd)
+
+    def download(self):
+        if not self.program.args.download:
             return
+
+        rev = self.program.args.rev
+        if not rev:
+            Util.error('Please designate revision')
+
+        download_dir = '%s/%s-%s/tmp' % (MainRepo.ignore_chromium_download_dir, self.target_arch, self.target_os)
+        Util.ensure_dir(download_dir)
+        Util.chdir(download_dir)
+
+        if self.target_os == 'darwin':
+            target_arch_tmp = ''
+        elif self.target_arch == 'x86_64':
+            target_arch_tmp = '_x64'
+        else:
+            target_arch_tmp = ''
+
+        if self.target_os == 'windows':
+            target_os_tmp = 'Win'
+            target_os_tmp2 = 'win'
+        elif self.target_os == 'darwin':
+            target_os_tmp = 'Mac'
+            target_os_tmp2 = 'mac'
+        else:
+            target_os_tmp = target_os.capitalize()
+            target_os_tmp2 = target_os
+
+        rev_zip = '%s.zip' % rev
+        if os.path.exists(rev_zip) and os.stat(rev_zip).st_size == 0:
+            Util.ensure_nofile(rev_zip)
+        if os.path.exists('../%s' % rev_zip):
+            Util.info('%s has been downloaded' % rev_zip)
+        else:
+            # linux64: Linux_x64/<rev>/chrome-linux.zip
+            # win64: Win_x64/<rev>/chrome-win32.zip
+            # mac64: Mac/<rev>/chrome-mac.zip
+            if Util.host_os == 'windows':
+                wget = Util.use_backslash('%s/wget64.exe' % MainRepo.tool_dir)
+            else:
+                wget = 'wget'
+
+            if self.target_os == 'android':
+                # https://commondatastorage.googleapis.com/chromium-browser-snapshots/index.html?prefix=Android/
+                # https://www.googleapis.com/download/storage/v1/b/chromium-browser-snapshots/o/Android%2F607944%2Fchrome-android.zip?generation=1542192867201693&alt=media
+                archive_url = '"https://www.googleapis.com/download/storage/v1/b/chromium-browser-snapshots/o/Android%2F' + rev + '%2Fchrome-android.zip?generation=1542192867201693&alt=media"'
+            else:
+                archive_url = 'http://commondatastorage.googleapis.com/chromium-browser-snapshots/%s%s/%s/chrome-%s.zip' % (target_os_tmp, target_arch_tmp, rev, target_os_tmp2)
+            self.program.execute('%s %s --show-progress -O %s' % (wget, archive_url, rev_zip))
+            if (os.path.getsize(rev_zip) == 0):
+                Util.warning('Could not find revision %s' % rev)
+                self.program.execute('rm %s' % rev_zip)
+            else:
+                self.program.execute('mv %s ../' % rev_zip)
+
+
 
     def _set_boto(self):
         boto_file = MainRepo.ignore_chromium_boto_file
