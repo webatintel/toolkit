@@ -15,7 +15,7 @@ else:
 sys.path.append(chromium_dir)
 sys.path.append(chromium_dir + '/..')
 
-from util.common import * # pylint: disable=unused-wildcard-import
+from util.util import * # pylint: disable=unused-wildcard-import
 
 class Repo():
     REV_MAX = 9999999
