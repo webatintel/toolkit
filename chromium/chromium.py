@@ -25,7 +25,7 @@ class Chromium():
                                         epilog='''
 examples:
   python %(prog)s --sync --rev 674968
-  python %(prog)s --sync --runhooks --makefile --build
+  python %(prog)s --sync --runhooks --makefile --build --backup --download
 ''')
         parser.add_argument('--rev', dest='rev', type=int, help='revision for sync')
         parser.add_argument('--hash', dest='hash', help='hash of revision for sync')
@@ -248,7 +248,7 @@ examples:
                 file = file[len('initialexe/'):]
 
             dir_name = os.path.dirname(file)
-            dst_dir = '%s/%s' % (selfbuilt_dir, dir_name)
+            dst_dir = '%s/%s' % (backup_dir, dir_name)
             Util.ensure_dir(dst_dir)
             shutil.copy(file, dst_dir)
 
