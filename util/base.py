@@ -300,7 +300,7 @@ class Program():
         else:
             script_name = sys.argv[0].split('/')[-1].replace('.py', '')
             log_file = MainRepo.ignore_log_dir + '/' + script_name + '-' + timestamp + '.log'
-        Util.info('Log file: %s' + log_file)
+        Util.info('Log file: %s' % log_file)
 
         if args.strace:
             sys.settrace(Util.strace_function)

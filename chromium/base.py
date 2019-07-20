@@ -29,11 +29,11 @@ class Base():
         self.no_component_build = no_component_build
         self.no_jumbo_build = no_jumbo_build
         self.no_warning_as_error = no_warning_as_error
-        self.relative_out_dir = self._get_relative_out_dir(target_arch, target_os, symbol_level, no_component_build, no_jumbo_build)
         if out_dir:
             self.out_dir = out_dir
         else:
-            self.out_dir = self.relative_out_dir
+            self.out_dir = self._get_relative_out_dir(target_arch, target_os, symbol_level, no_component_build, no_jumbo_build)
+        self.out_dir = '%s/%s' % (self.out_dir, self.build_type_cap)
         self.program = program
         self.rev = rev
         self.root_dir = root_dir
@@ -175,13 +175,13 @@ class Base():
             Util.error('Backup folder "%s" alreadys exists' % backup_dir)
 
         Util.chdir(self.src_dir)
-        chrome_files = self.program.execute('gn desc //%s/%s //chrome:chrome runtime_deps' % (self.relative_out_dir, self.build_type_cap), return_out=True)[1].rstrip('\n').split('\n')
-        chromedriver_files = self.program.execute('gn desc //%s/%s //chrome/test/chromedriver:chromedriver runtime_deps' % (self.relative_out_dir, self.build_type_cap), return_out=True)[1].rstrip('\n').split('\n')
+        chrome_files = self.program.execute('gn desc //%s //chrome:chrome runtime_deps' % self.out_dir, return_out=True)[1].rstrip('\n').split('\n')
+        chromedriver_files = self.program.execute('gn desc //%s //chrome/test/chromedriver:chromedriver runtime_deps' % self.out_dir, return_out=True)[1].rstrip('\n').split('\n')
         origin_files = Util.union_list(chrome_files, chromedriver_files)
         exclude_files = ['../', 'gen/', 'angledata/', 'pyproto/', './libVkLayer']
         files = []
         for file in origin_files:
-            if backup_nosymbol and file.endswith('.pdb'):
+            if backup_no_symbol and file.endswith('.pdb'):
                 continue
 
             for exclude_file in exclude_files:
@@ -334,7 +334,7 @@ class Base():
         if roll_count_diff < 0:
             Util.error('The decimal part of rev should be less than %s' % roll_count)
         Util.chdir('%s/%s' % (self.root_dir, roll_repo))
-        cmd = 'git reset --hard %s~%s' % (roll_hash, roll_count_diff)
+        cmd = 'git checkout master && git reset --hard %s~%s' % (roll_hash, roll_count_diff)
         self.program.execute(cmd)
 
     def _get_relative_out_dir(self, target_arch, target_os, symbol_level=0, no_component_build=False, no_jumbo_build=False):

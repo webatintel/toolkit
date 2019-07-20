@@ -63,7 +63,7 @@ class Chromium():
                 max_rev = int(max_rev)
                 tmp_rev = min_rev
                 while tmp_rev <= max_rev:
-                    if (int(tmp_rev) % args.rev_stride == 0):
+                    if (tmp_rev % args.rev_stride == 0):
                         self._process_rev(rev=str(tmp_rev))
                         tmp_rev += args.rev_stride
                     else:
@@ -111,6 +111,8 @@ python %(prog)s --sync --runhooks --makefile --build --backup --download
         self.program = Program(parser)
 
     def _process_rev(self, rev=''):
+        if rev:
+            Util.info('Begin to process rev %s' % rev)
         args = self.program.args
         self.base = Base(args.hash, args.is_debug, args.no_component_build, args.no_jumbo_build, args.no_warning_as_error, args.out_dir, self.program, rev, self.program.root_dir, args.symbol_level, self.target_arch, self.target_os)
         self._sync()
