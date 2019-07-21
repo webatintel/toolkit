@@ -334,8 +334,12 @@ class Base():
         if roll_count_diff < 0:
             Util.error('The decimal part of rev should be less than %s' % roll_count)
         Util.chdir('%s/%s' % (self.root_dir, roll_repo))
-        cmd = 'git checkout master && git reset --hard %s~%s' % (roll_hash, roll_count_diff)
+        cmd = 'git reset --hard %s~%s' % (roll_hash, roll_count_diff)
         self.program.execute(cmd)
+        cmd = 'git rev-parse --abbrev-ref HEAD'
+        branch = self.program.execute(cmd, return_out=True, show_cmd=False)[1].strip()
+        if not branch == 'master':
+            Util.error('Repo %s is on master' % roll_repo)
 
     def _get_relative_out_dir(self, target_arch, target_os, symbol_level=0, no_component_build=False, no_jumbo_build=False):
         relative_out_dir = 'out-%s-%s' % (target_arch, target_os)

@@ -209,7 +209,7 @@ class Util:
         file_path = frame.f_code.co_filename
         function_name = frame.f_code.co_name
         file_name = file_path.split('/')[-1]
-        if file_path[:4] != '/usr' and file_path != '<string>':
+        if not file_path[:4] == '/usr' and not file_path == '<string>':
             if event == 'call':
                 indent[0] += 2
                 Util.strace('-' * indent[0] + '> call %s:%s' % (file_name, function_name))
