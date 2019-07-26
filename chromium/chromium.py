@@ -20,6 +20,15 @@ from base import *
 from repo import *
 
 class Chromium():
+    OPS_SYNC = 1 << 0
+    OPS_RUNHOOKS = 1 << 1
+    OPS_MAKEFILE = 1 << 2
+    OPS_BUILD = 1 << 3
+    OPS_BACKUP = 1 << 4
+    OPS_RUN = 1 << 5
+    OPS_DOWNLOAD = 1 << 6
+    OPS_BACKUP = 1 << 7
+
     def __init__(self):
         self._parse_args()
         args = self.program.args
@@ -38,6 +47,8 @@ class Chromium():
                 tmp_revs = args.rev.split('-')
                 min_rev = tmp_revs[0]
                 max_rev = tmp_revs[1]
+                if args.run:
+                    Util.error('Cannot run with multiple revisions')
             else:
                 min_rev = args.rev
                 max_rev = args.rev
@@ -57,20 +68,22 @@ class Chromium():
                 tmp_min = int(min_rev.split('.')[1])
                 tmp_max = int(max_rev.split('.')[1])
                 for i in range(tmp_min, min(tmp_max + 1, roll_count)):
-                    self._process_rev(rev='%s.%s' % (min_rev.split('.')[0], i))
+                    self.rev = '%s.%s' % (min_rev.split('.')[0], i)
+                    self._handle_ops()
             else:
                 min_rev = int(min_rev)
                 max_rev = int(max_rev)
                 tmp_rev = min_rev
                 while tmp_rev <= max_rev:
                     if (tmp_rev % args.rev_stride == 0):
-                        self._process_rev(rev=str(tmp_rev))
+                        self.rev = str(tmp_rev)
+                        self._handle_ops()
                         tmp_rev += args.rev_stride
                     else:
                         tmp_rev += 1
-            return
-
-        self._process_rev()
+        else:
+            self.rev = ''
+            self._handle_ops()
 
     def _parse_args(self):
         parser = argparse.ArgumentParser(description='Script about Chromium',
@@ -82,7 +95,6 @@ python %(prog)s --sync -r 678699-678720 --rev-stride 10 --build
 python %(prog)s --sync --runhooks --makefile --build --backup --download
         ''')
 
-        parser.add_argument('--hash', dest='hash', help='hash of revision for sync')
         parser.add_argument('--is-debug', dest='is_debug', help='is debug', action='store_true')
         parser.add_argument('--no-component-build', dest='no_component_build', help='no component build', action='store_true')
         parser.add_argument('--no-jumbo-build', dest='no_jumbo_build', help='no jumbo build', action='store_true')
@@ -110,61 +122,59 @@ python %(prog)s --sync --runhooks --makefile --build --backup --download
 
         self.program = Program(parser)
 
-    def _process_rev(self, rev=''):
-        if rev:
-            Util.info('Begin to process rev %s' % rev)
+    def _handle_ops(self):
         args = self.program.args
-        self.base = Base(args.hash, args.is_debug, args.no_component_build, args.no_jumbo_build, args.no_warning_as_error, args.out_dir, self.program, rev, self.program.root_dir, args.symbol_level, self.target_arch, self.target_os)
-        self._sync()
-        self._runhooks()
-        self._makefile()
-        self._build()
-        self._backup()
-        self._run()
-        self._download()
+        if self.rev:
+            Util.info('Begin to handle rev %s' % self.rev)
 
-    def _sync(self):
-        args = self.program.args
-        if not args.sync:
-            return
-        self.base.sync(self.program.args.sync_reset)
+        self.base = Base(args.is_debug, args.no_component_build, args.no_jumbo_build, args.no_warning_as_error, args.out_dir, self.program, self.rev, self.program.root_dir, args.symbol_level, self.target_arch, self.target_os)
+        ops = 0
+        if args.sync:
+            ops |= Chromium.OPS_SYNC
+        if args.runhooks:
+            ops |= Chromium.OPS_RUNHOOKS
+        if args.makefile:
+            ops |= Chromium.OPS_MAKEFILE
+        if args.build:
+            ops |= Chromium.OPS_BUILD
+        if args.backup:
+            ops |= Chromium.OPS_BACKUP
+        if args.run:
+            ops |= Chromium.OPS_RUN
+        if args.download:
+            ops |= Chromium.OPS_DOWNLOAD
 
-    def _runhooks(self):
-        args = self.program.args
-        if not args.runhooks:
-            return
-        self.base.runhooks()
+        if self.rev:
+            if ops & Chromium.OPS_RUN:
+                ops |= Chromium.BACKUP
+            if ops & Chromium.OPS_BACKUP:
+                ops |= Chromium.OPS_BUILD
+            if ops & Chromium.OPS_BUILD:
+                ops |= Chromium.OPS_MAKEFILE
+            if ops & Chromium.OPS_MAKEFILE:
+                ops |= Chromium.OPS_RUNHOOKS
+            if ops & Chromium.OPS_RUNHOOKS:
+                ops |= Chromium.OPS_SYNC
 
-    def _makefile(self):
-        args = self.program.args
-        if not args.makefile:
-            return
-        self.base.makefile()
+            if ops & Chromium.OPS_BACKUP:
+                backup_dir = '%s/%s' % (MainRepo.ignore_chromium_selfbuilt_dir, self.rev)
+                if os.path.exists(backup_dir):
+                    ops &= ~(Chromium.OPS_BACKUP | Chromium.OPS_BUILD | Chromium.OPS_MAKEFILE | Chromium.OPS_RUNHOOKS | Chromium.OPS_SYNC)
 
-    def _build(self):
-        args = self.program.args
-        if not args.build:
-            return
-        self.base.build(args.build_max_fail, args.build_target, args.build_verbose)
-
-    def _backup(self):
-        args = self.program.args
-        if not args.backup:
-            return
-
-        self.base.backup(args.backup_no_symbol)
-
-    def _run(self):
-        args = self.program.args
-        if not args.run:
-            return
-        self.base.run(args.run_extra_args)
-
-    def _download(self):
-        args = self.program.args
-        if not args.download:
-            return
-        self.base.download()
+        if ops & Chromium.OPS_SYNC:
+            self.base.sync(self.program.args.sync_reset)
+        if ops & Chromium.OPS_RUNHOOKS:
+            self.base.runhooks()
+        if ops & Chromium.OPS_MAKEFILE:
+            self.base.makefile()
+        if ops & Chromium.OPS_BUILD:
+            self.base.build(args.build_max_fail, args.build_target, args.build_verbose)
+        if ops & Chromium.OPS_BACKUP:
+            self.base.backup(args.backup_no_symbol)
+        if ops & Chromium.OPS_RUN:
+            self.base.run(args.run_extra_args)
+        if ops & Chromium.OPS_DOWNLOAD:
+            self.base.download()
 
 if __name__ == '__main__':
     Chromium()

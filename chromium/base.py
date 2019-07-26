@@ -19,8 +19,7 @@ from util.base import * # pylint: disable=unused-wildcard-import
 from repo import *
 
 class Base():
-    def __init__(self, hash, is_debug, no_component_build, no_jumbo_build, no_warning_as_error, out_dir, program, rev, root_dir, symbol_level, target_arch, target_os):
-        self.hash = hash
+    def __init__(self, is_debug, no_component_build, no_jumbo_build, no_warning_as_error, out_dir, program, rev, root_dir, symbol_level, target_arch, target_os):
         if is_debug:
             self.build_type = 'debug'
         else:
@@ -57,6 +56,8 @@ class Base():
             self.decimal_rev = 0
 
     def sync(self, sync_reset):
+        if self.rev:
+            Util.info('Begin to sync rev %s' % self.rev)
         Util.set_proxy()
         self._set_boto()
         Util.chdir(self.repo.src_dir)
@@ -125,6 +126,7 @@ class Base():
         self.program.execute(cmd)
 
     def build(self, build_max_fail, build_target, build_verbose):
+        Util.chdir(self.src_dir)
         if not os.path.exists(self.out_dir):
             self.makefile()
 
@@ -303,8 +305,6 @@ class Base():
             if working_dir_rev == self.integer_rev:
                 return
             tmp_hash = self.repo.get_hash_from_rev(self.integer_rev)
-        elif self.hash:
-            tmp_hash = self.hash
 
         if tmp_hash:
             extra_cmd = '--revision src@' + tmp_hash
