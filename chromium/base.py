@@ -19,19 +19,18 @@ from util.base import * # pylint: disable=unused-wildcard-import
 from repo import *
 
 class Base():
-    def __init__(self, is_debug, no_component_build, no_jumbo_build, no_warning_as_error, out_dir, program, rev, root_dir, symbol_level, target_arch, target_os):
+    def __init__(self, is_debug, no_component_build, no_warning_as_error, out_dir, program, rev, root_dir, symbol_level, target_arch, target_os):
         if is_debug:
             self.build_type = 'debug'
         else:
             self.build_type = 'release'
         self.build_type_cap = self.build_type.capitalize()
         self.no_component_build = no_component_build
-        self.no_jumbo_build = no_jumbo_build
         self.no_warning_as_error = no_warning_as_error
         if out_dir:
             self.out_dir = out_dir
         else:
-            self.out_dir = self._get_relative_out_dir(target_arch, target_os, symbol_level, no_component_build, no_jumbo_build)
+            self.out_dir = self._get_relative_out_dir(target_arch, target_os, symbol_level, no_component_build)
         self.out_dir = '%s/%s' % (self.out_dir, self.build_type_cap)
         self.program = program
         self.rev = rev
@@ -98,10 +97,6 @@ class Base():
             gn_args += ' is_component_build=false'
         else:
             gn_args += ' is_component_build=true'
-        if self.no_jumbo_build:
-            gn_args += ' use_jumbo_build=false'
-        else:
-            gn_args += ' use_jumbo_build=true'
         if self.build_type == 'release':
             gn_args += ' is_debug=false strip_absolute_paths_from_debug_symbols=true'
         else:
@@ -341,7 +336,7 @@ class Base():
         if not branch == 'master':
             Util.error('Repo %s is on master' % roll_repo)
 
-    def _get_relative_out_dir(self, target_arch, target_os, symbol_level=0, no_component_build=False, no_jumbo_build=False):
+    def _get_relative_out_dir(self, target_arch, target_os, symbol_level=0, no_component_build=False):
         relative_out_dir = 'out-%s-%s' % (target_arch, target_os)
         relative_out_dir += '-symbol%s' % symbol_level
 
@@ -349,10 +344,5 @@ class Base():
             relative_out_dir += '-nocomponent'
         else:
             relative_out_dir += '-component'
-
-        if no_jumbo_build:
-            relative_out_dir += '-nojumbo'
-        else:
-            relative_out_dir += '-jumbo'
 
         return relative_out_dir
