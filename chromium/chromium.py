@@ -9,11 +9,11 @@ if re.search('->', output):
     if match:
         drive = match.group(1)
         output = output.replace('/%s/' % drive, '%s:/' % drive)
-    chromium_dir = os.path.dirname(os.path.realpath(output))
+    script_dir = os.path.dirname(os.path.realpath(output))
 else:
-    chromium_dir = sys.path[0]
-sys.path.append(chromium_dir)
-sys.path.append(chromium_dir + '/..')
+    script_dir = sys.path[0]
+sys.path.append(script_dir)
+sys.path.append(script_dir + '/..')
 
 from util.base import * # pylint: disable=unused-wildcard-import
 from base import *
@@ -161,7 +161,7 @@ python %(prog)s --sync --runhooks --makefile --build --backup --download
                     ops &= ~(Chromium.OPS_BACKUP | Chromium.OPS_BUILD | Chromium.OPS_MAKEFILE | Chromium.OPS_RUNHOOKS | Chromium.OPS_SYNC)
 
         if ops & Chromium.OPS_SYNC:
-            self.base.sync(self.program.args.sync_reset)
+            self.base.sync(args.sync_reset)
         if ops & Chromium.OPS_RUNHOOKS:
             self.base.runhooks()
         if ops & Chromium.OPS_MAKEFILE:

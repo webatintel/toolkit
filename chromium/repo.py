@@ -18,7 +18,6 @@ sys.path.append(chromium_dir + '/..')
 from util.base import * # pylint: disable=unused-wildcard-import
 
 class Repo():
-    MAX_REV = 9999999
     FAKE_REV = 0
 
     COMMIT_STR = 'commit (.*)'

@@ -3,15 +3,12 @@ import atexit
 import calendar
 import codecs
 import collections
-import commands
 import datetime
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 import fileinput
 from functools import wraps
 import hashlib
-from HTMLParser import HTMLParser
-from httplib import BadStatusLine
 import inspect
 import json
 import logging
@@ -22,7 +19,6 @@ import os
 from os.path import expanduser
 import pickle
 import platform
-import Queue
 import random
 import re
 import select
@@ -33,14 +29,14 @@ import subprocess
 import sys
 import threading
 import time
-import urllib2
 
 class Util:
+    MAX_REV = 9999999
     host_os = platform.system().lower()
     host_os_id = ''
     host_os_release = '0.0'
     if host_os == 'linux':
-        result = subprocess.check_output(['cat', '/etc/lsb-release'])
+        result = subprocess.check_output(['cat', '/etc/lsb-release']).decode('utf-8')
         if re.search('CHROMEOS', result[1]):
             host_os = 'chromeos'
 
@@ -63,6 +59,44 @@ class Util:
     else:
         user_name = os.getenv('USER')
     cpu_count = multiprocessing.cpu_count()
+
+    @staticmethod
+    def execute(cmd, show_cmd=True, exit_on_error=True, return_out=False, show_duration=False, dryrun=False, log_file=''):
+        orig_cmd = cmd
+        if show_cmd:
+            Util.cmd(orig_cmd)
+
+        if Util.host_os == 'windows':
+            cmd = '%s 2>&1' % cmd
+        else:
+            cmd = 'bash -o pipefail -c "%s 2>&1' % cmd
+        if log_file:
+            cmd += ' | tee -a %s' % log_file
+        if not Util.host_os == 'windows':
+            cmd += '; (exit ${PIPESTATUS})"'
+
+        if show_duration:
+            timer = Timer()
+
+        if dryrun:
+            result = [0, '']
+        elif return_out:
+            process = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            (out, err) = process.communicate()
+
+            ret = process.returncode
+            result = [ret, (out + err).decode('utf-8')]
+        else:
+            ret = os.system(cmd)
+            result = [int(ret / 256), '']
+
+        if show_duration:
+            Util.info('%s was spent to execute command "%s" in function "%s"' % (timer.stop(), orig_cmd, inspect.stack()[1][3]))
+
+        if exit_on_error and ret:
+            Util.error('Failed to execute command "%s"' % orig_cmd)
+
+        return result
 
     @staticmethod
     def _msg(msg, show_strace=False):
@@ -114,6 +148,11 @@ class Util:
             os.makedirs(dir)
 
     @staticmethod
+    def ensure_nodir(dir):
+        if os.path.exists(dir):
+            shutil.rmtree(dir)
+
+    @staticmethod
     def ensure_file(file_path):
         Util.ensure_dir(os.path.dirname(os.path.abspath(file_path)))
         if not os.path.exists(file_path):
@@ -125,6 +164,38 @@ class Util:
             return
 
         os.remove(file_path)
+
+    @staticmethod
+    def pkg_installed(pkg):
+        cmd = 'dpkg -s ' + pkg
+        result = Util.execute(cmd, return_out=True, show_cmd=False)
+        if result[0]:
+            return False
+        else:
+            return True
+
+    @staticmethod
+    def install_pkg(pkg):
+        if Util.pkg_installed(pkg):
+            return True
+        else:
+            Util.info('Package ' + pkg + ' is installing...')
+            cmd = 'sudo apt-get install --force-yes -y ' + pkg
+            result = Util.execute(cmd)
+            if result[0]:
+                Util.warning('Package ' + pkg + ' installation failed')
+                return False
+            else:
+                return True
+
+    @staticmethod
+    def ensure_pkg(pkgs):
+        ret = True
+        pkg_list = pkgs.split(' ')
+        for pkg in pkg_list:
+            ret &= Util.install_pkg(pkg)
+
+        return ret
 
     @staticmethod
     def read_file(file_path):
@@ -145,7 +216,7 @@ class Util:
         f = open(file_path, 'w')
         for line in lines:
             f.write(line + '\n')
-            print line
+            print(line)
         f.close()
 
     @staticmethod
@@ -316,35 +387,4 @@ class Program():
         self.log_file = log_file
 
     def execute(self, cmd, show_cmd=True, exit_on_error=True, return_out=False, show_duration=False, dryrun=False):
-        orig_cmd = cmd
-        if show_cmd:
-            Util.cmd(orig_cmd)
-
-        if Util.host_os == 'windows':
-            cmd = '%s 2>&1 | tee -a %s' % (cmd, self.log_file)
-        else:
-            cmd = 'bash -o pipefail -c "%s 2>&1 | tee -a %s; (exit ${PIPESTATUS})"' % (cmd, self.log_file)
-
-        if show_duration:
-            timer = Timer()
-
-        if dryrun:
-            result = [0, '']
-        elif return_out:
-            tmp_out = ''
-            process = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-            (out, err) = process.communicate()
-            out = tmp_out + out
-            ret = process.returncode
-            result = [ret, out + err]
-        else:
-            ret = os.system(cmd)
-            result = [ret / 256, '']
-
-        if show_duration:
-            Util.info('%s was spent to execute command "%s" in function "%s"' % (timer.stop(), orig_cmd, inspect.stack()[1][3]))
-
-        if exit_on_error and ret:
-            Util.error('Failed to execute command "%s"' % orig_cmd)
-
-        return result
+        return Util.execute(cmd=cmd, show_cmd=show_cmd, exit_on_error=exit_on_error, return_out=return_out, show_duration=show_duration, dryrun=dryrun, log_file=self.log_file)
