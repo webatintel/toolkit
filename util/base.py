@@ -83,7 +83,6 @@ class Util:
         elif return_out:
             process = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
             (out, err) = process.communicate()
-
             ret = process.returncode
             result = [ret, (out + err).decode('utf-8')]
         else:
