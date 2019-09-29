@@ -112,10 +112,10 @@ class Mesa():
         Util.error('Could not find rev for hash %s' % hash)
 
     def _build_one(self, rev, hash):
-        dir_install = '/workspace/install/%s-%s-%s-%s' % (self.mesa_dir, self.build_type, rev, hash)
-        dir_build = dir_install.replace('install', 'install/building')
+        single_build_dir = '%s/build/%s-%s-%s-%s' % (self.program.root_dir, self.mesa_dir, self.build_type, rev, hash)
+        building_dir = single_build_dir.replace('build', 'build/building')
 
-        if (os.path.exists(dir_build) or os.path.exists('%s' % dir_install)) and os.path.exists(dir_install + '/lib/dri/i965_dri.so') and not self.build_force:
+        if (os.path.exists(building_dir) or os.path.exists('%s' % single_build_dir)) and os.path.exists(single_build_dir + '/lib/dri/i965_dri.so') and not self.build_force:
             Util.info('Rev %s has been built, so just skip it' % rev)
             return
 
@@ -128,10 +128,10 @@ class Mesa():
 
         if 'drm' in self.modules:
             Util.chdir('%s/%s' % (self.program.root_dir, self.drm_dir))
-            cmd_build = './autogen.sh CFLAGS="-O2" CXXFLAGS="-O2" --prefix=%s --enable-libkms --enable-intel --disable-vmwgfx --disable-radeon --disable-amdgpu --disable-nouveau' % dir_build
+            build_cmd = './autogen.sh CFLAGS="-O2" CXXFLAGS="-O2" --prefix=%s --enable-libkms --enable-intel --disable-vmwgfx --disable-radeon --disable-amdgpu --disable-nouveau' % building_dir
             if self.build_type == 'debug':
-                cmd_build += ' --enable-debug'
-            result = self.program.execute(cmd_build + ' && make -j%s && make install' % Util.cpu_count)
+                build_cmd += ' --enable-debug'
+            result = self.program.execute(build_cmd + ' && make -j%s && make install' % Util.cpu_count)
             if result[0]:
                 return False
 
@@ -144,39 +144,35 @@ class Mesa():
             result = self.program.execute('git log -n 1 --oneline', return_out=True, show_cmd=False)
             self.program.execute('echo "#define MESA_GIT_SHA1 \\\"git-%s\\\"" >src/mesa/main/git_sha1.h' % result[1].split()[0])
             if self.args.build_system == 'autotools':
-                cmd_build = 'PKG_CONFIG_PATH=%s/lib/pkgconfig ./autogen.sh --enable-autotools CFLAGS="-O2" CXXFLAGS="-O2" --prefix=%s --with-dri-drivers="i915 i965" --with-dri-driverdir=%s/lib/dri --enable-gles1 --enable-gles2 --enable-shared-glapi --with-gallium-drivers= --with-egl-platforms=x11,drm --enable-texture-float --enable-gbm --enable-glx-tls --enable-dri3' % (dir_build, dir_build, dir_build)
+                build_cmd = 'PKG_CONFIG_PATH=%s/lib/pkgconfig ./autogen.sh --enable-autotools CFLAGS="-O2" CXXFLAGS="-O2" --prefix=%s --with-dri-drivers="i915 i965" --with-dri-driverdir=%s/lib/dri --enable-gles1 --enable-gles2 --enable-shared-glapi --with-gallium-drivers= --with-egl-platforms=x11,drm --enable-texture-float --enable-gbm --enable-glx-tls --enable-dri3' % (building_dir, building_dir, building_dir)
                 if not self.args.build_novulkan:
-                    cmd_build += ' --with-vulkan-driver="intel"'
+                    build_cmd += ' --with-vulkan-driver="intel"'
                 if build_type == 'debug':
-                    cmd_build += ' --enable-debug'
-                cmd = cmd_build + ' && make -j%s && make install' % Util.cpu_count
+                    build_cmd += ' --enable-debug'
+                cmd = build_cmd + ' && make -j%s && make install' % Util.cpu_count
             elif self.args.build_system == 'meson':
                 # missing options: -enable-texture-float --enable-glx-tls
                 Util.ensure_nodir('build')
                 Util.ensure_dir('build')
-                cmd_build = 'PKG_CONFIG_PATH=%s/lib/pkgconfig meson build/ -Dprefix=%s -Dvulkan-drivers=intel -Ddri-drivers=i915,i965 -Ddri-drivers-path=%s/lib/dri -Dgles1=true -Dgles2=true -Dshared-glapi=true -Dplatforms=x11,drm -Dgbm=true -Ddri3=true' % (dir_build, dir_build, dir_build)
-                if self.args.iris:
-                    cmd_build += ' -Dgallium-drivers=iris'
-                else:
-                    cmd_build += ' -Dgallium-drivers=""'
+                build_cmd = 'PKG_CONFIG_PATH=%s/lib/pkgconfig meson build/ -Dprefix=%s -Dvulkan-drivers=intel -Ddri-drivers=i915,i965 -Ddri-drivers-path=%s/lib/dri -Dgles1=true -Dgles2=true -Dshared-glapi=true -Dplatforms=x11,drm -Dgbm=true -Ddri3=true -Dgallium-drivers=iris' % (building_dir, building_dir, building_dir)
                 if not self.args.build_novulkan:
-                    cmd_build += ' -Dvulkan-drivers=intel'
+                    build_cmd += ' -Dvulkan-drivers=intel'
                 if self.build_type == 'release':
-                    cmd_build += ' -Dbuildtype=release'
-                cmd = cmd_build + ' && ninja -j%s -C build/ install' % Util.cpu_count
+                    build_cmd += ' -Dbuildtype=release'
+                cmd = build_cmd + ' && ninja -j%s -C build/ install' % Util.cpu_count
 
             result = self.program.execute(cmd)
             if result[0]:
                 return False
 
-        for line in fileinput.input('%s/share/vulkan/icd.d/intel_icd.x86_64.json' % dir_build, inplace=1):
+        for line in fileinput.input('%s/share/vulkan/icd.d/intel_icd.x86_64.json' % building_dir, inplace=1):
             match = re.search('"library_path": "(.*)"', line)
             if match:
                 line = line.replace(match.group(1), '../../../lib/x86_64-linux-gnu/libvulkan_intel.so')
             sys.stdout.write(line)
         fileinput.close()
 
-        self.program.execute('mv %s %s' % (dir_build, dir_install))
+        self.program.execute('mv %s %s' % (building_dir, single_build_dir))
         return True
 
     def _clean(self, modules):
@@ -211,7 +207,6 @@ python %(prog)s --hashtorev e58a10af640ba58b6001f5c5ad750b782547da76
 python %(prog)s --revtohash 1
     ''')
 
-        parser.add_argument('--iris', dest='iris', help='iris', action='store_true')
         parser.add_argument('--repo', dest='repo', help='repo, can be freedesktop or chromeos', default='freedesktop')
         parser.add_argument('--init', dest='init', help='init', action='store_true')
         parser.add_argument('--sync', dest='sync', help='sync', action='store_true')

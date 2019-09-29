@@ -2,7 +2,7 @@ import os
 import re
 import subprocess
 import sys
-output = subprocess.Popen('ls -l %s' % __file__, shell=True, stdout=subprocess.PIPE).stdout.readline()
+output = subprocess.Popen('ls -l %s' % __file__, shell=True, stdout=subprocess.PIPE).stdout.readline().decode('utf-8')
 if re.search('->', output):
     output = output.split(' ')[-1].strip()
     match = re.match('/(.)/', output)

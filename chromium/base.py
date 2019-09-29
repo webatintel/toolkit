@@ -2,7 +2,7 @@ import os
 import re
 import subprocess
 import sys
-output = subprocess.Popen('ls -l %s' % __file__, shell=True, stdout=subprocess.PIPE).stdout.readline()
+output = subprocess.Popen('ls -l %s' % __file__, shell=True, stdout=subprocess.PIPE).stdout.readline().decode('utf-8')
 if re.search('->', output):
     output = output.split(' ')[-1].strip()
     match = re.match('/(.)/', output)
@@ -334,7 +334,7 @@ class Base():
         cmd = 'git rev-parse --abbrev-ref HEAD'
         branch = self.program.execute(cmd, return_out=True, show_cmd=False)[1].strip()
         if not branch == 'master':
-            Util.error('Repo %s is on master' % roll_repo)
+            Util.error('Repo %s is not on master' % roll_repo)
 
     def _get_relative_out_dir(self, target_arch, target_os, symbol_level=0, no_component_build=False):
         relative_out_dir = 'out-%s-%s' % (target_arch, target_os)
