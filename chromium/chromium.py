@@ -25,9 +25,10 @@ class Chromium():
     OPS_MAKEFILE = 1 << 2
     OPS_BUILD = 1 << 3
     OPS_BACKUP = 1 << 4
-    OPS_RUN = 1 << 5
-    OPS_DOWNLOAD = 1 << 6
-    OPS_BACKUP = 1 << 7
+    OPS_BACKUP_WEBGL = 1 << 5
+    OPS_RUN = 1 << 6
+    OPS_DOWNLOAD = 1 << 7
+
 
     def __init__(self):
         self._parse_args()
@@ -115,6 +116,7 @@ python %(prog)s --sync --runhooks --makefile --build --backup --download
         parser.add_argument('--build-max-fail', dest='build_max_fail', help='build keeps going until N jobs fail', type=int, default=1)
         parser.add_argument('--backup', dest='backup', help='backup', action='store_true')
         parser.add_argument('--backup-no-symbol', dest='backup_no_symbol', help='backup no symbol', action='store_true')
+        parser.add_argument('--backup-webgl', dest='backup_webgl', help='backup webgl', action='store_true')
         parser.add_argument('--run', dest='run', help='run', action='store_true')
         parser.add_argument('--run-extra-args', dest='run_extra_args', help='run with extra args', default='')
         parser.add_argument('--download', dest='download', help='download', action='store_true')
@@ -138,6 +140,8 @@ python %(prog)s --sync --runhooks --makefile --build --backup --download
             ops |= Chromium.OPS_BUILD
         if args.backup:
             ops |= Chromium.OPS_BACKUP
+        if args.backup_webgl:
+            ops |= Chromium.OPS_BACKUP_WEBGL
         if args.run:
             ops |= Chromium.OPS_RUN
         if args.download:
@@ -147,6 +151,8 @@ python %(prog)s --sync --runhooks --makefile --build --backup --download
             if ops & Chromium.OPS_RUN:
                 ops |= Chromium.BACKUP
             if ops & Chromium.OPS_BACKUP:
+                ops |= Chromium.OPS_BUILD
+            if ops & Chromium.OPS_BACKUP_WEBGL:
                 ops |= Chromium.OPS_BUILD
             if ops & Chromium.OPS_BUILD:
                 ops |= Chromium.OPS_MAKEFILE

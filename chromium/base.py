@@ -35,7 +35,8 @@ class Base():
         self.program = program
         self.rev = rev
         self.root_dir = root_dir
-        self.src_dir = root_dir + '/src'
+        self.build_dir = '%s/build' % root_dir
+        self.src_dir = '%s/src' % root_dir
         self.symbol_level = symbol_level
         self.target_arch = target_arch
         self.target_os = target_os
@@ -80,7 +81,6 @@ class Base():
 
     def makefile(self):
         Util.chdir(self.repo.src_dir)
-
         if self.target_arch == 'x86_64':
             target_arch_tmp = 'x64'
         else:
@@ -90,7 +90,7 @@ class Base():
         if self.target_os == 'linux':
             gn_args += ' is_clang=true'
         if self.target_os in ['linux', 'android', 'chromeos']:
-            gn_args += ' target_os="%s" target_cpu="%s"' % (self.target_os, target_arch_tmp)
+            gn_args += ' target_os=\\\"%s\\\" target_cpu=\\\"%s\\\"' % (self.target_os, target_arch_tmp)
         if self.target_os == 'darwin':
             gn_args += ' cc_wrapper="ccache"'
         if self.no_component_build:
@@ -112,13 +112,14 @@ class Base():
             gn_args += ' ffmpeg_branding=\\\"Chrome\\\"'
             quotation = '\"'
         else:
-            gn_args += ' ffmpeg_branding="Chrome"'
+            gn_args += ' ffmpeg_branding=\\\"Chrome\\\"'
             quotation = '\''
 
         cmd = 'gn --args=%s%s%s gen %s' % (quotation, gn_args, quotation, self.out_dir)
         Util.info('GN ARGS: {}'.format(gn_args))
-
-        self.program.execute(cmd)
+        result = self.program.execute(cmd)
+        if result[0]:
+            Util.error('Failed to makefile')
 
     def build(self, build_max_fail, build_target, build_verbose):
         Util.chdir(self.src_dir)
@@ -167,7 +168,7 @@ class Base():
         else:
             tmp_rev = self.repo.get_working_dir_rev()
         Util.info('Begin to backup rev %s' % tmp_rev)
-        backup_dir = '%s/%s' % (MainRepo.ignore_chromium_selfbuilt_dir, tmp_rev)
+        backup_dir = '%s/%s' % (self.build_dir, tmp_rev)
         if os.path.exists(backup_dir):
             Util.error('Backup folder "%s" alreadys exists' % backup_dir)
 
@@ -199,6 +200,13 @@ class Base():
             dst_dir = '%s/%s' % (backup_dir, dir_name)
             Util.ensure_dir(dst_dir)
             shutil.copy(file, dst_dir)
+
+    def backup_webgl(self):
+        # generate telemetry_gpu_integration_test
+        cmd = 'vpython tools/mb/mb.py zip %s telemetry_gpu_integration_test %s/%s.zip' % (self.out_dir, self.build_dir, self.rev)
+        result = self.program.execute(cmd)
+        if result[0]:
+            Util.error('Failed to generate telemetry_gpu_integration_test')
 
     def run(self, run_extra_args):
         if self.rev:
