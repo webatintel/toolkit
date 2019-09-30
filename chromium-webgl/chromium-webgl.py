@@ -208,10 +208,7 @@ class Webgl():
             if extra_browser_args:
                 cmd += ' --extra-browser-args="%s"' % extra_browser_args
             cmd += ' --write-full-results-to %s' % self.result_file
-            result = self.program.execute(cmd)
-            if result[0]:
-                Util.warning('Failed to run test "%s"' % cmd)
-
+            result = self.program.execute(cmd, exit_on_error=False)
             self.report(mesa_type=mesa_type)
 
         Util.info('Final details:\n%s' % self.final_details)
@@ -274,9 +271,9 @@ class Webgl():
         self.build()
         if Util.host_os == 'linux':
             for mesa_type in self.mesa_types:
-                test(mesa_type=mesa_type)
+                self.test(mesa_type=mesa_type)
         else:
-            test()
+            self.test()
 
     def _parse_arg(self):
         parser = argparse.ArgumentParser(description='Chromium WebGL',
@@ -311,11 +308,15 @@ python %(prog)s --test
         if args.build:
             self.build()
         if args.test:
-            self.test()
+            if re.search(',', args.mesa_type):
+                Util.error('Only one mesa_type can be designated!')
+            self.test(mesa_type=args.mesa_type)
+        if args.report:
+            if re.search(',', args.mesa_type):
+                Util.error('Only one mesa_type can be designated!')
+            self.report(mesa_type=args.mesa_type)
         if args.run:
             self.run()
-        if args.report:
-            self.report()
         if args.daily:
             self.daily()
 
