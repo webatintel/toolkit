@@ -18,7 +18,7 @@ sys.path.append(script_dir + '/..')
 
 from util.base import * # pylint: disable=unused-wildcard-import
 
-class Webgl():
+class ChromiumWebgl():
     def __init__(self):
         self.skip_cases = {
             #'linux': ['WebglConformance_conformance2_textures_misc_tex_3d_size_limit'],
@@ -29,15 +29,14 @@ class Webgl():
 
         self._parse_arg()
         args = self.program.args
-
         root_dir = self.program.root_dir
         self.chrome_dir = '%s/chromium' % root_dir
         self.chrome_build_dir = '%s/build' % self.chrome_dir
         self.chrome_src_dir = '%s/src' % self.chrome_dir
         self.mesa_dir = '%s/mesa' % root_dir
         self.mesa_build_dir = '%s/build' % self.mesa_dir
-        self.depot_tools_dir = root_dir + '/depot_tools'
-        self.test_dir = root_dir + '/test'
+        self.depot_tools_dir = '%s/depot_tools' % root_dir
+        self.test_dir = '%s/test' % root_dir
         Util.set_path(extra_path=self.depot_tools_dir.replace('/', '\\'))
         test_chrome = args.test_chrome
         if Util.host_os == 'darwin':
@@ -69,18 +68,18 @@ class Webgl():
         if Util.host_os == 'linux':
             Util.chdir(self.mesa_dir)
             if not self.skip_sync:
-                self.program.execute('python mesa.py --sync --root-dir %s' % self.mesa_dir)
-            self.program.execute('python mesa.py --build --root-dir %s' % self.mesa_dir)
+                self.program.execute('python %s/mesa/mesa.py --sync --root-dir %s' % (MainRepo.root_dir, self.mesa_dir))
+            self.program.execute('python %s/mesa/mesa.py --build --root-dir %s' % (MainRepo.root_dir, self.mesa_dir))
 
         # build chrome
         if self.test_chrome == 'build':
             Util.chdir(self.chrome_dir)
             if not self.skip_sync:
-                cmd = 'python chromium.py --sync --runhooks --root-dir %s' % self.chrome_dir
+                cmd = 'python %s/chromium/chromium.py --sync --runhooks --root-dir %s' % (MainRepo.root_dir, self.chrome_dir)
                 if self.chrome_build_rev != 'latest':
                     cmd += ' --rev %s' % self.chrome_build_rev
                 self.program.execute(cmd)
-            cmd = 'python chromium.py --makefile --build --backup-webgl --root-dir %s' % self.chrome_dir
+            cmd = 'python %s/chromium/chromium.py --makefile --build --backup-webgl --root-dir %s' % (MainRepo.root_dir, self.chrome_dir)
             self.program.execute(cmd)
 
     def test(self, mesa_type=''):
@@ -308,11 +307,11 @@ python %(prog)s --test
         if args.build:
             self.build()
         if args.test:
-            if re.search(',', args.mesa_type):
+            if re.search(',', args.mesa_type) and Util.host_os == 'linux':
                 Util.error('Only one mesa_type can be designated!')
             self.test(mesa_type=args.mesa_type)
         if args.report:
-            if re.search(',', args.mesa_type):
+            if re.search(',', args.mesa_type) and Util.host_os == 'linux':
                 Util.error('Only one mesa_type can be designated!')
             self.report(mesa_type=args.mesa_type)
         if args.run:
@@ -356,4 +355,4 @@ python %(prog)s --test
                 self._parse_result(new_key, new_val, '%s/%s' % (path, new_key))
 
 if __name__ == '__main__':
-    Webgl()
+    ChromiumWebgl()
