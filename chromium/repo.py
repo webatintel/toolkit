@@ -2,18 +2,17 @@ import os
 import re
 import subprocess
 import sys
-output = subprocess.Popen('ls -l %s' % __file__, shell=True, stdout=subprocess.PIPE).stdout.readline().decode('utf-8')
-if re.search('->', output):
-    output = output.split(' ')[-1].strip()
-    match = re.match('/(.)/', output)
+lines = subprocess.Popen('dir %s' % __file__, shell=True, stdout=subprocess.PIPE).stdout.readlines()
+for line in lines:
+    match = re.search('\[(.*)\]', line.decode('utf-8'))
     if match:
-        drive = match.group(1)
-        output = output.replace('/%s/' % drive, '%s:/' % drive)
-    chromium_dir = os.path.dirname(os.path.realpath(output))
+        script_dir = os.path.dirname(match.group(1)).replace('\\', '/')
+        break
 else:
-    chromium_dir = sys.path[0]
-sys.path.append(chromium_dir)
-sys.path.append(chromium_dir + '/..')
+    script_dir = sys.path[0]
+
+sys.path.append(script_dir)
+sys.path.append(script_dir + '/..')
 
 from util.base import * # pylint: disable=unused-wildcard-import
 

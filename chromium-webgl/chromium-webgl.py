@@ -2,14 +2,12 @@ import os
 import re
 import subprocess
 import sys
-output = subprocess.Popen('ls -l %s' % __file__, shell=True, stdout=subprocess.PIPE).stdout.readline().decode('utf-8')
-if re.search(str('->'), output):
-    output = output.split(' ')[-1].strip()
-    match = re.match('/(.)/', output)
+lines = subprocess.Popen('dir %s' % __file__, shell=True, stdout=subprocess.PIPE).stdout.readlines()
+for line in lines:
+    match = re.search('\[(.*)\]', line.decode('utf-8'))
     if match:
-        drive = match.group(1)
-        output = output.replace('/%s/' % drive, '%s:/' % drive)
-    script_dir = os.path.dirname(os.path.realpath(output))
+        script_dir = os.path.dirname(match.group(1)).replace('\\', '/')
+        break
 else:
     script_dir = sys.path[0]
 
