@@ -209,14 +209,15 @@ class Base():
 
     def run(self, run_extra_args):
         if self.rev:
-            Util.chdir('%s/%s' % (MainRepo.ignore_chromium_selfbuilt_dir, self.rev))
+            cmd = '%s/build/%s' % (self.root_dir, self.rev)
         else:
-            Util.chdir(self.out_dir)
+            cmd = '%s/%s' % (self.src_dir, self.out_dir)
 
-        cmd = 'chrome'
+        cmd += '/chrome'
         if Util.host_os == 'windows':
             cmd += '.exe'
-        cmd += ' %s' % run_extra_args
+        if run_extra_args:
+            cmd += ' %s' % run_extra_args
         self.program.execute(cmd)
 
     def download(self):

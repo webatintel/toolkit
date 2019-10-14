@@ -216,9 +216,9 @@ class ChromiumWebgl():
             if len(self.mesa_types) > 1:
                 Util.error('Only one mesa_type is support for run')
             mesa_type = self.mesa_types[0]
-            test(mesa_type=mesa_type)
+            self.test(mesa_type=mesa_type)
         else:
-            test()
+            self.test()
 
     def report(self, mesa_type=''):
         self.fail_fail = []
