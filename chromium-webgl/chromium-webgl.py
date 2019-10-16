@@ -296,7 +296,7 @@ python %(prog)s --test
         parser.add_argument('--report', dest='report', help='report file')
         parser.add_argument('--email', dest='email', help='send report as email', action='store_true')
         parser.add_argument('--skip-sync', dest='skip_sync', help='skip sync', action='store_true')
-        parser.add_argument('--mesa-type', dest='mesa_type', help='mesa type', default='i965,iris')
+        parser.add_argument('--mesa-type', dest='mesa_type', help='mesa type', default='i965')
 
         self.program = Program(parser)
 
@@ -320,7 +320,7 @@ python %(prog)s --test
     def _get_latest(self, type):
         if type == 'mesa':
             rev_dir = self.mesa_build_dir
-            rev_pattern = 'mesa-master-release-(.*)-'
+            rev_pattern = 'mesa-master-release-(.*)-[a-z0-9]{40}(?<!tar.gz)$'
         elif type == 'chrome':
             rev_dir = self.chrome_build_dir
             rev_pattern = '(\d{6}).zip'
