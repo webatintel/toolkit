@@ -127,10 +127,20 @@ class Mesa():
 
         if 'drm' in self.modules:
             Util.chdir('%s/%s' % (self.program.root_dir, self.drm_dir))
-            build_cmd = './autogen.sh CFLAGS="-O2" CXXFLAGS="-O2" --prefix=%s --enable-libkms --enable-intel --disable-vmwgfx --disable-radeon --disable-amdgpu --disable-nouveau' % building_dir
-            if self.build_type == 'debug':
-                build_cmd += ' --enable-debug'
-            result = self.program.execute(build_cmd + ' && make -j%s && make install' % Util.cpu_count)
+            if self.args.build_system == 'autotools':
+                build_cmd = './autogen.sh CFLAGS="-O2" CXXFLAGS="-O2" --prefix=%s --enable-libkms --enable-intel --disable-vmwgfx --disable-radeon --disable-amdgpu --disable-nouveau' % building_dir
+                if self.build_type == 'debug':
+                    build_cmd += ' --enable-debug'
+                build_cmd += ' && make -j%s && make install' % Util.cpu_count
+            elif self.args.build_system == 'meson':
+                Util.ensure_nodir('build')
+                Util.ensure_dir('build')
+                build_cmd = 'meson build/ -Dprefix=%s -Dlibkms=true -Dintel=true -Dvmwgfx=false -Dradeon=false -Damdgpu=false -Dnouveau=false' % building_dir
+                if self.build_type == 'release':
+                    build_cmd += ' -Dbuildtype=release'
+                build_cmd += ' && ninja -j%s -C build/ install' % Util.cpu_count
+
+            result = self.program.execute(build_cmd)
             if result[0]:
                 return False
 
@@ -148,7 +158,7 @@ class Mesa():
                     build_cmd += ' --with-vulkan-driver="intel"'
                 if build_type == 'debug':
                     build_cmd += ' --enable-debug'
-                cmd = build_cmd + ' && make -j%s && make install' % Util.cpu_count
+                build_cmd += ' && make -j%s && make install' % Util.cpu_count
             elif self.args.build_system == 'meson':
                 # missing options: -enable-texture-float --enable-glx-tls
                 Util.ensure_nodir('build')
@@ -158,9 +168,9 @@ class Mesa():
                     build_cmd += ' -Dvulkan-drivers=intel'
                 if self.build_type == 'release':
                     build_cmd += ' -Dbuildtype=release'
-                cmd = build_cmd + ' && ninja -j%s -C build/ install' % Util.cpu_count
+                build_cmd += ' && ninja -j%s -C build/ install' % Util.cpu_count
 
-            result = self.program.execute(cmd)
+            result = self.program.execute(build_cmd)
             if result[0]:
                 return False
 
