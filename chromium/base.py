@@ -126,10 +126,10 @@ class Base():
             self.makefile()
 
         if self.rev:
-            tmp_rev = self.rev
+            rev = self.rev
         else:
-            tmp_rev = self.repo.get_working_dir_rev()
-        Util.info('Begin to build rev %s' % tmp_rev)
+            rev = self.repo.get_working_dir_rev()
+        Util.info('Begin to build rev %s' % rev)
         Util.chdir(self.src_dir + '/build/util')
         self.program.execute('python lastchange.py -o LASTCHANGE')
 
@@ -163,11 +163,11 @@ class Base():
 
     def backup(self, backup_no_symbol):
         if self.rev:
-            tmp_rev = self.rev
+            rev = self.rev
         else:
-            tmp_rev = self.repo.get_working_dir_rev()
-        Util.info('Begin to backup rev %s' % tmp_rev)
-        backup_dir = '%s/%s' % (self.build_dir, tmp_rev)
+            rev = self.repo.get_working_dir_rev()
+        Util.info('Begin to backup rev %s' % rev)
+        backup_dir = '%s/%s' % (self.build_dir, rev)
         if os.path.exists(backup_dir):
             Util.error('Backup folder "%s" alreadys exists' % backup_dir)
 
@@ -202,7 +202,12 @@ class Base():
 
     def backup_webgl(self):
         # generate telemetry_gpu_integration_test
-        cmd = 'vpython tools/mb/mb.py zip %s telemetry_gpu_integration_test %s/%s.zip' % (self.out_dir, self.build_dir, self.rev)
+        if self.rev:
+            rev = self.rev
+        else:
+            rev = self.repo.get_working_dir_rev()
+        Util.chdir(self.src_dir)
+        cmd = 'vpython tools/mb/mb.py zip %s telemetry_gpu_integration_test %s/%s.zip' % (self.out_dir, self.build_dir, rev)
         result = self.program.execute(cmd)
         if result[0]:
             Util.error('Failed to generate telemetry_gpu_integration_test')
