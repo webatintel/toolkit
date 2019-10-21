@@ -210,7 +210,7 @@ class ChromiumWebgl():
         for comb in test_combs:
             extra_browser_args = '--disable-backgrounding-occluded-windows'
             if Util.host_os == 'linux' and self.test_no_angle:
-                extra_browser_args += ' --use-gl=desktop'
+                extra_browser_args += ',--use-gl=desktop'
             cmd = common_cmd + ' --webgl-conformance-version=%s' % comb[COMB_INDEX_WEBGL]
             self.result_file = ''
             if Util.host_os == 'linux':
