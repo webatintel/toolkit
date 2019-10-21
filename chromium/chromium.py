@@ -175,6 +175,8 @@ python %(prog)s --sync --runhooks --makefile --build --backup --download
             self.base.build(args.build_max_fail, args.build_target, args.build_verbose)
         if ops & Chromium.OPS_BACKUP:
             self.base.backup(args.backup_no_symbol)
+        if ops & Chromium.OPS_BACKUP_WEBGL:
+            self.base.backup_webgl()
         if ops & Chromium.OPS_RUN:
             self.base.run(args.run_extra_args)
         if ops & Chromium.OPS_DOWNLOAD:
