@@ -82,8 +82,11 @@ class Mesa():
             if i > len(self.hashes):
                 Util.info('Rev %s exceeds the max git revision' % i)
                 break
+            if i % self.args.rev_stride:
+                i += 1
+                continue
             self._build_one(i, self._rev_to_hash(i))
-            i += self.args.rev_stride
+            i += 1
 
     def revtohash(self):
         tmp_rev = self.args.revtohash
@@ -111,7 +114,8 @@ class Mesa():
         Util.error('Could not find rev for hash %s' % hash)
 
     def _build_one(self, rev, hash):
-        single_build_dir = '%s/build/%s-%s-%s-%s' % (self.program.root_dir, self.mesa_dir, self.build_type, rev, hash)
+        date = Util.get_working_dir_commit_info('%s/%s' % (self.program.root_dir, self.mesa_dir))[0]
+        single_build_dir = '%s/build/%s-%s-%s-%s-%s' % (self.program.root_dir, self.mesa_dir, self.build_type, date, rev, hash)
         building_dir = single_build_dir.replace('build', 'build/building')
 
         if (os.path.exists(building_dir) or os.path.exists('%s' % single_build_dir)) and os.path.exists(single_build_dir + '/lib/dri/i965_dri.so') and not self.build_force:
