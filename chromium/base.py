@@ -57,8 +57,6 @@ class Base():
     def sync(self, sync_reset):
         if self.rev:
             Util.info('Begin to sync rev %s' % self.rev)
-        Util.set_proxy()
-        self._set_boto()
         Util.chdir(self.repo.src_dir)
 
         if sync_reset:
@@ -73,8 +71,6 @@ class Base():
         self._sync_decimal_rev()
 
     def runhooks(self):
-        Util.set_proxy()
-        self._set_boto()
         Util.chdir(self.repo.src_dir)
         self._gclient(cmd_type='runhooks')
 

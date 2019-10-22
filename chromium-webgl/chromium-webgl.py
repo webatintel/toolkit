@@ -78,19 +78,19 @@ class ChromiumWebgl():
         if Util.host_os == 'linux' and not self.build_skip_mesa:
             Util.chdir(self.mesa_dir)
             if not self.build_skip_sync:
-                self.program.execute('python %s/mesa/mesa.py --sync --root-dir %s' % (MainRepo.root_dir, self.mesa_dir))
+                self.program.execute('python %s/mesa/mesa.py --sync --runhooks --root-dir %s' % (MainRepo.root_dir, self.mesa_dir))
             self.program.execute('python %s/mesa/mesa.py --build --root-dir %s' % (MainRepo.root_dir, self.mesa_dir))
 
         # build chrome
         if self.test_chrome == 'build' and not self.build_skip_chrome:
-            Util.chdir(self.chrome_dir)
+            Util.chdir('%s/chromium' % MainRepo.root_dir)
             if not self.build_skip_sync:
-                cmd = 'python %s/chromium/chromium.py --sync --runhooks --root-dir %s' % (MainRepo.root_dir, self.chrome_dir)
+                cmd = 'python chromium.py --sync --root-dir %s' % self.chrome_dir
                 if self.build_chrome_rev != 'latest':
                     cmd += ' --rev %s' % self.build_chrome_rev
-                self.program.execute(cmd)
-            cmd = 'python %s/chromium/chromium.py --makefile --build --backup-webgl --out-dir out --root-dir %s' % (MainRepo.root_dir, self.chrome_dir)
-            self.program.execute(cmd)
+                self.program.execute(cmd, exit_on_error=False)
+            Util.ensure_dir('%s/build' % self.chrome_dir)
+            self.program.execute('python chromium.py --build --backup-webgl --out-dir out --root-dir %s' % self.chrome_dir)
 
     def test(self, mesa_type=''):
         self.final_details = ''
