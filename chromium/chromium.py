@@ -28,7 +28,6 @@ class Chromium():
     OPS_RUN = 1 << 6
     OPS_DOWNLOAD = 1 << 7
 
-
     def __init__(self):
         self._parse_args()
         args = self.program.args

@@ -72,7 +72,7 @@ class Base():
 
     def runhooks(self):
         Util.chdir(self.repo.src_dir)
-        self._gclient(cmd_type='runhooks')
+        self.program.execute(Util.get_gclient_cmd(cmd_type='runhooks'))
 
     def makefile(self):
         Util.chdir(self.repo.src_dir)
@@ -105,11 +105,10 @@ class Base():
         # for windows, it has to use "" instead of ''
         if self.target_os == 'windows':
             gn_args += ' ffmpeg_branding=\\\"Chrome\\\"'
-            quotation = '\"'
         else:
             gn_args += ' ffmpeg_branding=\\\"Chrome\\\"'
-            quotation = '\''
 
+        quotation = Util.get_quotation()
         cmd = 'gn --args=%s%s%s gen %s' % (quotation, gn_args, quotation, self.out_dir)
         Util.info('GN ARGS: {}'.format(gn_args))
         result = self.program.execute(cmd)
@@ -134,28 +133,28 @@ class Base():
         elif self.target_os in ['linux', 'windows', 'darwin', 'chromeos'] and build_target == 'default':
             build_target = 'chrome'
 
-        ninja_cmd = 'ninja -k' + str(build_max_fail) + ' -j' + str(Util.cpu_count) + ' -C ' + self.out_dir
+        cmd = 'ninja -k' + str(build_max_fail) + ' -j' + str(Util.cpu_count) + ' -C ' + self.out_dir
         if self.target_os == 'android' and build_target == 'webview_shell':
-            ninja_cmd += ' android_webview_apk libwebviewchromium'
+            cmd += ' android_webview_apk libwebviewchromium'
         elif self.target_os == 'android' and build_target == 'content_shell':
-            ninja_cmd += ' content_shell_apk'
+            cmd += ' content_shell_apk'
         elif self.target_os == 'android' and build_target == 'chrome_shell':
-            ninja_cmd += ' chrome_shell_apk'
+            cmd += ' chrome_shell_apk'
         elif self.target_os == 'android' and build_target == 'chrome_public':
-            ninja_cmd += ' chrome_public_apk'
+            cmd += ' chrome_public_apk'
         elif self.target_os == 'android' and build_target == 'webview':
-            ninja_cmd += ' system_webview_apk'
+            cmd += ' system_webview_apk'
         else:
-            ninja_cmd += ' ' + build_target
+            cmd += ' ' + build_target
 
         if self.target_os in ['linux', 'windows', 'darwin'] and build_target == 'chrome':
-            ninja_cmd += ' chromedriver'
+            cmd += ' chromedriver'
 
         if build_verbose:
-            ninja_cmd += ' -v'
+            cmd += ' -v'
 
         Util.chdir(self.src_dir)
-        self.program.execute(ninja_cmd, show_duration=True)
+        self.program.execute(cmd, show_duration=True)
 
     def backup(self, backup_no_symbol):
         if self.rev:
@@ -214,9 +213,7 @@ class Base():
         else:
             cmd = '%s/%s' % (self.src_dir, self.out_dir)
 
-        cmd += '/chrome'
-        if Util.host_os == 'windows':
-            cmd += '.exe'
+        cmd += '/chrome' + Util.get_exec_suffix()
         if run_extra_args:
             cmd += ' %s' % run_extra_args
         self.program.execute(cmd)
@@ -287,16 +284,6 @@ class Base():
 
         Util.set_env('NO_AUTH_BOTO_CONFIG', boto_file)
 
-    def _gclient(self, cmd_type, extra_cmd=''):
-        cmd = 'gclient ' + cmd_type
-        if extra_cmd:
-            cmd += ' ' + extra_cmd
-        if cmd_type == 'sync':
-            cmd += ' -n -D -R --break_repo_locks --delete_unversioned_trees'
-        cmd += ' -j' + str(Util.cpu_count)
-
-        self.program.execute(cmd)
-
     def _sync_integer_rev(self):
         if self.integer_rev:
             roll_repo = self.repo.info[Repo.INFO_INDEX_REV_INFO][self.integer_rev][Repo.REV_INFO_INDEX_ROLL_REPO]
@@ -316,7 +303,7 @@ class Base():
             self.program.execute('git pull')
             extra_cmd = ''
 
-        self._gclient(cmd_type='sync', extra_cmd=extra_cmd)
+        self.program.execute(Util.get_gclient_cmd(cmd_type='sync', extra_cmd=extra_cmd))
 
     def _sync_decimal_rev(self):
         roll_repo = self.repo.info[Repo.INFO_INDEX_REV_INFO][self.integer_rev][Repo.REV_INFO_INDEX_ROLL_REPO]
