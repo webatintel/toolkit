@@ -28,6 +28,7 @@ class Angle():
         self.out_dir = 'out/%s' % build_type.capitalize()
         self.is_debug = args.is_debug
         self.build_max_fail = args.build_max_fail
+        self.test_filter = args.test_filter
 
         self._handle_ops()
 
@@ -53,12 +54,10 @@ class Angle():
         self.program.execute(cmd)
 
     def test_e2e(self):
-        cmd = '%s/angle_end2end_tests%s' % (self.out_dir, Util.get_exec_suffix())
-        self._test(cmd)
+        self._test('angle_end2end_tests')
 
     def test_perf(self):
-        cmd = '%s/angle_perftests%s' % (self.out_dir, Util.get_exec_suffix())
-        self._test(cmd)
+        self._test('angle_perftests')
 
     def _parse_args(self):
         parser = argparse.ArgumentParser(description='script for angle',
@@ -74,6 +73,7 @@ class Angle():
         parser.add_argument('--build-max-fail', dest='build_max_fail', help='build keeps going until N jobs fail', type=int, default=1)
         parser.add_argument('--test-e2e', dest='test_e2e', help='end2end tests', action='store_true')
         parser.add_argument('--test-perf', dest='test_perf', help='perf tests', action='store_true')
+        parser.add_argument('--test-filter', dest='test_filter', help='test filter', default='all')
 
         self.program = Program(parser)
 
@@ -90,8 +90,12 @@ class Angle():
         if args.test_perf:
             self.test_perf()
 
-    def _test(self, cmd):
-        self.program.execute(Util.use_backslash(cmd))
+    def _test(self, type):
+        cmd = '%s/%s%s' % (self.out_dir, type, Util.get_exec_suffix())
+        cmd = Util.use_backslash(cmd)
+        if not self.test_filter == 'all':
+            cmd += ' --gtest_filter=%s*' % self.test_filter
+        self.program.execute(cmd)
 
 if __name__ == '__main__':
     Angle()
