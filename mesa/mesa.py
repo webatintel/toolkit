@@ -99,7 +99,7 @@ class Mesa():
     def _init_hash(self):
         if not self.hashes:
             Util.chdir('%s/%s' % (self.program.root_dir, self.mesa_dir))
-            result = self.program.execute('git log --pretty=format:"%H" --reverse origin/' + '%s' % self.branch, return_out=True, show_cmd=False)
+            result = self.program.execute('git log --pretty=format:"%H" --reverse', return_out=True, show_cmd=False)
             self.hashes = result[1].split('\n')
 
     def _rev_to_hash(self, rev):
