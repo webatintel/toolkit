@@ -4,7 +4,7 @@ import subprocess
 import sys
 lines = subprocess.Popen('dir %s' % __file__, shell=True, stdout=subprocess.PIPE).stdout.readlines()
 for line in lines:
-    match = re.search('\[(.*)\]', line.decode('utf-8'))
+    match = re.search(r'\[(.*)\]', line.decode('utf-8'))
     if match:
         script_dir = os.path.dirname(match.group(1)).replace('\\', '/')
         break
@@ -40,7 +40,7 @@ class ChromiumWebgl():
         self.test_dir = '%s/test' % root_dir
         Util.set_path(extra_path=self.depot_tools_dir.replace('/', '\\'))
         test_chrome = args.test_chrome
-        if Util.host_os == 'darwin':
+        if Util.HOST_OS == 'darwin':
             if test_chrome == 'default':
                 test_chrome = 'canary'
         else:
@@ -49,7 +49,7 @@ class ChromiumWebgl():
         self.test_chrome = test_chrome
         self.result_dir = '%s/result' % self.test_dir
 
-        if Util.host_os == 'linux':
+        if Util.HOST_OS == 'linux':
             mesa_type = args.mesa_type
             if mesa_type == 'default':
                 if args.daily:
@@ -75,27 +75,27 @@ class ChromiumWebgl():
 
     def build(self):
         # build mesa
-        if Util.host_os == 'linux' and not self.build_skip_mesa:
+        if Util.HOST_OS == 'linux' and not self.build_skip_mesa:
             Util.chdir(self.mesa_dir)
             if not self.build_skip_sync:
-                self.program.execute('python %s/mesa/mesa.py --sync --runhooks --root-dir %s' % (MainRepo.root_dir, self.mesa_dir))
-            self.program.execute('python %s/mesa/mesa.py --build --root-dir %s' % (MainRepo.root_dir, self.mesa_dir))
+                self.program.execute('python %s/mesa/mesa.py --sync --runhooks --root-dir %s' % (ScriptRepo.ROOT_DIR, self.mesa_dir))
+            self.program.execute('python %s/mesa/mesa.py --build --root-dir %s' % (ScriptRepo.ROOT_DIR, self.mesa_dir))
 
         # build chrome
         if self.test_chrome == 'build' and not self.build_skip_chrome:
-            Util.chdir('%s/chromium' % MainRepo.root_dir)
+            Util.chdir('%s/chromium' % ScriptRepo.ROOT_DIR)
             if not self.build_skip_sync:
                 cmd = 'python chromium.py --sync --root-dir %s' % self.chrome_dir
                 if self.build_chrome_rev != 'latest':
                     cmd += ' --rev %s' % self.build_chrome_rev
                 self.program.execute(cmd, exit_on_error=False)
             Util.ensure_dir('%s/build' % self.chrome_dir)
-            self.program.execute('python chromium.py --build --backup-webgl --out-dir out --root-dir %s' % self.chrome_dir)
+            self.program.execute('python chromium.py --no-component-build --makefile --build --backup-webgl --out-dir out --root-dir %s' % self.chrome_dir)
 
     def test(self, mesa_type=''):
         self.final_details = ''
         self.final_summary = ''
-        if Util.host_os == 'linux':
+        if Util.HOST_OS == 'linux':
             self.mesa_rev_number = self.test_mesa_rev
             if self.mesa_rev_number == 'system':
                 Util.info('Use system Mesa')
@@ -142,7 +142,7 @@ class ChromiumWebgl():
             Util.chdir(chrome_rev_dir)
             Util.info('Use Chrome at %s' % chrome_rev_dir)
 
-            if Util.host_os == 'windows':
+            if Util.HOST_OS == 'windows':
                 chrome = 'out\Release\chrome.exe'
             else:
                 if os.path.exists('out/Release/chrome'):
@@ -155,12 +155,12 @@ class ChromiumWebgl():
             common_cmd += ' --browser=%s' % self.test_chrome
             Util.chdir(self.chrome_src_dir)
             self.chrome_rev_number = self.test_chrome
-            if Util.host_os == 'darwin':
+            if Util.HOST_OS == 'darwin':
                 if self.test_chrome == 'canary':
                     chrome = '"/Applications/Google Chrome Canary.app/Contents/MacOS/Google Chrome Canary"'
                 else:
                     Util.error('test_chrome is not supported')
-            elif Util.host_os == 'linux':
+            elif Util.HOST_OS == 'linux':
                 if self.test_chrome == 'canary':
                     chrome = '/usr/bin/google-chrome-unstable'
                 elif self.test_chrome == 'stable':
@@ -172,14 +172,14 @@ class ChromiumWebgl():
 
         if self.program.args.run:
             param = '--enable-experimental-web-platform-features --disable-gpu-process-for-dx12-vulkan-info-collection --disable-domain-blocking-for-3d-apis --disable-gpu-process-crash-limit --disable-blink-features=WebXR --js-flags=--expose-gc --disable-gpu-watchdog --autoplay-policy=no-user-gesture-required --disable-features=UseSurfaceLayerForVideo --enable-net-benchmarking --metrics-recording-only --no-default-browser-check --no-first-run --ignore-background-tasks --enable-gpu-benchmarking --deny-permission-prompts --autoplay-policy=no-user-gesture-required --disable-background-networking --disable-component-extensions-with-background-pages --disable-default-apps --disable-search-geolocation-disclosure --enable-crash-reporter-for-testing --disable-component-update'
-            if Util.host_os == 'linux' and self.test_no_angle:
+            if Util.HOST_OS == 'linux' and self.test_no_angle:
                 param += ' --use-gl=desktop'
             self.program.execute('%s %s http://wp-27.sh.intel.com/workspace/project/readonly/WebGL/sdk/tests/webgl-conformance-tests.html?version=2.0.1' % (chrome, param))
             return
 
         if self.test_filter != 'all':
             common_cmd += ' --test-filter=%s' % self.test_filter
-        skip_filter = self.skip_cases[Util.host_os]
+        skip_filter = self.skip_cases[Util.HOST_OS]
         if skip_filter:
             for skip_tmp in skip_filter:
                 common_cmd += ' --skip=%s' % skip_tmp
@@ -191,9 +191,9 @@ class ChromiumWebgl():
 
         COMB_INDEX_WEBGL = 0
         COMB_INDEX_D3D = 1
-        if Util.host_os in ['linux', 'darwin']:
+        if Util.HOST_OS in ['linux', 'darwin']:
             all_combs = [['2.0.1']]
-        elif Util.host_os == 'windows':
+        elif Util.HOST_OS == 'windows':
             all_combs = [
                 ['1.0.3', '9'],
                 ['1.0.3', '11'],
@@ -209,17 +209,17 @@ class ChromiumWebgl():
 
         for comb in test_combs:
             extra_browser_args = '--disable-backgrounding-occluded-windows'
-            if Util.host_os == 'linux' and self.test_no_angle:
+            if Util.HOST_OS == 'linux' and self.test_no_angle:
                 extra_browser_args += ',--use-gl=desktop'
             cmd = common_cmd + ' --webgl-conformance-version=%s' % comb[COMB_INDEX_WEBGL]
             self.result_file = ''
-            if Util.host_os == 'linux':
+            if Util.HOST_OS == 'linux':
                 self.result_file = '%s/%s-%s-%s-%s-%s.log' % (self.result_dir, datetime, self.chrome_rev_number, mesa_type, self.mesa_rev_number, comb[COMB_INDEX_WEBGL])
-            elif Util.host_os == 'windows':
+            elif Util.HOST_OS == 'windows':
                 if comb[COMB_INDEX_D3D] != '11':
                     extra_browser_args += ' --use-angle=d3d%s' % comb[COMB_INDEX_D3D]
                 self.result_file = '%s/%s-%s-%s-%s.log' % (self.result_dir, datetime, self.chrome_rev_number, comb[COMB_INDEX_WEBGL], comb[COMB_INDEX_D3D])
-            elif Util.host_os == 'darwin':
+            elif Util.HOST_OS == 'darwin':
                 self.result_file = '%s/%s-%s-%s.log' % (self.result_dir, datetime, self.chrome_rev_number, comb[COMB_INDEX_WEBGL])
             if extra_browser_args:
                 cmd += ' --extra-browser-args="%s"' % extra_browser_args
@@ -231,7 +231,7 @@ class ChromiumWebgl():
         Util.info('Final summary:\n%s' % self.final_summary)
 
     def run(self):
-        if Util.host_os == 'linux':
+        if Util.HOST_OS == 'linux':
             if len(self.mesa_types) > 1:
                 Util.error('Only one mesa_type is support for run')
             mesa_type = self.mesa_types[0]
@@ -271,7 +271,7 @@ class ChromiumWebgl():
             for c in self.fail_fail:
                 content += c + '\n'
 
-        if Util.host_os == 'linux':
+        if Util.HOST_OS == 'linux':
             subject = 'WebGL CTS on Chrome %s and Mesa %s %s has %s Regression' % (self.chrome_rev_number, mesa_type, self.mesa_rev_number, json_result['num_regressions'])
         else:
             subject = 'WebGL CTS on Chrome %s has %s Regression' % (self.chrome_rev_number, json_result['num_regressions'])
@@ -280,12 +280,12 @@ class ChromiumWebgl():
         Util.info(subject)
         Util.info(content)
 
-        if self.program.args.daily and Util.host_os == 'linux' or self.email:
+        if self.program.args.daily and Util.HOST_OS == 'linux' or self.email:
             Util.send_email('webperf@intel.com', 'yang.gu@intel.com', subject, content)
 
     def daily(self):
         self.build()
-        if Util.host_os == 'linux':
+        if Util.HOST_OS == 'linux':
             for mesa_type in self.mesa_types:
                 self.test(mesa_type=mesa_type)
         else:
@@ -296,10 +296,9 @@ class ChromiumWebgl():
                                         formatter_class=argparse.RawTextHelpFormatter,
                                         epilog='''
 examples:
-python %(prog)s --proxy <host>:<port> --build --build-chrome-hash <hash>
+python %(prog)s --build --build-chrome-hash <hash>
 python %(prog)s --test
     ''')
-        parser.add_argument('--proxy', dest='proxy', help='proxy')
         parser.add_argument('--build', dest='build', help='build', action='store_true')
         parser.add_argument('--build-chrome-rev', dest='build_chrome_rev', help='Chrome rev to build', default='latest')
         parser.add_argument('--build-skip-sync', dest='build_skip_sync', help='skip sync during build', action='store_true')
@@ -328,11 +327,11 @@ python %(prog)s --test
         if args.build:
             self.build()
         if args.test:
-            if re.search(',', args.mesa_type) and Util.host_os == 'linux':
+            if re.search(',', args.mesa_type) and Util.HOST_OS == 'linux':
                 Util.error('Only one mesa_type can be designated!')
             self.test(mesa_type=args.mesa_type)
         if args.report:
-            if re.search(',', args.mesa_type) and Util.host_os == 'linux':
+            if re.search(',', args.mesa_type) and Util.HOST_OS == 'linux':
                 Util.error('Only one mesa_type can be designated!')
             self.report(mesa_type=args.mesa_type)
         if args.run:

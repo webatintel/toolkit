@@ -33,7 +33,7 @@ class Angle():
         self._handle_ops()
 
     def sync(self):
-        self.program.execute(Util.get_gclient_cmd(cmd_type='sync', job_count=1))
+        self.program.execute_gclient(cmd_type='sync', job_count=1)
 
     def makefile(self):
         if self.is_debug:
@@ -50,7 +50,7 @@ class Angle():
     def build(self):
         if not os.path.exists(self.out_dir):
             self.makefile()
-        cmd = 'ninja -k%s -j%s -C %s' % (str(self.build_max_fail), str(Util.cpu_count), self.out_dir)
+        cmd = 'ninja -k%s -j%s -C %s' % (str(self.build_max_fail), str(Util.CPU_COUNT), self.out_dir)
         self.program.execute(cmd)
 
     def test_e2e(self):

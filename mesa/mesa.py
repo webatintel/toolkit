@@ -60,7 +60,7 @@ class Mesa():
     def build(self):
         self._init_hash()
 
-        if Util.host_os == 'linux' and Util.host_os_id == 'ubuntu':
+        if Util.HOST_OS == 'linux' and Util.HOST_OS_ID == 'ubuntu':
             Util.ensure_pkg('meson libomxil-bellagio-dev libpciaccess-dev x11proto-dri3-dev x11proto-present-dev xutils-dev python-mako x11proto-gl-dev x11proto-dri2-dev libxcb-dri3-dev libxcb-present-dev libxshmfence-dev libx11-xcb-dev libxcb-glx0-dev libxcb-dri2-0-dev libxxf86vm-dev python3-mako')
 
         if re.search('-', str(self.rev)):
@@ -135,14 +135,14 @@ class Mesa():
                 build_cmd = './autogen.sh CFLAGS="-O2" CXXFLAGS="-O2" --prefix=%s --enable-libkms --enable-intel --disable-vmwgfx --disable-radeon --disable-amdgpu --disable-nouveau' % building_dir
                 if self.build_type == 'debug':
                     build_cmd += ' --enable-debug'
-                build_cmd += ' && make -j%s && make install' % Util.cpu_count
+                build_cmd += ' && make -j%s && make install' % Util.CPU_COUNT
             elif self.args.build_system == 'meson':
                 Util.ensure_nodir('build')
                 Util.ensure_dir('build')
                 build_cmd = 'meson build/ -Dprefix=%s -Dlibkms=true -Dintel=true -Dvmwgfx=false -Dradeon=false -Damdgpu=false -Dnouveau=false' % building_dir
                 if self.build_type == 'release':
                     build_cmd += ' -Dbuildtype=release'
-                build_cmd += ' && ninja -j%s -C build/ install' % Util.cpu_count
+                build_cmd += ' && ninja -j%s -C build/ install' % Util.CPU_COUNT
 
             result = self.program.execute(build_cmd)
             if result[0]:
@@ -162,7 +162,7 @@ class Mesa():
                     build_cmd += ' --with-vulkan-driver="intel"'
                 if build_type == 'debug':
                     build_cmd += ' --enable-debug'
-                build_cmd += ' && make -j%s && make install' % Util.cpu_count
+                build_cmd += ' && make -j%s && make install' % Util.CPU_COUNT
             elif self.args.build_system == 'meson':
                 # missing options: -enable-texture-float --enable-glx-tls
                 Util.ensure_nodir('build')
@@ -172,7 +172,7 @@ class Mesa():
                     build_cmd += ' -Dvulkan-drivers=intel'
                 if self.build_type == 'release':
                     build_cmd += ' -Dbuildtype=release'
-                build_cmd += ' && ninja -j%s -C build/ install' % Util.cpu_count
+                build_cmd += ' && ninja -j%s -C build/ install' % Util.CPU_COUNT
 
             result = self.program.execute(build_cmd)
             if result[0]:

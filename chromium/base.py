@@ -4,7 +4,7 @@ import subprocess
 import sys
 lines = subprocess.Popen('dir %s' % __file__, shell=True, stdout=subprocess.PIPE).stdout.readlines()
 for line in lines:
-    match = re.search('\[(.*)\]', line.decode('utf-8'))
+    match = re.search(r'\[(.*)\]', line.decode('utf-8'))
     if match:
         script_dir = os.path.dirname(match.group(1)).replace('\\', '/')
         break
@@ -41,7 +41,7 @@ class Base():
         self.target_os = target_os
         self.repo = Repo(self.src_dir, program)
         if self.rev:
-            match = re.search('(\d+)\.(\d+)', self.rev)
+            match = re.search(r'(\d+)\.(\d+)', self.rev)
             if match:
                 self.integer_rev = int(match.group(1)) + 1
                 self.decimal_rev = int(match.group(2))
@@ -72,7 +72,7 @@ class Base():
 
     def runhooks(self):
         Util.chdir(self.repo.src_dir)
-        self.program.execute(Util.get_gclient_cmd(cmd_type='runhooks'))
+        self.program.execute_gclient(cmd_type='runhooks')
 
     def makefile(self):
         Util.chdir(self.repo.src_dir)
@@ -133,7 +133,7 @@ class Base():
         elif self.target_os in ['linux', 'windows', 'darwin', 'chromeos'] and build_target == 'default':
             build_target = 'chrome'
 
-        cmd = 'ninja -k' + str(build_max_fail) + ' -j' + str(Util.cpu_count) + ' -C ' + self.out_dir
+        cmd = 'ninja -k' + str(build_max_fail) + ' -j' + str(Util.CPU_COUNT) + ' -C ' + self.out_dir
         if self.target_os == 'android' and build_target == 'webview_shell':
             cmd += ' android_webview_apk libwebviewchromium'
         elif self.target_os == 'android' and build_target == 'content_shell':
@@ -223,7 +223,7 @@ class Base():
         if not rev:
             Util.error('Please designate revision')
 
-        download_dir = '%s/%s-%s/tmp' % (MainRepo.ignore_chromium_download_dir, self.target_arch, self.target_os)
+        download_dir = '%s/%s-%s/tmp' % (ScriptRepo.IGNORE_CHROMIUM_DOWNLOAD_DIR, self.target_arch, self.target_os)
         Util.ensure_dir(download_dir)
         Util.chdir(download_dir)
 
@@ -241,8 +241,8 @@ class Base():
             target_os_tmp = 'Mac'
             target_os_tmp2 = 'mac'
         else:
-            target_os_tmp = target_os.capitalize()
-            target_os_tmp2 = target_os
+            target_os_tmp = self.target_os.capitalize()
+            target_os_tmp2 = self.target_os
 
         rev_zip = '%s.zip' % rev
         if os.path.exists(rev_zip) and os.stat(rev_zip).st_size == 0:
@@ -253,8 +253,8 @@ class Base():
             # linux64: Linux_x64/<rev>/chrome-linux.zip
             # win64: Win_x64/<rev>/chrome-win32.zip
             # mac64: Mac/<rev>/chrome-mac.zip
-            if Util.host_os == 'windows':
-                wget = Util.use_backslash('%s/wget64.exe' % MainRepo.tool_dir)
+            if Util.HOST_OS == 'windows':
+                wget = Util.use_backslash('%s/wget64.exe' % ScriptRepo.TOOL_DIR)
             else:
                 wget = 'wget'
 
@@ -272,12 +272,12 @@ class Base():
                 self.program.execute('mv %s ../' % rev_zip)
 
     def _set_boto(self):
-        boto_file = MainRepo.ignore_chromium_boto_file
+        boto_file = ScriptRepo.IGNORE_CHROMIUM_BOTO_FILE
         if not os.path.exists(boto_file):
             lines = [
                 '[Boto]',
-                'proxy = %s' % Util.proxy_address,
-                'proxy_port = %s' % Util.proxy_port,
+                'proxy = %s' % self.program.proxy_address,
+                'proxy_port = %s' % self.program.proxy_port,
                 'proxy_rdns = True',
             ]
             Util.write_file(boto_file, lines)
@@ -303,7 +303,7 @@ class Base():
             self.program.execute('git pull')
             extra_cmd = ''
 
-        self.program.execute(Util.get_gclient_cmd(cmd_type='sync', extra_cmd=extra_cmd))
+        self.program.execute_gclient(cmd_type='sync', extra_cmd=extra_cmd)
 
     def _sync_decimal_rev(self):
         roll_repo = self.repo.info[Repo.INFO_INDEX_REV_INFO][self.integer_rev][Repo.REV_INFO_INDEX_ROLL_REPO]

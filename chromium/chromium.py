@@ -4,7 +4,7 @@ import subprocess
 import sys
 lines = subprocess.Popen('dir %s' % __file__, shell=True, stdout=subprocess.PIPE).stdout.readlines()
 for line in lines:
-    match = re.search('\[(.*)\]', line.decode('utf-8'))
+    match = re.search(r'\[(.*)\]', line.decode('utf-8'))
     if match:
         script_dir = os.path.dirname(match.group(1)).replace('\\', '/')
         break
@@ -39,7 +39,7 @@ class Chromium():
         if args.target_os:
             self.target_os = args.target_os
             if self.target_os == 'default':
-                self.target_os = Util.host_os
+                self.target_os = Util.HOST_OS
 
         if args.rev:
             if re.search('-', args.rev):
@@ -147,7 +147,7 @@ python %(prog)s --sync --runhooks --makefile --build --backup --download
 
         if self.rev:
             if ops & Chromium.OPS_RUN:
-                ops |= Chromium.BACKUP
+                ops |= Chromium.OPS_BACKUP
             if ops & Chromium.OPS_BACKUP:
                 ops |= Chromium.OPS_BUILD
             if ops & Chromium.OPS_BACKUP_WEBGL:
@@ -160,7 +160,7 @@ python %(prog)s --sync --runhooks --makefile --build --backup --download
                 ops |= Chromium.OPS_SYNC
 
             if ops & Chromium.OPS_BACKUP:
-                backup_dir = '%s/%s' % (MainRepo.ignore_chromium_selfbuilt_dir, self.rev)
+                backup_dir = '%s/%s' % (ScriptRepo.IGNORE_CHROMIUM_SELFBUILT_DIR, self.rev)
                 if os.path.exists(backup_dir):
                     ops &= ~(Chromium.OPS_BACKUP | Chromium.OPS_BUILD | Chromium.OPS_MAKEFILE | Chromium.OPS_RUNHOOKS | Chromium.OPS_SYNC)
 
