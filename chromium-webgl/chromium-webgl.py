@@ -95,23 +95,24 @@ class ChromiumWebgl():
     def test(self, mesa_type=''):
         self.final_details = ''
         self.final_summary = ''
+
         if Util.HOST_OS == 'linux':
-            self.mesa_rev_number = self.test_mesa_rev
-            if self.mesa_rev_number == 'system':
+            self.mesa_rev = self.test_mesa_rev
+            if self.mesa_rev == 'system':
                 Util.info('Use system Mesa')
             else:
-                if self.mesa_rev_number == 'latest':
+                if self.mesa_rev == 'latest':
                     mesa_dir = self._get_latest('mesa')
-                    self.mesa_rev_number = re.match(Util.get_mesa_build_pattern(), mesa_dir).group(1)
+                    self.mesa_rev = re.match(Util.get_mesa_build_pattern(), mesa_dir).group(1)
                 else:
                     files = os.listdir(self.mesa_build_dir)
                     for file in files:
-                        match = re.match(Util.get_mesa_build_pattern(self.mesa_rev_number), file)
+                        match = re.match(Util.get_mesa_build_pattern(self.mesa_rev), file)
                         if match:
                             mesa_dir = file
                             break
                     else:
-                        Util.error('Could not find mesa build %s' % self.mesa_rev_number)
+                        Util.error('Could not find mesa build %s' % self.mesa_rev)
 
                 mesa_dir = self.mesa_build_dir + '/' + mesa_dir
                 Util.set_env('LD_LIBRARY_PATH', mesa_dir + '/lib')
@@ -124,21 +125,21 @@ class ChromiumWebgl():
 
         common_cmd = 'vpython content/test/gpu/run_gpu_integration_test.py webgl_conformance --disable-log-uploads'
         if self.test_chrome == 'build':
-            self.chrome_rev_number = self.test_chrome_rev
-            if self.chrome_rev_number == 'latest':
+            self.chrome_rev = self.test_chrome_rev
+            if self.chrome_rev == 'latest':
                 chrome_file = self._get_latest('chrome')
-                self.chrome_rev_number = chrome_file.replace('.zip', '')
-                if not re.match(r'\d{6}', self.chrome_rev_number):
+                self.chrome_rev = chrome_file.replace('.zip', '')
+                if not re.match(r'\d{6}', self.chrome_rev):
                     Util.error('Could not find the correct revision')
 
             Util.chdir(self.chrome_build_dir)
-            if not os.path.exists('%s' % self.chrome_rev_number):
-                if not os.path.exists('%s.zip' % self.chrome_rev_number):
-                    Util.error('Could not find Chromium revision %s' % self.chrome_rev_number)
-                Util.ensure_dir(self.chrome_rev_number)
-                self.program.execute('unzip %s.zip -d %s' % (self.chrome_rev_number, self.chrome_rev_number))
+            if not os.path.exists('%s' % self.chrome_rev):
+                if not os.path.exists('%s.zip' % self.chrome_rev):
+                    Util.error('Could not find Chromium revision %s' % self.chrome_rev)
+                Util.ensure_dir(self.chrome_rev)
+                self.program.execute('unzip %s.zip -d %s' % (self.chrome_rev, self.chrome_rev))
 
-            chrome_rev_dir = '%s/%s' % (self.chrome_build_dir, self.chrome_rev_number)
+            chrome_rev_dir = '%s/%s' % (self.chrome_build_dir, self.chrome_rev)
             Util.chdir(chrome_rev_dir)
             Util.info('Use Chrome at %s' % chrome_rev_dir)
 
@@ -154,7 +155,7 @@ class ChromiumWebgl():
         else:
             common_cmd += ' --browser=%s' % self.test_chrome
             Util.chdir(self.chrome_src_dir)
-            self.chrome_rev_number = self.test_chrome
+            self.chrome_rev = self.test_chrome
             if Util.HOST_OS == 'darwin':
                 if self.test_chrome == 'canary':
                     chrome = '"/Applications/Google Chrome Canary.app/Contents/MacOS/Google Chrome Canary"'
@@ -214,13 +215,14 @@ class ChromiumWebgl():
             cmd = common_cmd + ' --webgl-conformance-version=%s' % comb[COMB_INDEX_WEBGL]
             self.result_file = ''
             if Util.HOST_OS == 'linux':
-                self.result_file = '%s/%s-%s-%s-%s-%s.log' % (self.result_dir, datetime, self.chrome_rev_number, mesa_type, self.mesa_rev_number, comb[COMB_INDEX_WEBGL])
+                self.result_file = '%s/%s-%s-%s-%s-%s.log' % (self.result_dir, datetime, self.chrome_rev, mesa_type, self.mesa_rev, comb[COMB_INDEX_WEBGL])
             elif Util.HOST_OS == 'windows':
                 if comb[COMB_INDEX_D3D] != '11':
                     extra_browser_args += ' --use-angle=d3d%s' % comb[COMB_INDEX_D3D]
-                self.result_file = '%s/%s-%s-%s-%s.log' % (self.result_dir, datetime, self.chrome_rev_number, comb[COMB_INDEX_WEBGL], comb[COMB_INDEX_D3D])
+                self.result_file = '%s/%s-%s-%s-%s.log' % (self.result_dir, datetime, self.chrome_rev, comb[COMB_INDEX_WEBGL], comb[COMB_INDEX_D3D])
             elif Util.HOST_OS == 'darwin':
-                self.result_file = '%s/%s-%s-%s.log' % (self.result_dir, datetime, self.chrome_rev_number, comb[COMB_INDEX_WEBGL])
+                self.result_file = '%s/%s-%s-%s.log' % (self.result_dir, datetime, self.chrome_rev, comb[COMB_INDEX_WEBGL])
+
             if extra_browser_args:
                 cmd += ' --extra-browser-args="%s"' % extra_browser_args
             cmd += ' --write-full-results-to %s' % self.result_file
@@ -272,9 +274,9 @@ class ChromiumWebgl():
                 content += c + '\n'
 
         if Util.HOST_OS == 'linux':
-            subject = 'WebGL CTS on Chrome %s and Mesa %s %s has %s Regression' % (self.chrome_rev_number, mesa_type, self.mesa_rev_number, json_result['num_regressions'])
+            subject = 'WebGL CTS on Chrome %s and Mesa %s %s has %s Regression' % (self.chrome_rev, mesa_type, self.mesa_rev, json_result['num_regressions'])
         else:
-            subject = 'WebGL CTS on Chrome %s has %s Regression' % (self.chrome_rev_number, json_result['num_regressions'])
+            subject = 'WebGL CTS on Chrome %s has %s Regression' % (self.chrome_rev, json_result['num_regressions'])
 
         self.final_details += subject + '\n' + content
         Util.info(subject)
