@@ -78,7 +78,7 @@ class ChromiumWebgl():
         if Util.HOST_OS == 'linux' and not self.build_skip_mesa:
             Util.chdir(self.mesa_dir)
             if not self.build_skip_sync:
-                self.program.execute('python %s/mesa/mesa.py --sync --runhooks --root-dir %s' % (ScriptRepo.ROOT_DIR, self.mesa_dir))
+                self.program.execute('python %s/mesa/mesa.py --sync --root-dir %s' % (ScriptRepo.ROOT_DIR, self.mesa_dir))
             self.program.execute('python %s/mesa/mesa.py --build --root-dir %s' % (ScriptRepo.ROOT_DIR, self.mesa_dir))
 
         # build chrome
@@ -173,6 +173,7 @@ class ChromiumWebgl():
 
         if self.program.args.run:
             param = '--enable-experimental-web-platform-features --disable-gpu-process-for-dx12-vulkan-info-collection --disable-domain-blocking-for-3d-apis --disable-gpu-process-crash-limit --disable-blink-features=WebXR --js-flags=--expose-gc --disable-gpu-watchdog --autoplay-policy=no-user-gesture-required --disable-features=UseSurfaceLayerForVideo --enable-net-benchmarking --metrics-recording-only --no-default-browser-check --no-first-run --ignore-background-tasks --enable-gpu-benchmarking --deny-permission-prompts --autoplay-policy=no-user-gesture-required --disable-background-networking --disable-component-extensions-with-background-pages --disable-default-apps --disable-search-geolocation-disclosure --enable-crash-reporter-for-testing --disable-component-update'
+            param += ' --use-gl=angle'
             if Util.HOST_OS == 'linux' and self.test_no_angle:
                 param += ' --use-gl=desktop'
             self.program.execute('%s %s http://wp-27.sh.intel.com/workspace/project/readonly/WebGL/sdk/tests/webgl-conformance-tests.html?version=2.0.1' % (chrome, param))
