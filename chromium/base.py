@@ -271,19 +271,6 @@ class Base():
             else:
                 self.program.execute('mv %s ../' % rev_zip)
 
-    def _set_boto(self):
-        boto_file = ScriptRepo.IGNORE_CHROMIUM_BOTO_FILE
-        if not os.path.exists(boto_file):
-            lines = [
-                '[Boto]',
-                'proxy = %s' % self.program.proxy_address,
-                'proxy_port = %s' % self.program.proxy_port,
-                'proxy_rdns = True',
-            ]
-            Util.write_file(boto_file, lines)
-
-        Util.set_env('NO_AUTH_BOTO_CONFIG', boto_file)
-
     def _sync_integer_rev(self):
         if self.integer_rev:
             roll_repo = self.repo.info[Repo.INFO_INDEX_REV_INFO][self.integer_rev][Repo.REV_INFO_INDEX_ROLL_REPO]
