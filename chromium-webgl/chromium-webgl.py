@@ -102,20 +102,8 @@ class ChromiumWebgl():
             if self.mesa_rev == 'system':
                 Util.info('Use system Mesa')
             else:
-                if self.mesa_rev == 'latest':
-                    mesa_dir = self._get_latest('mesa')
-                    self.mesa_rev = re.match(Util.get_mesa_build_pattern(), mesa_dir).group(1)
-                else:
-                    files = os.listdir(self.mesa_build_dir)
-                    for file in files:
-                        match = re.match(Util.get_mesa_build_pattern(self.mesa_rev), file)
-                        if match:
-                            mesa_dir = file
-                            break
-                    else:
-                        Util.error('Could not find mesa build %s' % self.mesa_rev)
-
-                mesa_dir = self.mesa_build_dir + '/' + mesa_dir
+                (rev_dir, self.mesa_rev) = Util.get_rev_dir(self.mesa_build_dir, 'mesa', self.mesa_rev)
+                mesa_dir = self.mesa_build_dir + '/' + rev_dir
                 Util.set_env('LD_LIBRARY_PATH', mesa_dir + '/lib')
                 Util.set_env('LIBGL_DRIVERS_PATH', mesa_dir + '/lib/dri')
                 if mesa_type == 'iris':
@@ -127,11 +115,7 @@ class ChromiumWebgl():
         common_cmd = 'vpython content/test/gpu/run_gpu_integration_test.py webgl_conformance --disable-log-uploads'
         if self.test_chrome == 'build':
             self.chrome_rev = self.test_chrome_rev
-            if self.chrome_rev == 'latest':
-                chrome_file = self._get_latest('chrome')
-                self.chrome_rev = chrome_file.replace('.zip', '')
-                if not re.match(r'\d{6}', self.chrome_rev):
-                    Util.error('Could not find the correct revision')
+            (_, self.chrome_rev) = self.get_rev_dir(self.chrome_build_dir, 'chrome', self.chrome_rev)
 
             Util.chdir(self.chrome_build_dir)
             if not os.path.exists('%s' % self.chrome_rev):
@@ -342,27 +326,6 @@ python %(prog)s --test
             self.run()
         if args.daily:
             self.daily()
-
-    def _get_latest(self, type):
-        if type == 'mesa':
-            rev_dir = self.mesa_build_dir
-            rev_pattern = Util.get_mesa_build_pattern()
-        elif type == 'chrome':
-            rev_dir = self.chrome_build_dir
-            rev_pattern = Util.CHROME_BUILD_PATTERN
-
-        latest_rev = -1
-        latest_file = ''
-        files = os.listdir(rev_dir)
-        for file in files:
-            match = re.search(rev_pattern, file)
-            if match:
-                tmp_rev = int(match.group(1))
-                if tmp_rev > latest_rev:
-                    latest_file = file
-                    latest_rev = tmp_rev
-
-        return latest_file
 
     def _parse_result(self, key, val, path):
         if 'expected' in val:

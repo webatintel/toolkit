@@ -33,10 +33,10 @@ class Mesa():
         else:
             self.modules = [args.build_module]
         self.hashes = []
-        if not args.rev:
-            self.rev = str(Util.MAX_REV)
-        else:
-            self.rev = args.rev
+        self.rev = args.rev
+
+        self.run_cmd = args.run
+        self.type = args.type
 
         self.args = args
 
@@ -67,14 +67,13 @@ class Mesa():
             tmp_revs = self.rev.split('-')
             min_rev = self._unify_to_rev(tmp_revs[0])
             max_rev = self._unify_to_rev(tmp_revs[1])
+        elif self.rev == 'latest':
+            min_rev = len(self.hashes)
+            max_rev = min_rev
         else:
             tmp_rev = self._unify_to_rev(self.rev)
             min_rev = tmp_rev
             max_rev = tmp_rev
-
-        if min_rev == Util.MAX_REV:
-            min_rev = len(self.hashes)
-            max_rev = min_rev
 
         Util.info('Begin to build rev from %s to %s' % (min_rev, max_rev))
         i = min_rev
@@ -95,6 +94,24 @@ class Mesa():
     def hashtorev(self):
         tmp_hash = self.args.hashtorev
         Util.info('The rev of hash %s is %s' % (tmp_hash, _hash_to_rev(tmp_hash)))
+
+    def run(self):
+        if self.rev == 'system':
+            Util.info('Use system Mesa')
+        else:
+            build_dir = '%s/build' % self.program.root_dir
+            (rev_dir, rev) = Util.get_rev_dir(build_dir, 'mesa', self.rev)
+            mesa_dir = '%s/%s' % (build_dir, rev_dir)
+            Util.set_env('LD_LIBRARY_PATH', '%s/lib' % mesa_dir)
+            Util.set_env('LIBGL_DRIVERS_PATH', '%s/lib/dri' % mesa_dir)
+            if self.type == 'iris':
+                Util.set_env('MESA_LOADER_DRIVER_OVERRIDE', 'iris')
+            else:
+                Util.set_env('MESA_LOADER_DRIVER_OVERRIDE', '')
+
+            Util.set_env('VK_ICD_FILENAMES', '%s/share/vulkan/icd.d/intel_icd.x86_64.json' % (mesa_dir))
+            Util.info('Use mesa at %s' % mesa_dir)
+        self.program.execute(self.run_cmd)
 
     def _init_hash(self):
         if not self.hashes:
@@ -224,8 +241,10 @@ python %(prog)s --revtohash 1
         parser.add_argument('--init', dest='init', help='init', action='store_true')
         parser.add_argument('--sync', dest='sync', help='sync', action='store_true')
         parser.add_argument('--build', dest='build', help='build', action='store_true')
+        parser.add_argument('--run', dest='run', help='run')
+        parser.add_argument('--type', dest='type', help='type', default='i965')
         parser.add_argument('--branch', dest='branch', help='branch', default='master')
-        parser.add_argument('--rev', dest='rev', help='rev')
+        parser.add_argument('--rev', dest='rev', help='rev, can be system, latest, or any specific revision', default='latest')
         parser.add_argument('--rev-stride', dest='rev_stride', help='rev stride', type=int, default=1)
         parser.add_argument('--clean', dest='clean', help='clean when build_force', action='store_true')
         parser.add_argument('--revtohash', dest='revtohash', help='get hash of commit rev starting from 1', type=int)
@@ -250,6 +269,8 @@ python %(prog)s --revtohash 1
             self.revtohash()
         if args.hashtorev:
             self.hashtorev()
+        if args.run:
+            self.run()
 
 if __name__ == '__main__':
     Mesa()
