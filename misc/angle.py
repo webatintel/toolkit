@@ -91,7 +91,7 @@ class Angle():
             self.test_perf()
 
     def _test(self, type):
-        cmd = '%s/%s%s' % (self.out_dir, type, Util.get_exec_suffix())
+        cmd = '%s/%s%s' % (self.out_dir, type, Util.EXEC_SUFFIX)
         cmd = Util.use_backslash(cmd)
         if not self.test_filter == 'all':
             cmd += ' --gtest_filter=%s*' % self.test_filter

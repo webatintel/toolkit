@@ -213,7 +213,7 @@ class Base():
         else:
             cmd = '%s/%s' % (self.src_dir, self.out_dir)
 
-        cmd += '/chrome' + Util.get_exec_suffix()
+        cmd += '/chrome' + Util.EXEC_SUFFIX
         if run_extra_args:
             cmd += ' %s' % run_extra_args
         self.program.execute(cmd)
