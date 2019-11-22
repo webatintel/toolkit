@@ -62,7 +62,7 @@ class Aquarium():
             run_backend = self.run_backend
 
         cmd = '%s/aquarium%s --num-fish 30000 --backend %s' % (self.out_dir, Util.EXEC_SUFFIX, run_backend)
-        self.program.execute(cmd)
+        self.program.execute(cmd, exit_on_error=False)
 
     def _parse_args(self):
         parser = argparse.ArgumentParser(description='script for aquarium',
