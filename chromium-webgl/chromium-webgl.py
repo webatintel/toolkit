@@ -115,13 +115,13 @@ class ChromiumWebgl():
         common_cmd = 'vpython content/test/gpu/run_gpu_integration_test.py webgl_conformance --disable-log-uploads'
         if self.test_chrome == 'build':
             self.chrome_rev = self.test_chrome_rev
-            (_, self.chrome_rev) = self.get_rev_dir(self.chrome_build_dir, 'chrome', self.chrome_rev)
+            (_, self.chrome_rev) = Util.get_rev_dir(self.chrome_build_dir, 'chrome', self.chrome_rev)
 
             Util.chdir(self.chrome_build_dir)
             if not os.path.exists('%s' % self.chrome_rev):
                 if not os.path.exists('%s.zip' % self.chrome_rev):
                     Util.error('Could not find Chromium revision %s' % self.chrome_rev)
-                Util.ensure_dir(self.chrome_rev)
+                Util.ensure_dir(str(self.chrome_rev))
                 self.program.execute('unzip %s.zip -d %s' % (self.chrome_rev, self.chrome_rev))
 
             chrome_rev_dir = '%s/%s' % (self.chrome_build_dir, self.chrome_rev)
