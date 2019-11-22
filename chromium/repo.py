@@ -2,7 +2,7 @@ import os
 import re
 import subprocess
 import sys
-lines = subprocess.Popen('dir %s' % __file__, shell=True, stdout=subprocess.PIPE).stdout.readlines()
+lines = subprocess.Popen('dir %s' % __file__.replace('/', '\\'), shell=True, stdout=subprocess.PIPE).stdout.readlines()
 for line in lines:
     match = re.search('\[(.*)\]', line.decode('utf-8'))
     if match:

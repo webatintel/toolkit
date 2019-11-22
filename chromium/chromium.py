@@ -2,7 +2,7 @@ import os
 import re
 import subprocess
 import sys
-lines = subprocess.Popen('dir %s' % __file__, shell=True, stdout=subprocess.PIPE).stdout.readlines()
+lines = subprocess.Popen('dir %s' % __file__.replace('/', '\\'), shell=True, stdout=subprocess.PIPE).stdout.readlines()
 for line in lines:
     match = re.search(r'\[(.*)\]', line.decode('utf-8'))
     if match:
@@ -120,6 +120,7 @@ python %(prog)s --sync --runhooks --makefile --build --backup --download
         parser.add_argument('--download', dest='download', help='download', action='store_true')
 
         self.program = Program(parser)
+
 
     def _handle_ops(self):
         args = self.program.args

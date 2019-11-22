@@ -2,7 +2,8 @@ import os
 import re
 import subprocess
 import sys
-lines = subprocess.Popen('dir %s' % __file__, shell=True, stdout=subprocess.PIPE).stdout.readlines()
+
+lines = subprocess.Popen('dir %s' % __file__.replace('/', '\\'), shell=True, stdout=subprocess.PIPE).stdout.readlines()
 for line in lines:
     match = re.search(r'\[(.*)\]', line.decode('utf-8'))
     if match:
@@ -29,7 +30,7 @@ class Base():
         if out_dir:
             self.out_dir = out_dir
         else:
-            self.out_dir = self._get_relative_out_dir(target_arch, target_os, symbol_level, no_component_build)
+            self.out_dir = Util.get_chrome_relative_out_dir(target_arch, target_os, symbol_level, no_component_build)
         self.out_dir = '%s/%s' % (self.out_dir, self.build_type_cap)
         self.program = program
         self.rev = rev
