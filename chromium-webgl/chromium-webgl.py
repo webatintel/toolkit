@@ -38,8 +38,8 @@ class ChromiumWebgl():
         self.mesa_build_dir = '%s/build' % self.mesa_dir
         self.depot_tools_dir = '%s/depot_tools' % root_dir
         self.test_dir = '%s/test' % root_dir
-        Util.prepend_path(path=self.depot_tools_dir)
-        Util.set_env('GCLIENT_PY3', '1')
+        #Util.prepend_path(path=self.depot_tools_dir)
+        #Util.set_env('GCLIENT_PY3', '1')
         test_chrome = args.test_chrome
         if Util.HOST_OS == 'darwin':
             if test_chrome == 'default':

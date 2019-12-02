@@ -94,7 +94,7 @@ class Base():
         else:
             gn_args += ' is_component_build=true'
         if self.build_type == 'release':
-            gn_args += ' is_debug=false strip_absolute_paths_from_debug_symbols=true'
+            gn_args += ' is_debug=false'
         else:
             gn_args += ' is_debug=true'
         if self.no_warning_as_error:
