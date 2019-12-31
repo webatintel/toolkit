@@ -1,15 +1,28 @@
 import os
+import platform
 import re
 import subprocess
 import sys
-lines = subprocess.Popen('dir %s' % __file__.replace('/', '\\'), shell=True, stdout=subprocess.PIPE).stdout.readlines()
-for line in lines:
-    match = re.search(r'\[(.*)\]', line.decode('utf-8'))
-    if match:
-        script_dir = os.path.dirname(match.group(1)).replace('\\', '/')
-        break
+
+HOST_OS = platform.system().lower()
+if HOST_OS == 'windows':
+    lines = subprocess.Popen('dir %s' % __file__.replace('/', '\\'), shell=True, stdout=subprocess.PIPE).stdout.readlines()
+    for line in lines:
+        match = re.search(r'\[(.*)\]', line.decode('utf-8'))
+        if match:
+            script_dir = os.path.dirname(match.group(1)).replace('\\', '/')
+            break
+    else:
+        script_dir = sys.path[0]
 else:
-    script_dir = sys.path[0]
+    lines = subprocess.Popen('ls -l %s' % __file__, shell=True, stdout=subprocess.PIPE).stdout.readlines()
+    for line in lines:
+        match = re.search(r'.* -> (.*)', line.decode('utf-8'))
+        if match:
+            script_dir = os.path.dirname(match.group(1))
+            break
+    else:
+        script_dir = sys.path[0]
 
 sys.path.append(script_dir)
 sys.path.append(script_dir + '/..')
