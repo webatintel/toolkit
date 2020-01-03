@@ -1,0 +1,17 @@
+{
+  "suites": [
+    {
+      "name": "Performance Test",
+      "description": "Performance Test",
+      "browser": {
+        "name": "chrome_canary",
+        "path": "",
+        "options": "",
+        "webdriver_path": ""
+      },
+      "cases": [
+        {"name": "aquarium"}
+      ]
+    }
+  ]
+}
