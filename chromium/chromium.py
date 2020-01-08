@@ -118,6 +118,7 @@ python %(prog)s --sync --runhooks --makefile --build --backup --download
         parser.add_argument('--target-os', dest='target_os', help='target os, choices can be android, linux, chromeos, windows, darwin', default='default')
 
         parser.add_argument('--sync', dest='sync', help='sync to a specific rev if designated, otherwise, sync to upstream', action='store_true')
+        parser.add_argument('--sync-src-only', dest='sync_src_only', help='sync src only', action='store_true')
         parser.add_argument('--sync-reset', dest='sync_reset', help='do a reset before syncing', action='store_true')
         parser.add_argument('--runhooks', dest='runhooks', help='runhooks', action='store_true')
         parser.add_argument('--makefile', dest='makefile', help='generate makefile', action='store_true')
@@ -179,7 +180,7 @@ python %(prog)s --sync --runhooks --makefile --build --backup --download
                     ops &= ~(Chromium.OPS_BACKUP | Chromium.OPS_BUILD | Chromium.OPS_MAKEFILE | Chromium.OPS_RUNHOOKS | Chromium.OPS_SYNC)
 
         if ops & Chromium.OPS_SYNC:
-            self.base.sync(args.sync_reset)
+            self.base.sync(args.sync_src_only, args.sync_reset)
         if ops & Chromium.OPS_RUNHOOKS:
             self.base.runhooks()
         if ops & Chromium.OPS_MAKEFILE:

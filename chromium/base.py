@@ -67,7 +67,7 @@ class Base():
             self.integer_rev = 0
             self.decimal_rev = 0
 
-    def sync(self, sync_reset):
+    def sync(self, sync_src_only, sync_reset):
         if self.rev:
             Util.info('Begin to sync rev %s' % self.rev)
         Util.chdir(self.repo.src_dir)
@@ -77,7 +77,7 @@ class Base():
 
         if self.integer_rev:
             self.repo.get_info(self.integer_rev)
-        self._sync_integer_rev()
+        self._sync_integer_rev(sync_src_only)
         if not self.integer_rev:
             self.integer_rev = self.repo.get_working_dir_rev()
             self.repo.get_info(self.integer_rev)
@@ -284,7 +284,7 @@ class Base():
             else:
                 self.program.execute('mv %s ../' % rev_zip)
 
-    def _sync_integer_rev(self):
+    def _sync_integer_rev(self, src_only):
         if self.integer_rev:
             roll_repo = self.repo.info[Repo.INFO_INDEX_REV_INFO][self.integer_rev][Repo.REV_INFO_INDEX_ROLL_REPO]
             if self.decimal_rev and not roll_repo:
@@ -303,7 +303,8 @@ class Base():
             self.program.execute('git pull')
             extra_cmd = ''
 
-        self.program.execute_gclient(cmd_type='sync', extra_cmd=extra_cmd)
+        if not src_only:
+            self.program.execute_gclient(cmd_type='sync', extra_cmd=extra_cmd)
 
     def _sync_decimal_rev(self):
         roll_repo = self.repo.info[Repo.INFO_INDEX_REV_INFO][self.integer_rev][Repo.REV_INFO_INDEX_ROLL_REPO]
