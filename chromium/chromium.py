@@ -45,6 +45,10 @@ class Chromium():
         self._parse_args()
         args = self.program.args
 
+        if Util.HOST_OS == 'linux':
+            path = Util.get_env('PATH')
+            Util.set_env('PATH', '%s:%s' % (Util.PROJECT_DEPOT_TOOLS, path))
+
         self.target_arch = args.target_arch
         if self.target_arch == 'default':
             self.target_arch = 'x86_64'
