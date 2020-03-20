@@ -36,9 +36,7 @@ class ChromiumWebgl():
         else:
             self.mesa_dir = '%s/mesa' % root_dir
         self.mesa_build_dir = '%s/build' % self.mesa_dir
-        self.depot_tools_dir = '%s/depot_tools' % root_dir
         self.test_dir = '%s/test' % root_dir
-        #Util.prepend_path(path=self.depot_tools_dir)
         #Util.set_env('GCLIENT_PY3', '1')
         test_chrome = args.test_chrome
         if Util.HOST_OS == 'darwin':
@@ -109,7 +107,7 @@ class ChromiumWebgl():
                 if mesa_type == 'iris':
                     Util.set_env('MESA_LOADER_DRIVER_OVERRIDE', 'iris')
                 else:
-                    Util.set_env('MESA_LOADER_DRIVER_OVERRIDE', '')
+                    Util.set_env('MESA_LOADER_DRIVER_OVERRIDE', 'i965')
                 Util.info('Use mesa at %s' % mesa_dir)
 
         common_cmd = 'vpython content/test/gpu/run_gpu_integration_test.py webgl_conformance --disable-log-uploads'
