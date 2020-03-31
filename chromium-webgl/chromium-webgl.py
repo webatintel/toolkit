@@ -89,7 +89,7 @@ class ChromiumWebgl():
                     cmd += ' --rev %s' % self.build_chrome_rev
                 self.program.execute(cmd, exit_on_error=False)
             Util.ensure_dir('%s/build' % self.chrome_dir)
-            self.program.execute('python chromium.py --no-component-build --makefile --build --backup-webgl --out-dir out --root-dir %s' % self.chrome_dir)
+            self.program.execute('python chromium.py --no-component-build --makefile --symbol-level 0 --build --backup-webgl --out-dir out --root-dir %s' % self.chrome_dir)
 
     def test(self, mesa_type=''):
         self.final_details = ''
