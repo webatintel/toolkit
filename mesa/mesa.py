@@ -99,9 +99,9 @@ class Mesa():
         if self.rev == 'system':
             Util.info('Use system Mesa')
         else:
-            build_dir = '%s/build' % self.program.root_dir
-            (rev_dir, rev) = Util.get_rev_dir(build_dir, 'mesa', self.rev)
-            mesa_dir = '%s/%s' % (build_dir, rev_dir)
+            backup_dir = '%s/backup' % self.program.root_dir
+            (rev_dir, rev) = Util.get_rev_dir(backup_dir, 'mesa', self.rev)
+            mesa_dir = '%s/%s' % (backup_dir, rev_dir)
             Util.set_env('LD_LIBRARY_PATH', '%s/lib' % mesa_dir)
             Util.set_env('LIBGL_DRIVERS_PATH', '%s/lib/dri' % mesa_dir)
             if self.type == 'iris':
@@ -132,10 +132,10 @@ class Mesa():
 
     def _build_one(self, rev, hash):
         date = Util.get_working_dir_commit_info('%s/%s' % (self.program.root_dir, self.mesa_dir))[0]
-        single_build_dir = '%s/build/%s-%s-%s-%s-%s' % (self.program.root_dir, self.mesa_dir, self.build_type, date, rev, hash)
-        building_dir = single_build_dir.replace('build', 'build/building')
+        single_backup_dir = '%s/backup/%s-%s-%s-%s-%s' % (self.program.root_dir, self.mesa_dir, self.build_type, date, rev, hash)
+        building_dir = single_backup_dir.replace('backup', 'backup/building')
 
-        if (os.path.exists(building_dir) or os.path.exists('%s' % single_build_dir)) and os.path.exists(single_build_dir + '/lib/dri/i965_dri.so') and not self.build_force:
+        if (os.path.exists(building_dir) or os.path.exists('%s' % single_backup_dir)) and os.path.exists(single_backup_dir + '/lib/dri/i965_dri.so') and not self.build_force:
             Util.info('Rev %s has been built, so just skip it' % rev)
             return
 
@@ -202,7 +202,7 @@ class Mesa():
             sys.stdout.write(line)
         fileinput.close()
 
-        self.program.execute('mv %s %s' % (building_dir, single_build_dir))
+        self.program.execute('mv %s %s' % (building_dir, single_backup_dir))
         return True
 
     def _clean(self, modules):
