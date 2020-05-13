@@ -32,7 +32,11 @@ class Angle():
         self._handle_ops()
 
     def sync(self):
-        self.program.execute_gclient(cmd_type='sync', job_count=1)
+        self.program.execute('git pull')
+        self.program.execute_gclient(cmd_type='sync')
+
+    def runhooks(self):
+        self.program.execute_gclient(cmd_type='runhooks')
 
     def makefile(self):
         args = self.program.args
@@ -41,12 +45,16 @@ class Angle():
             gn_args = 'is_debug=true'
         else:
             gn_args = 'is_debug=false'
-
         if args.no_warning_as_error:
             gn_args += ' treat_warnings_as_errors=false'
         else:
             gn_args += ' treat_warnings_as_errors=true'
-        gn_args += ' is_clang = false'
+        if args.no_dcheck:
+            gn_args += ' dcheck_always_on=false'
+        else:
+            gn_args += ' dcheck_always_on=true'
+
+        gn_args += ' is_clang = true'
         quotation = Util.get_quotation()
         cmd = 'gn --args=%s%s%s gen %s' % (quotation, gn_args, quotation, self.out_dir)
         Util.ensure_dir(self.out_dir)
@@ -59,26 +67,85 @@ class Angle():
         cmd = 'ninja -k%s -j%s -C %s' % (str(self.build_max_fail), str(Util.CPU_COUNT), self.out_dir)
         self.program.execute(cmd)
 
-    def test(self):
-        cmd = '%s/%s%s' % (self.out_dir, self.program.args.test, Util.EXEC_SUFFIX)
+    def _test(self, type):
+        cmd = '%s%s' % (type, Util.EXEC_SUFFIX)
         cmd = Util.use_backslash(cmd)
         if not self.test_filter == 'all':
             cmd += ' --gtest_filter=*%s*' % self.test_filter
         self.program.execute(cmd)
+
+    def test(self):
+        if self.program.args.backup:
+            Util.chdir(self.backup_dir, verbose=True)
+        else:
+            Util.chdir(self.out_dir, verbose=True)
+
+        if self.program.args.test == 'e2e':
+            test = 'angle_end2end_tests'
+        else:
+            test = self.program.args.test
+        self._test(test)
+
+    def backup(self):
+        date = self.program.execute('git log -1 --date=format:"%Y%m%d" --format="%ad"', return_out=True)[1].rstrip('\n').rstrip('\r')
+        hash1 = self.program.execute('git rev-parse --short HEAD', return_out=True)[1].rstrip('\n').rstrip('\r')
+        rev = '%s-%s' % (date, hash1)
+        self.rev = rev
+        Util.info('Begin to backup rev %s' % rev)
+        self.backup_dir = '%s/backup/%s' % (self.program.root_dir, rev)
+        if os.path.exists(self.backup_dir):
+            Util.info('Backup folder "%s" alreadys exists' % self.backup_dir)
+            return
+
+        origin_files = self.program.execute('gn desc //%s //src/tests:angle_end2end_tests runtime_deps' % self.out_dir, return_out=True)[1].rstrip('\n').rstrip('\r').split('\r\n')
+        exclude_files = []
+        files = []
+        for file in origin_files:
+            if file.endswith('.pdb'):
+                continue
+
+            for exclude_file in exclude_files:
+                if file.startswith(exclude_file):
+                    break
+            else:
+                files.append(file)
+
+        Util.chdir(self.out_dir)
+        for file in files:
+            if re.match(r'\./', file):
+                file = file[2:]
+
+            if re.match('initialexe/', file):
+                file = file[len('initialexe/'):]
+
+            dir_name = os.path.dirname(file)
+            dst_dir = '%s/%s' % (self.backup_dir, dir_name)
+            Util.ensure_dir(dst_dir)
+            shutil.copy(file, dst_dir)
+
+    def release(self):
+        self.sync()
+        self.runhooks()
+        self.makefile()
+        self.build()
+        self.test()
 
     def _parse_args(self):
         parser = argparse.ArgumentParser(description='script for angle',
                                         formatter_class=argparse.RawTextHelpFormatter,
                                         epilog='''
     examples:
-    python %(prog)s --sync --build
+    python %(prog)s --sync --runhooks --makefile --build --test angle_end2end_tests
     ''')
         parser.add_argument('--is-debug', dest='is_debug', help='is debug', action='store_true')
         parser.add_argument('--no-warning-as-error', dest='no_warning_as_error', help='not treat warning as error', action='store_true')
+        parser.add_argument('--no-dcheck', dest='no_dcheck', help='no dcheck', action='store_true')
         parser.add_argument('--sync', dest='sync', help='sync', action='store_true')
+        parser.add_argument('--runhooks', dest='runhooks', help='runhooks', action='store_true')
         parser.add_argument('--makefile', dest='makefile', help='generate makefile', action='store_true')
         parser.add_argument('--build', dest='build', help='build', action='store_true')
         parser.add_argument('--build-max-fail', dest='build_max_fail', help='build keeps going until N jobs fail', type=int, default=1)
+        parser.add_argument('--backup', dest='backup', help='backup', action='store_true')
         parser.add_argument('--test', dest='test', help='test')
         parser.add_argument('--test-filter', dest='test_filter', help='test filter', default='all')
 
@@ -88,10 +155,14 @@ class Angle():
         args = self.program.args
         if args.sync:
             self.sync()
+        if args.runhooks:
+            self.runhooks()
         if args.makefile:
             self.makefile()
         if args.build:
             self.build()
+        if args.backup:
+            self.backup()
         if args.test:
             self.test()
 
