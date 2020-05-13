@@ -31,7 +31,7 @@ from util.base import * # pylint: disable=unused-wildcard-import
 from repo import *
 
 class Base():
-    def __init__(self, is_debug, no_component_build, no_warning_as_error, out_dir, program, rev, root_dir, symbol_level, target_arch, target_os):
+    def __init__(self, is_debug, no_component_build, no_warning_as_error, no_dcheck, out_dir, program, rev, root_dir, symbol_level, target_arch, target_os):
         if is_debug:
             self.build_type = 'debug'
         else:
@@ -39,6 +39,7 @@ class Base():
         self.build_type_cap = self.build_type.capitalize()
         self.no_component_build = no_component_build
         self.no_warning_as_error = no_warning_as_error
+        self.no_dcheck = no_dcheck
         if out_dir:
             self.out_dir = out_dir
         else:
@@ -47,7 +48,7 @@ class Base():
         self.program = program
         self.rev = rev
         self.root_dir = root_dir
-        self.build_dir = '%s/build' % root_dir
+        self.backup_dir = '%s/backup' % root_dir
         self.src_dir = '%s/src' % root_dir
         self.symbol_level = symbol_level
         self.target_arch = target_arch
@@ -113,7 +114,13 @@ class Base():
             gn_args += ' treat_warnings_as_errors=false'
         else:
             gn_args += ' treat_warnings_as_errors=true'
+        if self.no_dcheck:
+            gn_args += ' dcheck_always_on=false'
+        else:
+            gn_args += ' dcheck_always_on=true'
         gn_args += ' symbol_level=%s' % self.symbol_level
+        if self.symbol_level == 0:
+            gn_args += ' blink_symbol_level=0'
 
         # for windows, it has to use "" instead of ''
         if self.target_os == 'windows':
@@ -175,7 +182,7 @@ class Base():
         else:
             rev = self.repo.get_working_dir_rev()
         Util.info('Begin to backup rev %s' % rev)
-        backup_dir = '%s/%s' % (self.build_dir, rev)
+        backup_dir = '%s/%s' % (self.backup_dir, rev)
         if os.path.exists(backup_dir):
             Util.error('Backup folder "%s" alreadys exists' % backup_dir)
 
@@ -214,11 +221,20 @@ class Base():
             rev = self.rev
         else:
             rev = self.repo.get_working_dir_rev()
-        Util.chdir(self.src_dir)
-        cmd = 'vpython tools/mb/mb.py zip %s telemetry_gpu_integration_test %s/%s.zip' % (self.out_dir, self.build_dir, rev)
-        result = self.program.execute(cmd)
-        if result[0]:
-            Util.error('Failed to generate telemetry_gpu_integration_test')
+        rev_str = str(rev)
+
+        if not os.path.exists('%s/%s-orig.zip' % (self.backup_dir, rev_str)):
+            Util.chdir(self.src_dir)
+            cmd = 'vpython tools/mb/mb.py zip %s telemetry_gpu_integration_test %s/%s-orig.zip' % (self.out_dir, self.backup_dir, rev_str)
+            result = self.program.execute(cmd)
+            if result[0]:
+                Util.error('Failed to generate telemetry_gpu_integration_test')
+
+        Util.chdir(self.backup_dir)
+        if not os.path.exists(rev_str):
+            zipfile.ZipFile('%s-orig.zip' % rev_str).extractall(rev_str)
+            Util.del_filetype_in_dir(rev_str, 'pdb')
+            shutil.make_archive(rev_str, 'zip', rev_str)
 
     def run(self, run_extra_args):
         if self.rev:

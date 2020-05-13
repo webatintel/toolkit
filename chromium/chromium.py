@@ -114,6 +114,7 @@ python %(prog)s --sync --runhooks --makefile --build --backup --download
         parser.add_argument('--is-debug', dest='is_debug', help='is debug', action='store_true')
         parser.add_argument('--no-component-build', dest='no_component_build', help='no component build', action='store_true')
         parser.add_argument('--no-warning-as-error', dest='no_warning_as_error', help='not treat warning as error', action='store_true')
+        parser.add_argument('--no-dcheck', dest='no_dcheck', help='no dcheck', action='store_true')
         parser.add_argument('--out-dir', dest='out_dir', help='out dir')
         parser.add_argument('-r', '--rev', dest='rev', help='revision for sync')
         parser.add_argument('--rev-stride', dest='rev_stride', help='rev stride', type=int, default=1)
@@ -145,7 +146,7 @@ python %(prog)s --sync --runhooks --makefile --build --backup --download
         if self.rev:
             Util.info('Begin to handle rev %s' % self.rev)
 
-        self.base = Base(args.is_debug, args.no_component_build, args.no_warning_as_error, args.out_dir, self.program, self.rev, self.program.root_dir, args.symbol_level, self.target_arch, self.target_os)
+        self.base = Base(args.is_debug, args.no_component_build, args.no_warning_as_error, args.no_dcheck, args.out_dir, self.program, self.rev, self.program.root_dir, args.symbol_level, self.target_arch, self.target_os)
         ops = 0
         if args.sync:
             ops |= Chromium.OPS_SYNC

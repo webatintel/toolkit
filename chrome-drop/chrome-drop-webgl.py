@@ -1,22 +1,35 @@
 import os
+import platform
 import re
 import subprocess
 import sys
-lines = subprocess.Popen('dir %s' % __file__, shell=True, stdout=subprocess.PIPE).stdout.readlines()
-for line in lines:
-    match = re.search(r'\[(.*)\]', line.decode('utf-8'))
-    if match:
-        script_dir = os.path.dirname(match.group(1)).replace('\\', '/')
-        break
+
+HOST_OS = platform.system().lower()
+if HOST_OS == 'windows':
+    lines = subprocess.Popen('dir %s' % __file__.replace('/', '\\'), shell=True, stdout=subprocess.PIPE).stdout.readlines()
+    for line in lines:
+        match = re.search(r'\[(.*)\]', line.decode('utf-8'))
+        if match:
+            script_dir = os.path.dirname(match.group(1)).replace('\\', '/')
+            break
+    else:
+        script_dir = sys.path[0]
 else:
-    script_dir = sys.path[0]
+    lines = subprocess.Popen('ls -l %s' % __file__, shell=True, stdout=subprocess.PIPE).stdout.readlines()
+    for line in lines:
+        match = re.search(r'.* -> (.*)', line.decode('utf-8'))
+        if match:
+            script_dir = os.path.dirname(match.group(1))
+            break
+    else:
+        script_dir = sys.path[0]
 
 sys.path.append(script_dir)
 sys.path.append(script_dir + '/..')
 
 from util.base import * # pylint: disable=unused-wildcard-import
 
-class ChromiumWebgl():
+class Webgl():
     def __init__(self):
         self.skip_cases = {
             #'linux': ['WebglConformance_conformance2_textures_misc_tex_3d_size_limit'],
@@ -29,7 +42,7 @@ class ChromiumWebgl():
         args = self.program.args
         root_dir = self.program.root_dir
         self.chrome_dir = '%s/chromium' % root_dir
-        self.chrome_build_dir = '%s/build' % self.chrome_dir
+        self.chrome_backup_dir = '%s/backup' % self.chrome_dir
         self.chrome_src_dir = '%s/src' % self.chrome_dir
         if args.mesa_dir:
             self.mesa_dir = args.mesa_dir
@@ -37,7 +50,6 @@ class ChromiumWebgl():
             self.mesa_dir = '%s/mesa' % root_dir
         self.mesa_build_dir = '%s/build' % self.mesa_dir
         self.test_dir = '%s/test' % root_dir
-        #Util.set_env('GCLIENT_PY3', '1')
         test_chrome = args.test_chrome
         if Util.HOST_OS == 'darwin':
             if test_chrome == 'default':
@@ -51,7 +63,7 @@ class ChromiumWebgl():
         if Util.HOST_OS == 'linux':
             mesa_type = args.mesa_type
             if mesa_type == 'default':
-                if args.daily:
+                if args.release:
                     mesa_type = 'i965,iris'
                 else:
                     mesa_type = 'i965'
@@ -59,7 +71,8 @@ class ChromiumWebgl():
 
         self.proxy = args.proxy
         self.build_skip_sync = args.build_skip_sync
-        self.build_skip_chrome = args.build_skip_chrome
+        self.build_skip_build_chrome = args.build_skip_build_chrome
+        self.build_skip_backup_chrome = args.build_skip_backup_chrome
         self.build_skip_mesa = args.build_skip_mesa
         self.build_chrome_rev = args.build_chrome_rev
         self.test_mesa_rev = args.test_mesa_rev
@@ -81,15 +94,17 @@ class ChromiumWebgl():
             self.program.execute('python %s/mesa/mesa.py --build --root-dir %s' % (ScriptRepo.ROOT_DIR, self.mesa_dir))
 
         # build chrome
-        if self.test_chrome == 'build' and not self.build_skip_chrome:
+        if self.test_chrome == 'build':
             Util.chdir('%s/chromium' % ScriptRepo.ROOT_DIR)
             if not self.build_skip_sync:
                 cmd = 'python chromium.py --sync --runhooks --root-dir %s' % self.chrome_dir
                 if self.build_chrome_rev != 'latest':
                     cmd += ' --rev %s' % self.build_chrome_rev
                 self.program.execute(cmd, exit_on_error=False)
-            Util.ensure_dir('%s/build' % self.chrome_dir)
-            self.program.execute('python chromium.py --no-component-build --makefile --symbol-level 0 --build --backup-webgl --out-dir out --root-dir %s' % self.chrome_dir)
+            if not self.build_skip_build_chrome:
+                self.program.execute('python chromium.py --no-component-build --makefile --symbol-level 0 --build --out-dir out --root-dir %s' % self.chrome_dir)
+            if not self.build_skip_backup_chrome:
+                self.program.execute('python chromium.py --backup-webgl --out-dir out --root-dir %s' % self.chrome_dir)
 
     def test(self, mesa_type=''):
         self.final_details = ''
@@ -113,16 +128,16 @@ class ChromiumWebgl():
         common_cmd = 'vpython content/test/gpu/run_gpu_integration_test.py webgl_conformance --disable-log-uploads'
         if self.test_chrome == 'build':
             self.chrome_rev = self.test_chrome_rev
-            (_, self.chrome_rev) = Util.get_rev_dir(self.chrome_build_dir, 'chrome', self.chrome_rev)
+            (_, self.chrome_rev) = Util.get_rev_dir(self.chrome_backup_dir, 'chrome', self.chrome_rev)
 
-            Util.chdir(self.chrome_build_dir)
+            Util.chdir(self.chrome_backup_dir)
             if not os.path.exists('%s' % self.chrome_rev):
                 if not os.path.exists('%s.zip' % self.chrome_rev):
                     Util.error('Could not find Chromium revision %s' % self.chrome_rev)
                 Util.ensure_dir(str(self.chrome_rev))
-                self.program.execute('unzip %s.zip -d %s' % (self.chrome_rev, self.chrome_rev))
+                self.program.execute('unzip%s %s.zip -d %s' % (Util.EXEC_SUFFIX, self.chrome_rev, self.chrome_rev))
 
-            chrome_rev_dir = '%s/%s' % (self.chrome_build_dir, self.chrome_rev)
+            chrome_rev_dir = '%s/%s' % (self.chrome_backup_dir, self.chrome_rev)
             Util.chdir(chrome_rev_dir)
             Util.info('Use Chrome at %s' % chrome_rev_dir)
 
@@ -175,14 +190,16 @@ class ChromiumWebgl():
         datetime = Util.get_datetime()
 
         COMB_INDEX_WEBGL = 0
-        COMB_INDEX_D3D = 1
+        COMB_INDEX_BACKEND = 1
         if Util.HOST_OS in ['linux', 'darwin']:
             all_combs = [['2.0.1']]
         elif Util.HOST_OS == 'windows':
             all_combs = [
-                ['1.0.3', '9'],
-                ['1.0.3', '11'],
-                ['2.0.1', '11'],
+                ['1.0.3', 'd3d9'],
+                ['1.0.3', 'd3d11'],
+                ['1.0.3', 'gl'],
+                ['2.0.1', 'd3d11'],
+                ['2.0.1', 'gl'],
             ]
 
         test_combs = []
@@ -201,9 +218,11 @@ class ChromiumWebgl():
             if Util.HOST_OS == 'linux':
                 self.result_file = '%s/%s-%s-%s-%s-%s.log' % (self.result_dir, datetime, self.chrome_rev, mesa_type, self.mesa_rev, comb[COMB_INDEX_WEBGL])
             elif Util.HOST_OS == 'windows':
-                if comb[COMB_INDEX_D3D] != '11':
-                    extra_browser_args += ' --use-angle=d3d%s' % comb[COMB_INDEX_D3D]
-                self.result_file = '%s/%s-%s-%s-%s.log' % (self.result_dir, datetime, self.chrome_rev, comb[COMB_INDEX_WEBGL], comb[COMB_INDEX_D3D])
+                if comb[COMB_INDEX_BACKEND] == 'd3d9':
+                    extra_browser_args += ' --use-angle=%s' % comb[COMB_INDEX_BACKEND]
+                elif comb[COMB_INDEX_BACKEND] == 'd3d11':
+                    extra_browser_args += ' --use-angle=%s --use-gl=angle' % comb[COMB_INDEX_BACKEND]
+                self.result_file = '%s/%s-%s-%s-%s.log' % (self.result_dir, datetime, self.chrome_rev, comb[COMB_INDEX_WEBGL], comb[COMB_INDEX_BACKEND])
             elif Util.HOST_OS == 'darwin':
                 self.result_file = '%s/%s-%s-%s.log' % (self.result_dir, datetime, self.chrome_rev, comb[COMB_INDEX_WEBGL])
 
@@ -266,10 +285,10 @@ class ChromiumWebgl():
         Util.info(subject)
         Util.info(content)
 
-        if self.program.args.daily and Util.HOST_OS == 'linux' or self.email:
+        if self.program.args.release and Util.HOST_OS == 'linux' or self.email:
             Util.send_email('webperf@intel.com', 'yang.gu@intel.com', subject, content)
 
-    def daily(self):
+    def release(self):
         self.build()
         if Util.HOST_OS == 'linux':
             for mesa_type in self.mesa_types:
@@ -278,7 +297,7 @@ class ChromiumWebgl():
             self.test()
 
     def _parse_arg(self):
-        parser = argparse.ArgumentParser(description='Chromium WebGL',
+        parser = argparse.ArgumentParser(description='Chrome Drop WebGL',
                                         formatter_class=argparse.RawTextHelpFormatter,
                                         epilog='''
 examples:
@@ -288,7 +307,8 @@ python %(prog)s --test
         parser.add_argument('--build', dest='build', help='build', action='store_true')
         parser.add_argument('--build-chrome-rev', dest='build_chrome_rev', help='Chrome rev to build', default='latest')
         parser.add_argument('--build-skip-sync', dest='build_skip_sync', help='skip sync during build', action='store_true')
-        parser.add_argument('--build-skip-chrome', dest='build_skip_chrome', help='skip building chrome during build', action='store_true')
+        parser.add_argument('--build-skip-build-chrome', dest='build_skip_build_chrome', help='skip building chrome during build', action='store_true')
+        parser.add_argument('--build-skip-backup-chrome', dest='build_skip_backup_chrome', help='skip backing up chrome during build', action='store_true')
         parser.add_argument('--build-skip-mesa', dest='build_skip_mesa', help='skip skip building mesa during build', action='store_true')
         parser.add_argument('--test', dest='test', help='test', action='store_true')
         parser.add_argument('--test-chrome-rev', dest='test_chrome_rev', help='Chromium revision', default='latest')
@@ -298,7 +318,7 @@ python %(prog)s --test
         parser.add_argument('--test-chrome', dest='test_chrome', help='test chrome', default='default')
         parser.add_argument('--test-combs', dest='test_combs', help='test combs, split by comma, like "0,2"', default='all')
         parser.add_argument('--test-no-angle', dest='test_no_angle', help='test without angle', action='store_true')
-        parser.add_argument('--daily', dest='daily', help='daily test', action='store_true')
+        parser.add_argument('--release', dest='release', help='release', action='store_true')
         parser.add_argument('--run', dest='run', help='run', action='store_true')
         parser.add_argument('--dryrun', dest='dryrun', help='dryrun', action='store_true')
         parser.add_argument('--report', dest='report', help='report file')
@@ -322,8 +342,8 @@ python %(prog)s --test
             self.report(mesa_type=args.mesa_type)
         if args.run:
             self.run()
-        if args.daily:
-            self.daily()
+        if args.release:
+            self.release()
 
     def _parse_result(self, key, val, path):
         if 'expected' in val:
@@ -340,4 +360,4 @@ python %(prog)s --test
                 self._parse_result(new_key, new_val, '%s/%s' % (path, new_key))
 
 if __name__ == '__main__':
-    ChromiumWebgl()
+    Webgl()
