@@ -31,7 +31,7 @@ from util.base import * # pylint: disable=unused-wildcard-import
 from repo import *
 
 class Base():
-    def __init__(self, is_debug, no_component_build, no_warning_as_error, no_dcheck, out_dir, program, rev, root_dir, symbol_level, target_arch, target_os):
+    def __init__(self, is_debug, no_component_build, no_warning_as_error, dcheck, out_dir, program, rev, root_dir, symbol_level, target_arch, target_os):
         if is_debug:
             self.build_type = 'debug'
         else:
@@ -39,7 +39,7 @@ class Base():
         self.build_type_cap = self.build_type.capitalize()
         self.no_component_build = no_component_build
         self.no_warning_as_error = no_warning_as_error
-        self.no_dcheck = no_dcheck
+        self.dcheck = dcheck
         if out_dir:
             self.out_dir = out_dir
         else:
@@ -114,10 +114,10 @@ class Base():
             gn_args += ' treat_warnings_as_errors=false'
         else:
             gn_args += ' treat_warnings_as_errors=true'
-        if self.no_dcheck:
-            gn_args += ' dcheck_always_on=false'
-        else:
+        if self.dcheck:
             gn_args += ' dcheck_always_on=true'
+        else:
+            gn_args += ' dcheck_always_on=false'
         gn_args += ' symbol_level=%s' % self.symbol_level
         if self.symbol_level == 0:
             gn_args += ' blink_symbol_level=0'

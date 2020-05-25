@@ -75,6 +75,7 @@ class Webgl():
         self.build_skip_backup_chrome = args.build_skip_backup_chrome
         self.build_skip_mesa = args.build_skip_mesa
         self.build_chrome_rev = args.build_chrome_rev
+        self.build_chrome_dcheck = args.build_chrome_dcheck
         self.test_mesa_rev = args.test_mesa_rev
         self.test_filter = args.test_filter
         self.test_verbose = args.test_verbose
@@ -102,7 +103,10 @@ class Webgl():
                     cmd += ' --rev %s' % self.build_chrome_rev
                 self.program.execute(cmd, exit_on_error=False)
             if not self.build_skip_build_chrome:
-                self.program.execute('python chromium.py --no-component-build --makefile --symbol-level 0 --build --out-dir out --root-dir %s' % self.chrome_dir)
+                cmd = 'python chromium.py --no-component-build --makefile --symbol-level 0 --build --out-dir out --root-dir %s' % self.chrome_dir
+                if self.build_chrome_dcheck:
+                    cmd += ' --dcheck'
+                self.program.execute(cmd)
             if not self.build_skip_backup_chrome:
                 self.program.execute('python chromium.py --backup-webgl --out-dir out --root-dir %s' % self.chrome_dir)
 
@@ -174,7 +178,7 @@ class Webgl():
             param += ' --use-gl=angle'
             if Util.HOST_OS == 'linux' and self.test_no_angle:
                 param += ' --use-gl=desktop'
-            self.program.execute('%s %s http://wp-27.sh.intel.com/workspace/project/readonly/WebGL/sdk/tests/webgl-conformance-tests.html?version=2.0.1' % (chrome, param))
+            self.program.execute('%s %s http://wp-27.sh.intel.com/workspace/project/WebGL/sdk/tests/webgl-conformance-tests.html?version=2.0.1' % (chrome, param))
             return
 
         if self.test_filter != 'all':
@@ -218,10 +222,7 @@ class Webgl():
             if Util.HOST_OS == 'linux':
                 self.result_file = '%s/%s-%s-%s-%s-%s.log' % (self.result_dir, datetime, self.chrome_rev, mesa_type, self.mesa_rev, comb[COMB_INDEX_WEBGL])
             elif Util.HOST_OS == 'windows':
-                if comb[COMB_INDEX_BACKEND] == 'd3d9':
-                    extra_browser_args += ' --use-angle=%s' % comb[COMB_INDEX_BACKEND]
-                elif comb[COMB_INDEX_BACKEND] == 'd3d11':
-                    extra_browser_args += ' --use-angle=%s --use-gl=angle' % comb[COMB_INDEX_BACKEND]
+                extra_browser_args += ' --use-angle=%s' % comb[COMB_INDEX_BACKEND]
                 self.result_file = '%s/%s-%s-%s-%s.log' % (self.result_dir, datetime, self.chrome_rev, comb[COMB_INDEX_WEBGL], comb[COMB_INDEX_BACKEND])
             elif Util.HOST_OS == 'darwin':
                 self.result_file = '%s/%s-%s-%s.log' % (self.result_dir, datetime, self.chrome_rev, comb[COMB_INDEX_WEBGL])
@@ -229,11 +230,16 @@ class Webgl():
             if extra_browser_args:
                 cmd += ' --extra-browser-args="%s"' % extra_browser_args
             cmd += ' --write-full-results-to %s' % self.result_file
-            result = self.program.execute(cmd, exit_on_error=False)
-            self.report(mesa_type=mesa_type)
+            test_timer = Timer()
+            result = self.program.execute(cmd, exit_on_error=False, show_duration=True)
+            self.report(str(test_timer.stop()), mesa_type=mesa_type)
 
         Util.info('Final details:\n%s' % self.final_details)
-        Util.info('Final summary:\n%s' % self.final_summary)
+        if self.build_chrome_dcheck:
+            dcheck = 'true'
+        else:
+            dcheck = 'false'
+        Util.info('Final summary (chrome_rev: %s, dcheck: %s):\n%s' % (self.chrome_rev, dcheck, self.final_summary))
 
     def run(self):
         if Util.HOST_OS == 'linux':
@@ -244,7 +250,7 @@ class Webgl():
         else:
             self.test()
 
-    def report(self, mesa_type=''):
+    def report(self, test_duration, mesa_type=''):
         self.fail_fail = []
         self.fail_pass = []
         self.pass_fail = []
@@ -259,7 +265,7 @@ class Webgl():
         for key, val in test_results.items():
             self._parse_result(key, val, key)
 
-        content = 'FAIL: %s (New: %s, Expected: %s), PASS %s (New: %s, Expected: %s), SKIP: %s\n' % (result_type['FAIL'], len(self.pass_fail), len(self.fail_fail), result_type['PASS'], len(self.fail_pass), len(self.pass_pass), result_type['SKIP'])
+        content = 'FAIL: %s (New: %s, Expected: %s), PASS: %s (New: %s, Expected: %s), SKIP: %s, Duration: %s\n' % (result_type['FAIL'], len(self.pass_fail), len(self.fail_fail), result_type['PASS'], len(self.fail_pass), len(self.pass_pass), result_type['SKIP'], test_duration)
         self.final_summary+= '\n' + content
         content += '[PASS_FAIL(%s)]\n' % len(self.pass_fail)
         if self.pass_fail:
@@ -306,6 +312,7 @@ python %(prog)s --test
     ''')
         parser.add_argument('--build', dest='build', help='build', action='store_true')
         parser.add_argument('--build-chrome-rev', dest='build_chrome_rev', help='Chrome rev to build', default='latest')
+        parser.add_argument('--build-chrome-dcheck', dest='build_chrome_dcheck', help='Build Chrome with dcheck', action='store_true')
         parser.add_argument('--build-skip-sync', dest='build_skip_sync', help='skip sync during build', action='store_true')
         parser.add_argument('--build-skip-build-chrome', dest='build_skip_build_chrome', help='skip building chrome during build', action='store_true')
         parser.add_argument('--build-skip-backup-chrome', dest='build_skip_backup_chrome', help='skip backing up chrome during build', action='store_true')
