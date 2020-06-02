@@ -40,16 +40,16 @@ class Base():
         self.no_component_build = no_component_build
         self.no_warning_as_error = no_warning_as_error
         self.dcheck = dcheck
-        if out_dir:
-            self.out_dir = out_dir
-        else:
-            self.out_dir = Util.get_chrome_relative_out_dir(target_arch, target_os, symbol_level, no_component_build)
-        self.out_dir = '%s/%s' % (self.out_dir, self.build_type_cap)
         self.program = program
         self.rev = rev
         self.root_dir = root_dir
         self.backup_dir = '%s/backup' % root_dir
-        self.src_dir = '%s/src' % root_dir
+        self.src_dir = Util.use_slash('%s/src' % root_dir)
+        if out_dir:
+            self.out_dir = out_dir
+        else:
+            self.out_dir = Util.get_chrome_relative_out_dir(target_arch, target_os, symbol_level, no_component_build, dcheck)
+        self.out_dir = '%s/%s' % (self.out_dir, self.build_type_cap)
         self.symbol_level = symbol_level
         self.target_arch = target_arch
         self.target_os = target_os
@@ -153,22 +153,21 @@ class Base():
         elif self.target_os in ['linux', 'windows', 'darwin', 'chromeos'] and build_target == 'default':
             build_target = 'chrome'
 
-        cmd = 'ninja -k' + str(build_max_fail) + ' -j' + str(Util.CPU_COUNT) + ' -C ' + self.out_dir
-        if self.target_os == 'android' and build_target == 'webview_shell':
-            cmd += ' android_webview_apk libwebviewchromium'
-        elif self.target_os == 'android' and build_target == 'content_shell':
-            cmd += ' content_shell_apk'
-        elif self.target_os == 'android' and build_target == 'chrome_shell':
-            cmd += ' chrome_shell_apk'
-        elif self.target_os == 'android' and build_target == 'chrome_public':
-            cmd += ' chrome_public_apk'
-        elif self.target_os == 'android' and build_target == 'webview':
-            cmd += ' system_webview_apk'
-        else:
-            cmd += ' ' + build_target
+        tmp_targets = build_target.split(',')
 
-        if self.target_os in ['linux', 'windows', 'darwin'] and build_target == 'chrome':
-            cmd += ' chromedriver'
+        if self.target_os in ['linux', 'windows', 'darwin'] and 'chrome' in tmp_targets and 'chromedriver' not in tmp_targets:
+            tmp_targets.append('chromedriver')
+
+        target_simple_real = {
+            'webgl': 'telemetry_gpu_integration_test',
+            'webgpu': 'webgpu_blink_web_tests',
+        }
+        for simple, real in target_simple_real.items():
+            if simple in tmp_targets:
+                tmp_targets[tmp_targets.index(simple)] = real
+
+        cmd = 'ninja -k' + str(build_max_fail) + ' -j' + str(Util.CPU_COUNT) + ' -C ' + self.out_dir
+        cmd += ' %s' % ' '.join(tmp_targets)
 
         if build_verbose:
             cmd += ' -v'
@@ -176,7 +175,7 @@ class Base():
         Util.chdir(self.src_dir)
         self.program.execute(cmd, show_duration=True)
 
-    def backup(self, backup_no_symbol):
+    def backup(self, backup_target='chrome', backup_symbol=False):
         if self.rev:
             rev = self.rev
         else:
@@ -184,16 +183,34 @@ class Base():
         Util.info('Begin to backup rev %s' % rev)
         backup_dir = '%s/%s' % (self.backup_dir, rev)
         if os.path.exists(backup_dir):
-            Util.error('Backup folder "%s" alreadys exists' % backup_dir)
+            Util.warning('Backup folder "%s" alreadys exists' % backup_dir)
+            os.rename(backup_dir, '%s-%s' % (backup_dir, Util.get_datetime()))
 
         Util.chdir(self.src_dir)
-        chrome_files = self.program.execute('gn desc //%s //chrome:chrome runtime_deps' % self.out_dir, return_out=True)[1].rstrip('\n').split('\n')
-        chromedriver_files = self.program.execute('gn desc //%s //chrome/test/chromedriver:chromedriver runtime_deps' % self.out_dir, return_out=True)[1].rstrip('\n').split('\n')
-        origin_files = Util.union_list(chrome_files, chromedriver_files)
-        exclude_files = ['../', 'gen/', 'angledata/', 'pyproto/', './libVkLayer']
+        tmp_targets = backup_target.split(',')
+        if 'chrome' in tmp_targets and 'chromedriver' not in tmp_targets:
+            tmp_targets.append('chromedriver')
+
+        target_simple_real = {
+            'chrome': '//chrome:chrome',
+            'chromedriver': '//chrome/test/chromedriver:chromedriver',
+            'webgl': '//chrome/test:telemetry_gpu_integration_test',
+            'webgpu': '//:webgpu_blink_web_tests',
+        }
+
+        for simple, real in target_simple_real.items():
+            if simple in tmp_targets:
+                tmp_targets[tmp_targets.index(simple)] = real
+
+        origin_files = []
+        for tmp_target in tmp_targets:
+            tmp_files = self.program.execute('gn desc //%s %s runtime_deps' % (self.out_dir, tmp_target), return_out=True)[1].rstrip('\r\n').split('\r\n')
+            origin_files = Util.union_list(origin_files, tmp_files)
+
+        exclude_files = ['gen/', 'angledata/', 'pyproto/', './libVkLayer']
         files = []
         for file in origin_files:
-            if backup_no_symbol and file.endswith('.pdb'):
+            if not backup_symbol and file.endswith('.pdb'):
                 continue
 
             for exclude_file in exclude_files:
@@ -202,18 +219,21 @@ class Base():
             else:
                 files.append(file)
 
-        Util.chdir(self.out_dir)
-        for file in files:
-            if re.match(r'\./', file):
-                file = file[2:]
+        for src in files:
+            if re.match('initialexe/', src):
+                src = src[len('initialexe/'):]
 
-            if re.match('initialexe/', file):
-                file = file[len('initialexe/'):]
+            src = '%s/%s' % (self.out_dir, src)
+            dst = '%s/%s' % (backup_dir, src)
+            Util.ensure_dir(os.path.dirname(dst))
+            if os.path.isdir(src):
+                dst = os.path.dirname(os.path.dirname(dst))
+            Util.execute('cp -rf %s %s' % (src, dst), show_cmd=False)
 
-            dir_name = os.path.dirname(file)
-            dst_dir = '%s/%s' % (backup_dir, dir_name)
-            Util.ensure_dir(dst_dir)
-            shutil.copy(file, dst_dir)
+            # permission denied
+            #shutil.copyfile(file, dst_dir)
+
+            #D:\workspace\project\chromium\backup\771575\third_party\perl\perl\perl
 
     def backup_webgl(self):
         # generate telemetry_gpu_integration_test
@@ -349,13 +369,3 @@ class Base():
         if not branch == 'master':
             Util.error('Repo %s is not on master' % roll_repo)
 
-    def _get_relative_out_dir(self, target_arch, target_os, symbol_level=0, no_component_build=False):
-        relative_out_dir = 'out-%s-%s' % (target_arch, target_os)
-        relative_out_dir += '-symbol%s' % symbol_level
-
-        if no_component_build:
-            relative_out_dir += '-nocomponent'
-        else:
-            relative_out_dir += '-component'
-
-        return relative_out_dir

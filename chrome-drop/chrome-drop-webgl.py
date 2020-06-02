@@ -83,6 +83,8 @@ class Webgl():
         self.test_combs = args.test_combs
         self.email = args.email
         self.test_no_angle = args.test_no_angle
+        self.final_details = ''
+        self.final_summary = ''
 
         self._handle_ops()
 
@@ -111,9 +113,6 @@ class Webgl():
                 self.program.execute('python chromium.py --backup-webgl --out-dir out --root-dir %s' % self.chrome_dir)
 
     def test(self, mesa_type=''):
-        self.final_details = ''
-        self.final_summary = ''
-
         if Util.HOST_OS == 'linux':
             self.mesa_rev = self.test_mesa_rev
             if self.mesa_rev == 'system':
@@ -250,7 +249,7 @@ class Webgl():
         else:
             self.test()
 
-    def report(self, test_duration, mesa_type=''):
+    def report(self, test_duration='0', mesa_type=''):
         self.fail_fail = []
         self.fail_pass = []
         self.pass_fail = []
@@ -258,6 +257,7 @@ class Webgl():
 
         if self.program.args.report:
             self.result_file = '%s/%s' % (self.result_dir, self.program.args.report)
+            self.chrome_rev = self.program.args.report.split('-')[1]
 
         json_result = json.load(open(self.result_file))
         result_type = json_result['num_failures_by_type']
@@ -354,11 +354,11 @@ python %(prog)s --test
 
     def _parse_result(self, key, val, path):
         if 'expected' in val:
-            if val['expected'] == 'FAIL' and val['actual'] == 'FAIL':
+            if val['expected'] == 'FAIL' and val['actual'].startswith('FAIL'):
                 self.fail_fail.append(path)
             elif val['expected'] == 'FAIL' and val['actual'] == 'PASS':
                 self.fail_pass.append(path)
-            elif val['expected'] == 'PASS' and val['actual'] == 'FAIL':
+            elif val['expected'] == 'PASS' and val['actual'].startswith('FAIL'):
                 self.pass_fail.append(path)
             elif val['expected'] == 'PASS' and val['actual'] == 'PASS':
                 self.pass_pass.append(path)

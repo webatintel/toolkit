@@ -132,14 +132,14 @@ python %(prog)s --sync --runhooks --makefile --build --backup --download
         parser.add_argument('--build-verbose', dest='build_verbose', help='output verbose info. Find log at out/Release/.ninja_log', action='store_true')
         parser.add_argument('--build-max-fail', dest='build_max_fail', help='build keeps going until N jobs fail', type=int, default=1)
         parser.add_argument('--backup', dest='backup', help='backup', action='store_true')
-        parser.add_argument('--backup-no-symbol', dest='backup_no_symbol', help='backup no symbol', action='store_true')
+        parser.add_argument('--backup-symbol', dest='backup_symbol', help='backup symbol', action='store_true')
+        parser.add_argument('--backup-target', dest='backup_target', help='backup target')
         parser.add_argument('--backup-webgl', dest='backup_webgl', help='backup webgl', action='store_true')
         parser.add_argument('--run', dest='run', help='run', action='store_true')
         parser.add_argument('--run-extra-args', dest='run_extra_args', help='run with extra args', default='')
         parser.add_argument('--download', dest='download', help='download', action='store_true')
 
         self.program = Program(parser)
-
 
     def _handle_ops(self):
         args = self.program.args
@@ -193,7 +193,7 @@ python %(prog)s --sync --runhooks --makefile --build --backup --download
         if ops & Chromium.OPS_BUILD:
             self.base.build(args.build_max_fail, args.build_target, args.build_verbose)
         if ops & Chromium.OPS_BACKUP:
-            self.base.backup(args.backup_no_symbol)
+            self.base.backup(backup_target=args.backup_target, backup_symbol=args.backup_symbol)
         if ops & Chromium.OPS_BACKUP_WEBGL:
             self.base.backup_webgl()
         if ops & Chromium.OPS_RUN:

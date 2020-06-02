@@ -28,6 +28,11 @@ class Angle():
         self.out_dir = 'out/%s' % build_type.capitalize()
         self.build_max_fail = args.build_max_fail
         self.test_filter = args.test_filter
+        self.target_simple_real = {
+            'e2e': 'angle_end2end_tests',
+            'perf': 'angle_perftests',
+            'unit': 'angle_unittests',
+        }
 
         self._handle_ops()
 
@@ -65,6 +70,17 @@ class Angle():
         if not os.path.exists(self.out_dir):
             self.makefile()
         cmd = 'ninja -k%s -j%s -C %s' % (str(self.build_max_fail), str(Util.CPU_COUNT), self.out_dir)
+        build_target = self.program.args.build_target
+        if build_target == 'default':
+            tmp_targets = ['']
+        else:
+            tmp_targets = build_target.split(',')
+
+        for simple, real in self.target_simple_real.items():
+            if simple in tmp_targets:
+                tmp_targets[tmp_targets.index(simple)] = real
+
+        cmd += ' %s' % ' '.join(tmp_targets)
         self.program.execute(cmd)
 
     def _test(self, type):
@@ -80,11 +96,14 @@ class Angle():
         else:
             Util.chdir(self.out_dir, verbose=True)
 
-        if self.program.args.test == 'e2e':
-            test = 'angle_end2end_tests'
-        else:
-            test = self.program.args.test
-        self._test(test)
+        tmp_targets = self.program.args.test_target.split(',')
+
+        for simple, real in self.target_simple_real.items():
+            if simple in tmp_targets:
+                tmp_targets[tmp_targets.index(simple)] = real
+
+        for target in tmp_targets:
+            self._test(target)
 
     def backup(self):
         date = self.program.execute('git log -1 --date=format:"%Y%m%d" --format="%ad"', return_out=True)[1].rstrip('\n').rstrip('\r')
@@ -144,9 +163,11 @@ class Angle():
         parser.add_argument('--runhooks', dest='runhooks', help='runhooks', action='store_true')
         parser.add_argument('--makefile', dest='makefile', help='generate makefile', action='store_true')
         parser.add_argument('--build', dest='build', help='build', action='store_true')
+        parser.add_argument('--build-target', dest='build_target', help='build target', default='default')
         parser.add_argument('--build-max-fail', dest='build_max_fail', help='build keeps going until N jobs fail', type=int, default=1)
         parser.add_argument('--backup', dest='backup', help='backup', action='store_true')
-        parser.add_argument('--test', dest='test', help='test')
+        parser.add_argument('--test', dest='test', help='test', action='store_true')
+        parser.add_argument('--test-target', dest='test_target', help='test target')
         parser.add_argument('--test-filter', dest='test_filter', help='test filter', default='all')
 
         self.program = Program(parser)
