@@ -1,15 +1,75 @@
-# Provision
-## Get all the code
-* Copy the related .zip file from server, and unzip it to directory <chromium_webgl>.
-* open "cmd"
-* set PATH=<chromium_webgl>/depot_tools;%PATH% # Get all necessary tools, including python, git, etc.
+# Chrome Drop
+Chrome Drop contains below binaries:
+* WebGL CTS
+* ANGLE end2end tests
+* WebGPU CTS
 
-## Install Visual Studio (If you want to build Chromium)
-As of September, 2017 (R503915) Chromium requires Visual Studio 2017 (15.7.2) to build. The clang-cl compiler is used but Visual Studio's header files, libraries, and some tools are required. Visual Studio Community Edition should work. You must install the “Desktop development with C++” component and the “MFC and ATL support” sub-component.
-You must have the version 10.0.17134 Windows 10 SDK installed. This can be installed separately or by checking the appropriate box in the Visual Studio Installer.
-The SDK Debugging Tools must also be installed. If the Windows 10 SDK was installed via the Visual Studio installer, then they can be installed by going to: Control Panel → Programs → Programs and Features → Select the "Windows Software Development Kit" → Change → Change → Check “Debugging Tools For Windows” → Change. Or, you can download the standalone SDK installer and use it to install the Debugging Tools.
+# WebGL CTS
+## Binary
 
-# Sync latest code
-* cd <toolkit> && git pull
-* cd <chromium_webgl>/test
-* python webgl.py --daily
+[Chrome-revision].zip
+
+## Command
+
+`python content/test/gpu/run_gpu_integration_test.py webgl_conformance --disable-log-uploads --browser=release --webgl-conformance-version=[webgl-conformance-version] --extra-browser-args="[extra-browser-args]"`
+
+[webgl-conformance-version] can be "1.0.3" and "2.0.1".<br>
+[extra_browser_args] can be used for extra browser arguments. Some meaningful args are: 1) --use-angle=[angle-backend], while [angle-backend] can be d3d9, d3d11 (default) and gl.<br>
+
+Other useful arguments:<br>
+--total-shards and --shard-index are used for shard execution.<br>
+--write-full-results-to is used to persist testing result to disk so that you may analyze result later.<br>
+
+## Example
+
+`python content/test/gpu/run_gpu_integration_test.py webgl_conformance --disable-log-uploads --browser=release --webgl-conformance-version=1.0.3 --extra-browser-args="--use-angle=gl" --total-shards=10 --shard-index=0 --write-full-results-to=webgl.json`
+
+## Debug
+
+* cd [version]
+* Start browser with “out\Release\chrome.exe --use-angle=[angle-backend]”
+* Start http server using python "python -mSimpleHTTPServer" (python2) or "python -mhttp.server" (python3)
+* Browse to http://127.0.0.1:8000/third_party/webgl/src/sdk/tests/webgl-conformance-tests.html?version=[webgl-conformance-version]
+* Find the test case. Taking "conformance_textures_image_bitmap_from_video_tex-2d-alpha-alpha-unsigned_byte.html" as example, you need to find category "all/conformance/textures/image_bitmap_from_video" first, then find the case "tex-2d-alpha-alpha-unsigned_byte.html" under it.
+* Run the case by clicking the "run" button (running in place) or link (running in another tab)
+* The result will show there
+
+
+# ANGLE end2end tests
+## Binary
+[yyyymmdd]-[short_commit_hash].zip
+
+## Command
+
+`angle_end2end_tests.exe`
+
+Other useful arguments:<br>
+
+--gtest_filter is used to filter the cases to run against.
+--test-launcher-total-shards and --test-launcher-shard-index are used for shard execution.<br>
+
+## Example
+
+`angle_end2end_tests.exe --gtest_filter=DrawElementsTest* --gtest_output=json:angle.json` # Run tests starting from DrawElementsTest
+`angle_end2end_tests.exe --gtest_filter=-DrawBuffersWebGL2*:DrawElementsTest` # Run tests other than DrawBuffersWebGL2* and DrawElementsTest*
+
+## Debug
+
+* cd folder [yyyymmdd]-[short_commit_hash]
+* angle_end2end_tests.exe --gtest_filter=[filter]
+
+# WebGPU CTS
+## Binary
+[Chrome-revision].zip
+
+## Command
+
+python2 is used, and package pywin32 is required.<br>
+
+`python third_party\blink\tools\run_web_tests.py --target=Release --no-show-results --clobber-old-results --no-retry-failures --additional-driver-flag=--enable-unsafe-webgpu --ignore-default-expectations --additional-expectations=third_party\blink\web_tests\WebGPUExpectations --isolated-script-test-filter=wpt_internal/webgpu/* --additional-driver-flag=--disable-gpu-sandbox --write-full-results-to=blink_webgpu.json`
+
+## Example
+`python third_party\blink\tools\run_web_tests.py --target=Release --no-show-results --clobber-old-results --no-retry-failures --additional-driver-flag=--enable-unsafe-webgpu --ignore-default-expectations --additional-expectations=third_party\blink\web_tests\WebGPUExpectations --isolated-script-test-filter=wpt_internal/webgpu/* --additional-driver-flag=--disable-gpu-sandbox --write-full-results-to=blink_webgpu.json`
+
+## Debug
+TBD
