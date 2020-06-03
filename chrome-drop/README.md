@@ -68,8 +68,11 @@ python2 is used, and package pywin32 is required.<br>
 
 `python third_party\blink\tools\run_web_tests.py --target=Release --no-show-results --clobber-old-results --no-retry-failures --additional-driver-flag=--enable-unsafe-webgpu --ignore-default-expectations --additional-expectations=third_party\blink\web_tests\WebGPUExpectations --isolated-script-test-filter=wpt_internal/webgpu/* --additional-driver-flag=--disable-gpu-sandbox --write-full-results-to=blink_webgpu.json`
 
+Other useful arguments:<br>
+--total-shards and --shard-index are used for shard execution.<br>
+
 ## Example
-`python third_party\blink\tools\run_web_tests.py --target=Release --no-show-results --clobber-old-results --no-retry-failures --additional-driver-flag=--enable-unsafe-webgpu --ignore-default-expectations --additional-expectations=third_party\blink\web_tests\WebGPUExpectations --isolated-script-test-filter=wpt_internal/webgpu/* --additional-driver-flag=--disable-gpu-sandbox --write-full-results-to=blink_webgpu.json`
+`python third_party\blink\tools\run_web_tests.py --target=Release --no-show-results --clobber-old-results --no-retry-failures --additional-driver-flag=--enable-unsafe-webgpu --ignore-default-expectations --additional-expectations=third_party\blink\web_tests\WebGPUExpectations --isolated-script-test-filter=wpt_internal/webgpu/* --additional-driver-flag=--disable-gpu-sandbox --write-full-results-to=blink_webgpu.json --total-shards=10 --shard-index=0`
 
 ## Debug
 TBD
