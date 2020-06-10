@@ -42,8 +42,8 @@ class Webgl():
         args = self.program.args
         root_dir = self.program.root_dir
         self.chrome_dir = '%s/chromium' % root_dir
-        self.chrome_backup_dir = '%s/backup' % self.chrome_dir
         self.chrome_src_dir = '%s/src' % self.chrome_dir
+        self.chrome_backup_dir = '%s/backup' % self.chrome_src_dir
         if args.mesa_dir:
             self.mesa_dir = args.mesa_dir
         else:
@@ -105,14 +105,16 @@ class Webgl():
                     cmd += ' --rev %s' % self.build_chrome_rev
                 self.program.execute(cmd, exit_on_error=False)
             if not self.build_skip_build_chrome:
-                cmd = 'python chromium.py --no-component-build --makefile --symbol-level 0 --build --out-dir out --root-dir %s' % self.chrome_dir
+                cmd = 'python chromium.py --no-component-build --makefile --symbol-level 0 --build --build-target webgl --out-dir out --root-dir %s' % self.chrome_dir
                 if self.build_chrome_dcheck:
                     cmd += ' --dcheck'
                 self.program.execute(cmd)
             if not self.build_skip_backup_chrome:
-                self.program.execute('python chromium.py --backup-webgl --out-dir out --root-dir %s' % self.chrome_dir)
+                self.program.execute('python chromium.py --backup --backup-target webgl --out-dir out --root-dir %s' % self.chrome_dir)
 
     def test(self, mesa_type=''):
+        Util.clear_proxy()
+
         if Util.HOST_OS == 'linux':
             self.mesa_rev = self.test_mesa_rev
             if self.mesa_rev == 'system':

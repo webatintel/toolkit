@@ -27,11 +27,17 @@ class Angle():
             build_type = 'release'
         self.out_dir = 'out/%s' % build_type.capitalize()
         self.build_max_fail = args.build_max_fail
+        self.test_disabled = args.test_disabled
         self.test_filter = args.test_filter
-        self.target_simple_real = {
+        self.build_target_dict = {
             'e2e': 'angle_end2end_tests',
             'perf': 'angle_perftests',
             'unit': 'angle_unittests',
+        }
+        self.backup_target_dict = {
+            'e2e': '//src/tests:angle_end2end_tests',
+            'perf': '//src/tests:angle_perftests',
+            'unit': '//src/tests:angle_unittests',
         }
 
         self._handle_ops()
@@ -76,9 +82,9 @@ class Angle():
         else:
             tmp_targets = build_target.split(',')
 
-        for simple, real in self.target_simple_real.items():
-            if simple in tmp_targets:
-                tmp_targets[tmp_targets.index(simple)] = real
+        for key, value in self.build_target_dict.items():
+            if key in tmp_targets:
+                tmp_targets[tmp_targets.index(key)] = value
 
         cmd += ' %s' % ' '.join(tmp_targets)
         self.program.execute(cmd)
@@ -86,6 +92,8 @@ class Angle():
     def _test(self, type):
         cmd = '%s%s' % (type, Util.EXEC_SUFFIX)
         cmd = Util.use_backslash(cmd)
+        if self.test_disabled:
+            cmd += ' --gtest_also_run_disabled_tests'
         if not self.test_filter == 'all':
             cmd += ' --gtest_filter=*%s*' % self.test_filter
         self.program.execute(cmd)
@@ -98,49 +106,22 @@ class Angle():
 
         tmp_targets = self.program.args.test_target.split(',')
 
-        for simple, real in self.target_simple_real.items():
-            if simple in tmp_targets:
-                tmp_targets[tmp_targets.index(simple)] = real
+        for key, value in self.build_target_dict.items():
+            if key in tmp_targets:
+                tmp_targets[tmp_targets.index(key)] = value
 
         for target in tmp_targets:
             self._test(target)
 
     def backup(self):
-        date = self.program.execute('git log -1 --date=format:"%Y%m%d" --format="%ad"', return_out=True)[1].rstrip('\n').rstrip('\r')
-        hash1 = self.program.execute('git rev-parse --short HEAD', return_out=True)[1].rstrip('\n').rstrip('\r')
+        date = self.program.execute('git log -1 --date=format:"%Y%m%d" --format="%ad"', return_out=True, show_cmd=False)[1].rstrip('\n').rstrip('\r')
+        hash1 = self.program.execute('git rev-parse --short HEAD', return_out=True, show_cmd=False)[1].rstrip('\n').rstrip('\r')
         rev = '%s-%s' % (date, hash1)
         self.rev = rev
         Util.info('Begin to backup rev %s' % rev)
         self.backup_dir = '%s/backup/%s' % (self.program.root_dir, rev)
-        if os.path.exists(self.backup_dir):
-            Util.info('Backup folder "%s" alreadys exists' % self.backup_dir)
-            return
-
-        origin_files = self.program.execute('gn desc //%s //src/tests:angle_end2end_tests runtime_deps' % self.out_dir, return_out=True)[1].rstrip('\n').rstrip('\r').split('\r\n')
-        exclude_files = []
-        files = []
-        for file in origin_files:
-            if file.endswith('.pdb'):
-                continue
-
-            for exclude_file in exclude_files:
-                if file.startswith(exclude_file):
-                    break
-            else:
-                files.append(file)
-
-        Util.chdir(self.out_dir)
-        for file in files:
-            if re.match(r'\./', file):
-                file = file[2:]
-
-            if re.match('initialexe/', file):
-                file = file[len('initialexe/'):]
-
-            dir_name = os.path.dirname(file)
-            dst_dir = '%s/%s' % (self.backup_dir, dir_name)
-            Util.ensure_dir(dst_dir)
-            shutil.copy(file, dst_dir)
+        targets = self.program.args.backup_target.split(',')
+        Util.backup_gn_target(self.program.root_dir, self.out_dir, self.backup_dir, targets=targets, out_dir_only=True, target_dict=self.backup_target_dict, need_symbol=self.program.args.backup_symbol)
 
     def release(self):
         self.sync()
@@ -166,8 +147,11 @@ class Angle():
         parser.add_argument('--build-target', dest='build_target', help='build target', default='default')
         parser.add_argument('--build-max-fail', dest='build_max_fail', help='build keeps going until N jobs fail', type=int, default=1)
         parser.add_argument('--backup', dest='backup', help='backup', action='store_true')
+        parser.add_argument('--backup-target', dest='backup_target', help='backup target')
+        parser.add_argument('--backup-symbol', dest='backup_symbol', help='backup symbol', action='store_true')
         parser.add_argument('--test', dest='test', help='test', action='store_true')
         parser.add_argument('--test-target', dest='test_target', help='test target')
+        parser.add_argument('--test-disabled', dest='test_disabled', help='test disabled cases', action='store_true')
         parser.add_argument('--test-filter', dest='test_filter', help='test filter', default='all')
 
         self.program = Program(parser)

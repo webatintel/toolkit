@@ -43,8 +43,8 @@ class Base():
         self.program = program
         self.rev = rev
         self.root_dir = root_dir
-        self.backup_dir = '%s/backup' % root_dir
         self.src_dir = Util.use_slash('%s/src' % root_dir)
+        self.backup_dir = '%s/backup' % self.src_dir
         if out_dir:
             self.out_dir = out_dir
         else:
@@ -54,6 +54,14 @@ class Base():
         self.target_arch = target_arch
         self.target_os = target_os
         self.repo = Repo(self.src_dir, program)
+
+        self.backup_target_dict = {
+            'chrome': '//chrome:chrome',
+            'chromedriver': '//chrome/test/chromedriver:chromedriver',
+            'webgl': '//chrome/test:telemetry_gpu_integration_test',
+            'webgpu': '//:webgpu_blink_web_tests',
+        }
+
         if self.rev:
             match = re.search(r'(\d+)\.(\d+)', self.rev)
             if match:
@@ -158,11 +166,11 @@ class Base():
         if self.target_os in ['linux', 'windows', 'darwin'] and 'chrome' in tmp_targets and 'chromedriver' not in tmp_targets:
             tmp_targets.append('chromedriver')
 
-        target_simple_real = {
+        target_dict = {
             'webgl': 'telemetry_gpu_integration_test',
             'webgpu': 'webgpu_blink_web_tests',
         }
-        for simple, real in target_simple_real.items():
+        for simple, real in target_dict.items():
             if simple in tmp_targets:
                 tmp_targets[tmp_targets.index(simple)] = real
 
@@ -175,65 +183,20 @@ class Base():
         Util.chdir(self.src_dir)
         self.program.execute(cmd, show_duration=True)
 
-    def backup(self, backup_target='chrome', backup_symbol=False):
+    def backup(self, backup_target, backup_symbol=False):
         if self.rev:
             rev = self.rev
         else:
             rev = self.repo.get_working_dir_rev()
         Util.info('Begin to backup rev %s' % rev)
-        backup_dir = '%s/%s' % (self.backup_dir, rev)
-        if os.path.exists(backup_dir):
-            Util.warning('Backup folder "%s" alreadys exists' % backup_dir)
-            os.rename(backup_dir, '%s-%s' % (backup_dir, Util.get_datetime()))
 
-        Util.chdir(self.src_dir)
-        tmp_targets = backup_target.split(',')
-        if 'chrome' in tmp_targets and 'chromedriver' not in tmp_targets:
-            tmp_targets.append('chromedriver')
+        self.backup_dir = '%s/%s' % (self.backup_dir, rev)
 
-        target_simple_real = {
-            'chrome': '//chrome:chrome',
-            'chromedriver': '//chrome/test/chromedriver:chromedriver',
-            'webgl': '//chrome/test:telemetry_gpu_integration_test',
-            'webgpu': '//:webgpu_blink_web_tests',
-        }
+        targets = backup_target.split(',')
+        if 'chrome' in targets and 'chromedriver' not in targets:
+            targets.append('chromedriver')
 
-        for simple, real in target_simple_real.items():
-            if simple in tmp_targets:
-                tmp_targets[tmp_targets.index(simple)] = real
-
-        origin_files = []
-        for tmp_target in tmp_targets:
-            tmp_files = self.program.execute('gn desc //%s %s runtime_deps' % (self.out_dir, tmp_target), return_out=True)[1].rstrip('\r\n').split('\r\n')
-            origin_files = Util.union_list(origin_files, tmp_files)
-
-        exclude_files = ['gen/', 'angledata/', 'pyproto/', './libVkLayer']
-        files = []
-        for file in origin_files:
-            if not backup_symbol and file.endswith('.pdb'):
-                continue
-
-            for exclude_file in exclude_files:
-                if file.startswith(exclude_file):
-                    break
-            else:
-                files.append(file)
-
-        for src in files:
-            if re.match('initialexe/', src):
-                src = src[len('initialexe/'):]
-
-            src = '%s/%s' % (self.out_dir, src)
-            dst = '%s/%s' % (backup_dir, src)
-            Util.ensure_dir(os.path.dirname(dst))
-            if os.path.isdir(src):
-                dst = os.path.dirname(os.path.dirname(dst))
-            Util.execute('cp -rf %s %s' % (src, dst), show_cmd=False)
-
-            # permission denied
-            #shutil.copyfile(file, dst_dir)
-
-            #D:\workspace\project\chromium\backup\771575\third_party\perl\perl\perl
+        Util.backup_gn_target(self.src_dir, self.out_dir, self.backup_dir, targets=targets, out_dir_only=False, target_dict=self.backup_target_dict, need_symbol=self.program.args.backup_symbol)
 
     def backup_webgl(self):
         # generate telemetry_gpu_integration_test
