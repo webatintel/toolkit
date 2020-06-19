@@ -119,9 +119,6 @@ python %(prog)s --sync --runhooks --makefile --build --backup --download
         parser.add_argument('-r', '--rev', dest='rev', help='revision for sync')
         parser.add_argument('--rev-stride', dest='rev_stride', help='rev stride', type=int, default=1)
         parser.add_argument('--symbol-level', dest='symbol_level', help='symbol level', type=int, default=0)
-        parser.add_argument('--target-arch', dest='target_arch', help='target arch', choices=['x86', 'arm', 'x86_64', 'arm64'], default='default')
-        parser.add_argument('--target-os', dest='target_os', help='target os, choices can be android, linux, chromeos, windows, darwin', default='default')
-
         parser.add_argument('--sync', dest='sync', help='sync to a specific rev if designated, otherwise, sync to upstream', action='store_true')
         parser.add_argument('--sync-src-only', dest='sync_src_only', help='sync src only', action='store_true')
         parser.add_argument('--sync-reset', dest='sync_reset', help='do a reset before syncing', action='store_true')

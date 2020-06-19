@@ -104,11 +104,11 @@ class Base():
             target_arch_tmp = self.target_arch
 
         gn_args = 'enable_nacl=false proprietary_codecs=true'
-        if self.target_os == 'linux':
+        if self.target_os == Util.LINUX:
             gn_args += ' is_clang=true'
-        if self.target_os in ['linux', 'android', 'chromeos']:
+        if self.target_os in [Util.LINUX, Util.ANDROID, Util.CHROMEOS]:
             gn_args += ' target_os=\\\"%s\\\" target_cpu=\\\"%s\\\"' % (self.target_os, target_arch_tmp)
-        if self.target_os == 'darwin':
+        if self.target_os == Util.DARWIN:
             gn_args += ' cc_wrapper="ccache"'
         if self.no_component_build:
             gn_args += ' is_component_build=false'
@@ -131,7 +131,7 @@ class Base():
             gn_args += ' blink_symbol_level=0'
 
         # for windows, it has to use "" instead of ''
-        if self.target_os == 'windows':
+        if self.target_os == Util.WINDOWS:
             gn_args += ' ffmpeg_branding=\\\"Chrome\\\"'
         else:
             gn_args += ' ffmpeg_branding=\\\"Chrome\\\"'
@@ -156,14 +156,14 @@ class Base():
         Util.chdir(self.src_dir + '/build/util')
         self.program.execute('python lastchange.py -o LASTCHANGE')
 
-        if self.target_os == 'android' and build_target == 'default':
+        if self.target_os == Util.ANDROID and build_target == 'default':
             build_target = 'chrome_public'
-        elif self.target_os in ['linux', 'windows', 'darwin', 'chromeos'] and build_target == 'default':
+        elif self.target_os in [Util.LINUX, Util.WINDOWS, Util.DARWIN, Util.CHROMEOS] and build_target == 'default':
             build_target = 'chrome'
 
         tmp_targets = build_target.split(',')
 
-        if self.target_os in ['linux', 'windows', 'darwin'] and 'chrome' in tmp_targets and 'chromedriver' not in tmp_targets:
+        if self.target_os in [Util.LINUX, Util.WINDOWS, Util.DARWIN] and 'chrome' in tmp_targets and 'chromedriver' not in tmp_targets:
             tmp_targets.append('chromedriver')
 
         target_dict = {
@@ -196,7 +196,7 @@ class Base():
         if 'chrome' in targets and 'chromedriver' not in targets:
             targets.append('chromedriver')
 
-        Util.backup_gn_target(self.src_dir, self.out_dir, self.backup_dir, targets=targets, out_dir_only=False, target_dict=self.backup_target_dict, need_symbol=self.program.args.backup_symbol)
+        Util.backup_gn_target(self.src_dir, self.out_dir, self.backup_dir, targets=targets, out_dir_only=False, target_dict=self.backup_target_dict, need_symbol=self.program.args.backup_symbol, target_os=self.target_os)
 
     def backup_webgl(self):
         # generate telemetry_gpu_integration_test
@@ -239,17 +239,17 @@ class Base():
         Util.ensure_dir(download_dir)
         Util.chdir(download_dir)
 
-        if self.target_os == 'darwin':
+        if self.target_os == Util.DARWIN:
             target_arch_tmp = ''
         elif self.target_arch == 'x86_64':
             target_arch_tmp = '_x64'
         else:
             target_arch_tmp = ''
 
-        if self.target_os == 'windows':
+        if self.target_os == Util.WINDOWS:
             target_os_tmp = 'Win'
             target_os_tmp2 = 'win'
-        elif self.target_os == 'darwin':
+        elif self.target_os == Util.DARWIN:
             target_os_tmp = 'Mac'
             target_os_tmp2 = 'mac'
         else:
@@ -265,12 +265,12 @@ class Base():
             # linux64: Linux_x64/<rev>/chrome-linux.zip
             # win64: Win_x64/<rev>/chrome-win32.zip
             # mac64: Mac/<rev>/chrome-mac.zip
-            if Util.HOST_OS == 'windows':
+            if Util.HOST_OS == Util.WINDOWS:
                 wget = Util.use_backslash('%s/wget64.exe' % ScriptRepo.TOOL_DIR)
             else:
                 wget = 'wget'
 
-            if self.target_os == 'android':
+            if self.target_os == Util.ANDROID:
                 # https://commondatastorage.googleapis.com/chromium-browser-snapshots/index.html?prefix=Android/
                 # https://www.googleapis.com/download/storage/v1/b/chromium-browser-snapshots/o/Android%2F607944%2Fchrome-android.zip?generation=1542192867201693&alt=media
                 archive_url = '"https://www.googleapis.com/download/storage/v1/b/chromium-browser-snapshots/o/Android%2F' + rev + '%2Fchrome-android.zip?generation=1542192867201693&alt=media"'
