@@ -99,8 +99,15 @@ class Angle():
         self.program.execute(cmd)
 
     def test(self):
-        if self.program.args.backup:
-            Util.chdir(self.backup_dir, verbose=True)
+        date = self.program.execute('git log -1 --date=format:"%Y%m%d" --format="%ad"', return_out=True, show_cmd=False)[1].rstrip('\n').rstrip('\r')
+        hash1 = self.program.execute('git rev-parse --short HEAD', return_out=True, show_cmd=False)[1].rstrip('\n').rstrip('\r')
+        rev = '%s-%s' % (date, hash1)
+        backup_dir = '%s/backup/%s/out/Release' % (self.program.root_dir, rev)
+
+
+        if os.path.exists(backup_dir):
+            Util.info('Use backup_dir %s for testing' % backup_dir)
+            Util.chdir(backup_dir, verbose=True)
         else:
             Util.chdir(self.out_dir, verbose=True)
 
@@ -121,7 +128,7 @@ class Angle():
         Util.info('Begin to backup rev %s' % rev)
         self.backup_dir = '%s/backup/%s' % (self.program.root_dir, rev)
         targets = self.program.args.backup_target.split(',')
-        Util.backup_gn_target(self.program.root_dir, self.out_dir, self.backup_dir, targets=targets, out_dir_only=True, target_dict=self.backup_target_dict, need_symbol=self.program.args.backup_symbol)
+        Util.backup_gn_target(self.program.root_dir, self.out_dir, self.backup_dir, targets=targets, out_dir_only=False, target_dict=self.backup_target_dict, need_symbol=self.program.args.backup_symbol)
 
     def release(self):
         self.sync()
