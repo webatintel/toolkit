@@ -163,9 +163,6 @@ class Base():
 
         tmp_targets = build_target.split(',')
 
-        if self.target_os in [Util.LINUX, Util.WINDOWS, Util.DARWIN] and 'chrome' in tmp_targets and 'chromedriver' not in tmp_targets:
-            tmp_targets.append('chromedriver')
-
         target_dict = {
             'webgl': 'telemetry_gpu_integration_test',
             'webgpu': 'webgpu_blink_web_tests',
@@ -193,9 +190,6 @@ class Base():
         self.backup_dir = '%s/%s' % (self.backup_dir, rev)
 
         targets = backup_target.split(',')
-        if 'chrome' in targets and 'chromedriver' not in targets:
-            targets.append('chromedriver')
-
         Util.backup_gn_target(self.src_dir, self.out_dir, self.backup_dir, targets=targets, out_dir_only=False, target_dict=self.backup_target_dict, need_symbol=self.program.args.backup_symbol, target_os=self.target_os)
 
     def backup_webgl(self):
