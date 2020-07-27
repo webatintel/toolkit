@@ -141,9 +141,9 @@ class Angle():
         parser = argparse.ArgumentParser(description='script for angle',
                                         formatter_class=argparse.RawTextHelpFormatter,
                                         epilog='''
-    examples:
-    python %(prog)s --sync --runhooks --makefile --build --test angle_end2end_tests
-    ''')
+examples:
+python %(prog)s --sync --runhooks --makefile --build --test angle_end2end_tests
+''')
         parser.add_argument('--is-debug', dest='is_debug', help='is debug', action='store_true')
         parser.add_argument('--no-warning-as-error', dest='no_warning_as_error', help='not treat warning as error', action='store_true')
         parser.add_argument('--no-dcheck', dest='no_dcheck', help='no dcheck', action='store_true')
