@@ -77,51 +77,10 @@ class Dawn():
         self.program.execute(cmd, show_duration=True)
 
     def test(self):
-        if host_os == 'linux':
-            mesa_rev_number = args.test_mesa_rev
-            if mesa_rev_number == 'system':
-                ensure_pkg('mesa-vulkan-drivers')
-                info('Use system Mesa')
-            else:
-                if mesa_rev_number == 'latest':
-                    mesa_dir = self._get_latest('mesa')
-                    mesa_rev_number = re.match('mesa-master-release-(.*)-', mesa_dir).group(1)
-                else:
-                    files = os.listdir(mesa_install_dir)
-                    for file in files:
-                        match = re.match('mesa-master-release-%s' % mesa_rev_number, file)
-                        if match:
-                            mesa_dir = file
-                            break
-                    else:
-                        _error('Could not find mesa build %s' % mesa_rev_number)
-
-                mesa_dir = mesa_install_dir + '/' + mesa_dir
-                setenv('VK_ICD_FILENAMES', '%s/share/vulkan/icd.d/intel_icd.x86_64.json' % mesa_dir)
-                info('Use mesa at %s' % mesa_dir)
+        if Util.HOST_OS == Util.LINUX:
+            Util.set_mesa(Util.PROJECT_MESA_BACKUP_DIR, self.args.test_mesa_rev)
 
         self.program.execute('%s/dawn_end2end_tests' % self.out_dir)
-
-    def _get_latest(self, type):
-        if type == 'mesa':
-            rev_dir = mesa_install_dir
-            rev_pattern = 'mesa-master-release-(.*)-'
-        elif type == 'chrome':
-            rev_dir = build_dir
-            rev_pattern = '(.*).zip'
-
-        latest_rev = -1
-        latest_file = ''
-        files = os.listdir(rev_dir)
-        for file in files:
-            match = re.search(rev_pattern, file)
-            if match:
-                tmp_rev = int(match.group(1))
-                if tmp_rev > latest_rev:
-                    latest_file = file
-                    latest_rev = tmp_rev
-
-        return latest_file
 
     def _parse_arg(self):
         global args, args_dict
@@ -143,7 +102,7 @@ python %(prog)s --sync --makefile --build
         parser.add_argument('--backup', dest='backup', help='backup', action='store_true')
         parser.add_argument('--backup-target', dest='backup_target', help='backup target')
         parser.add_argument('--test', dest='test', help='test', action='store_true')
-        parser.add_argument('--test-mesa-rev', dest='test_mesa_rev', help='mesa revision', default='latest')
+        parser.add_argument('--test-mesa-rev', dest='test_mesa_rev', help='mesa revision', default='system')
 
         self.program = Program(parser)
 

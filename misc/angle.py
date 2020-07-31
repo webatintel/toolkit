@@ -20,6 +20,7 @@ class Angle():
     def __init__(self):
         self._parse_args()
         args = self.program.args
+        self.args = args
 
         if args.is_debug:
             build_type = 'debug'
@@ -91,19 +92,24 @@ class Angle():
 
     def _test(self, type):
         cmd = '%s%s' % (type, Util.EXEC_SUFFIX)
-        cmd = Util.use_backslash(cmd)
+        if Util.HOST_OS == Util.WINDOWS:
+            cmd = Util.use_backslash(cmd)
         if self.test_disabled:
             cmd += ' --gtest_also_run_disabled_tests'
         if not self.test_filter == 'all':
             cmd += ' --gtest_filter=*%s*' % self.test_filter
+        if Util.HOST_OS == Util.LINUX:
+            cmd = './' + cmd
         self.program.execute(cmd)
 
     def test(self):
+        if Util.HOST_OS == Util.LINUX:
+            Util.set_mesa(Util.PROJECT_MESA_BACKUP_DIR, self.args.test_mesa_rev)
+
         date = self.program.execute('git log -1 --date=format:"%Y%m%d" --format="%ad"', return_out=True, show_cmd=False)[1].rstrip('\n').rstrip('\r')
         hash1 = self.program.execute('git rev-parse --short HEAD', return_out=True, show_cmd=False)[1].rstrip('\n').rstrip('\r')
         rev = '%s-%s' % (date, hash1)
         backup_dir = '%s/backup/%s/out/Release' % (self.program.root_dir, rev)
-
 
         if os.path.exists(backup_dir):
             Util.info('Use backup_dir %s for testing' % backup_dir)
@@ -160,6 +166,7 @@ python %(prog)s --sync --runhooks --makefile --build --test angle_end2end_tests
         parser.add_argument('--test-target', dest='test_target', help='test target')
         parser.add_argument('--test-disabled', dest='test_disabled', help='test disabled cases', action='store_true')
         parser.add_argument('--test-filter', dest='test_filter', help='test filter', default='all')
+        parser.add_argument('--test-mesa-rev', dest='test_mesa_rev', help='mesa revision', default='system')
 
         self.program = Program(parser)
 
