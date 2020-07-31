@@ -190,7 +190,7 @@ class Base():
         self.backup_dir = '%s/%s' % (self.backup_dir, rev)
 
         targets = backup_target.split(',')
-        Util.backup_gn_target(self.src_dir, self.out_dir, self.backup_dir, targets=targets, out_dir_only=False, target_dict=self.backup_target_dict, need_symbol=self.program.args.backup_symbol, target_os=self.target_os)
+        Util.backup_gn_target(self.src_dir, self.out_dir, self.backup_dir, targets=targets, target_dict=self.backup_target_dict, need_symbol=self.program.args.backup_symbol, target_os=self.target_os)
 
     def backup_webgl(self):
         # generate telemetry_gpu_integration_test

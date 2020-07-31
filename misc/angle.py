@@ -65,7 +65,7 @@ class Angle():
         else:
             gn_args += ' dcheck_always_on=true'
 
-        gn_args += ' is_clang = true'
+        gn_args += ' is_clang=true'
         quotation = Util.get_quotation()
         cmd = 'gn --args=%s%s%s gen %s' % (quotation, gn_args, quotation, self.out_dir)
         Util.ensure_dir(self.out_dir)
@@ -128,7 +128,7 @@ class Angle():
         Util.info('Begin to backup rev %s' % rev)
         self.backup_dir = '%s/backup/%s' % (self.program.root_dir, rev)
         targets = self.program.args.backup_target.split(',')
-        Util.backup_gn_target(self.program.root_dir, self.out_dir, self.backup_dir, targets=targets, out_dir_only=False, target_dict=self.backup_target_dict, need_symbol=self.program.args.backup_symbol)
+        Util.backup_gn_target(self.program.root_dir, self.out_dir, self.backup_dir, targets=targets, target_dict=self.backup_target_dict, need_symbol=self.program.args.backup_symbol)
 
     def release(self):
         self.sync()

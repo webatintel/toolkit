@@ -57,11 +57,11 @@ class Aquarium():
             if Util.HOST_OS == 'linux':
                 run_backend = 'dawn_vulkan'
             elif Util.HOST_OS == 'windows':
-                run_backend = 'dawn_d3d12'
+                run_backend = 'd3d12'
         else:
             run_backend = self.run_backend
 
-        cmd = '%s/aquarium%s --num-fish 30000 --backend %s' % (self.out_dir, Util.EXEC_SUFFIX, run_backend)
+        cmd = '%s --num-fish 1000 --backend %s' % (Util.use_backslash('%s/%s/aquarium%s'  % (self.program.root_dir, Util.use_backslash(self.out_dir), Util.EXEC_SUFFIX)), run_backend)
         self.program.execute(cmd, exit_on_error=False)
 
     def _parse_args(self):
