@@ -1,0 +1,12 @@
+#!/bin/sh
+
+output=$(git cl format --full --diff)
+
+if [[ -z $output ]]; then
+	echo "Nothing needs to be reformatted."
+	exit 0
+fi
+
+git cl format --full --diff
+echo -e "\nPlease run \"git cl format --full\" before commit!"
+exit 1
