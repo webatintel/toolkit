@@ -98,6 +98,8 @@ class Angle():
             cmd += ' --gtest_also_run_disabled_tests'
         if not self.test_filter == 'all':
             cmd += ' --gtest_filter=*%s*' % self.test_filter
+        if type == 'angle_perftests':
+            cmd += ' --one-frame-only'
         if Util.HOST_OS == Util.LINUX:
             cmd = './' + cmd
         self.program.execute(cmd)
