@@ -49,7 +49,7 @@ class Angle():
 
     def test(self):
         Util.chdir(self.angle_dir)
-        self.program.execute('python angle.py --test --test-target e2e')
+        self.program.execute('python angle.py --test --test-target e2e --test-angle-rev latest')
 
     def release(self):
         self.build()

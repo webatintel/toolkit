@@ -108,16 +108,11 @@ class Angle():
         if Util.HOST_OS == Util.LINUX:
             Util.set_mesa(Util.PROJECT_MESA_BACKUP_DIR, self.args.test_mesa_rev)
 
-        date = self.program.execute('git log -1 --date=format:"%Y%m%d" --format="%ad"', return_out=True, show_cmd=False)[1].rstrip('\n').rstrip('\r')
-        hash1 = self.program.execute('git rev-parse --short HEAD', return_out=True, show_cmd=False)[1].rstrip('\n').rstrip('\r')
-        rev = '%s-%s' % (date, hash1)
-        backup_dir = '%s/backup/%s/out/Release' % (self.program.root_dir, rev)
-
-        if os.path.exists(backup_dir):
-            Util.info('Use backup_dir %s for testing' % backup_dir)
-            Util.chdir(backup_dir, verbose=True)
-        else:
+        if self.args.test_angle_rev == 'out':
             Util.chdir(self.out_dir, verbose=True)
+        else:
+            rev_dir, _ = Util.get_backup_dir('%s/backup' % self.program.root_dir, self.args.test_angle_rev)
+            Util.chdir('%s/backup/%s/out/Release' % (self.program.root_dir, rev_dir), verbose=True)
 
         tmp_targets = self.program.args.test_target.split(',')
 
@@ -129,14 +124,7 @@ class Angle():
             self._test(target)
 
     def backup(self):
-        date = self.program.execute('git log -1 --date=format:"%Y%m%d" --format="%ad"', return_out=True, show_cmd=False)[1].rstrip('\n').rstrip('\r')
-        hash1 = self.program.execute('git rev-parse --short HEAD', return_out=True, show_cmd=False)[1].rstrip('\n').rstrip('\r')
-        rev = '%s-%s' % (date, hash1)
-        self.rev = rev
-        Util.info('Begin to backup rev %s' % rev)
-        self.backup_dir = '%s/backup/%s' % (self.program.root_dir, rev)
-        targets = self.program.args.backup_target.split(',')
-        Util.backup_gn_target(self.program.root_dir, self.out_dir, self.backup_dir, targets=targets, target_dict=self.backup_target_dict, need_symbol=self.program.args.backup_symbol)
+        Util.backup_gn_target(self.program.root_dir, self.out_dir, target_str=self.args.backup_target, target_dict=self.backup_target_dict, need_symbol=self.program.args.backup_symbol)
 
     def release(self):
         self.sync()
@@ -162,12 +150,13 @@ python %(prog)s --sync --runhooks --makefile --build --test angle_end2end_tests
         parser.add_argument('--build-target', dest='build_target', help='build target', default='default')
         parser.add_argument('--build-max-fail', dest='build_max_fail', help='build keeps going until N jobs fail', type=int, default=1)
         parser.add_argument('--backup', dest='backup', help='backup', action='store_true')
-        parser.add_argument('--backup-target', dest='backup_target', help='backup target')
+        parser.add_argument('--backup-target', dest='backup_target', help='backup target', default='e2e')
         parser.add_argument('--backup-symbol', dest='backup_symbol', help='backup symbol', action='store_true')
         parser.add_argument('--test', dest='test', help='test', action='store_true')
         parser.add_argument('--test-target', dest='test_target', help='test target')
         parser.add_argument('--test-disabled', dest='test_disabled', help='test disabled cases', action='store_true')
         parser.add_argument('--test-filter', dest='test_filter', help='test filter', default='all')
+        parser.add_argument('--test-angle-rev', dest='test_angle_rev', help='angle revision', default='out')
         parser.add_argument('--test-mesa-rev', dest='test_mesa_rev', help='mesa revision', default='system')
 
         self.program = Program(parser)

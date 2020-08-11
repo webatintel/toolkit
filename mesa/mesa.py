@@ -96,28 +96,13 @@ class Mesa():
         Util.info('The rev of hash %s is %s' % (tmp_hash, _hash_to_rev(tmp_hash)))
 
     def run(self):
-        if self.rev == 'system':
-            Util.info('Use system Mesa')
-        else:
-            backup_dir = '%s/backup' % self.program.root_dir
-            (rev_dir, rev) = Util.get_rev_dir(backup_dir, 'mesa', self.rev)
-            mesa_dir = '%s/%s' % (backup_dir, rev_dir)
-            Util.set_env('LD_LIBRARY_PATH', '%s/lib' % mesa_dir)
-            Util.set_env('LIBGL_DRIVERS_PATH', '%s/lib/dri' % mesa_dir)
-            if self.type == 'iris':
-                Util.set_env('MESA_LOADER_DRIVER_OVERRIDE', 'iris')
-            else:
-                Util.set_env('MESA_LOADER_DRIVER_OVERRIDE', '')
-
-            Util.set_env('VK_ICD_FILENAMES', '%s/share/vulkan/icd.d/intel_icd.x86_64.json' % (mesa_dir))
-            Util.info('Use mesa at %s' % mesa_dir)
+        Util.set_mesa('%s/backup' % self.program.root_dir, self.rev, self.type)
         self.program.execute(self.run_cmd)
 
     def _init_hash(self):
         if not self.hashes:
             Util.chdir('%s/%s' % (self.program.root_dir, self.mesa_dir))
-            result = self.program.execute('git log --pretty=format:"%H" --reverse', return_out=True, show_cmd=False)
-            self.hashes = result[1].split('\n')
+            self.hashes = Util.get_repo_hashes()
 
     def _rev_to_hash(self, rev):
         self._init_hash()
@@ -131,8 +116,8 @@ class Mesa():
         Util.error('Could not find rev for hash %s' % hash)
 
     def _build_one(self, rev, hash):
-        date = Util.get_working_dir_commit_info('%s/%s' % (self.program.root_dir, self.mesa_dir))[0]
-        single_backup_dir = '%s/backup/%s-%s-%s-%s-%s' % (self.program.root_dir, self.mesa_dir, self.build_type, date, rev, hash)
+        Util.chdir('%s/%s' % (self.program.root_dir, self.mesa_dir))
+        single_backup_dir = '%s/backup/%s' % (self.program.root_dir, Util.cal_backup_dir())
         building_dir = single_backup_dir.replace('backup', 'backup/building')
 
         if (os.path.exists(building_dir) or os.path.exists('%s' % single_backup_dir)) and os.path.exists(single_backup_dir + '/lib/dri/i965_dri.so') and not self.build_force:
@@ -171,7 +156,7 @@ class Mesa():
                 self.program.execute('git reset --hard %s' % hash)
 
             # update git hash
-            result = self.program.execute('git log -n 1 --oneline', return_out=True, show_cmd=False)
+            result = Util.get_repo_head_hash()
             self.program.execute('echo "#define MESA_GIT_SHA1 \\\"git-%s\\\"" >src/mesa/main/git_sha1.h' % result[1].split()[0])
             if self.args.build_system == 'autotools':
                 build_cmd = 'PKG_CONFIG_PATH=%s/lib/x86_64-linux-gnu/pkgconfig ./autogen.sh --enable-autotools CFLAGS="-O2" CXXFLAGS="-O2" --prefix=%s --with-dri-drivers="i915 i965" --with-dri-driverdir=%s/lib/dri --enable-gles1 --enable-gles2 --enable-shared-glapi --with-gallium-drivers= --with-egl-platforms=x11,drm --enable-texture-float --enable-gbm --enable-glx-tls --enable-dri3' % (building_dir, building_dir, building_dir)
@@ -231,8 +216,8 @@ class Mesa():
 examples:
 python %(prog)s --sync --build
 python %(prog)s --build --build-system autotools --rev-stride 50 --build-novulkan --rev 96700-96900
-python %(prog)s --build --dir-install /workspace/install/mesa-master-release-9999999 --build-replace
-python %(prog)s --build --dir-install /workspace/install/mesa-master-release-9999999 --build-replace --clean  # if build fails
+python %(prog)s --build --dir-install 20200810-126997-f7e7cf637e1 --build-replace
+python %(prog)s --build --dir-install 20200810-126997-f7e7cf637e1 --build-replace --clean  # if build fails
 python %(prog)s --hashtorev e58a10af640ba58b6001f5c5ad750b782547da76
 python %(prog)s --revtohash 1
     ''')

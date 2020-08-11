@@ -130,7 +130,7 @@ python %(prog)s --sync --runhooks --makefile --build --backup --download
         parser.add_argument('--build-max-fail', dest='build_max_fail', help='build keeps going until N jobs fail', type=int, default=1)
         parser.add_argument('--backup', dest='backup', help='backup', action='store_true')
         parser.add_argument('--backup-symbol', dest='backup_symbol', help='backup symbol', action='store_true')
-        parser.add_argument('--backup-target', dest='backup_target', help='backup target')
+        parser.add_argument('--backup-target', dest='backup_target', help='backup target', default='chrome')
         parser.add_argument('--backup-webgl', dest='backup_webgl', help='backup webgl', action='store_true')
         parser.add_argument('--run', dest='run', help='run', action='store_true')
         parser.add_argument('--run-extra-args', dest='run_extra_args', help='run with extra args', default='')

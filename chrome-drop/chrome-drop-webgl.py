@@ -125,24 +125,12 @@ class Webgl():
         Util.clear_proxy()
 
         if Util.HOST_OS == Util.LINUX:
-            self.mesa_rev = self.test_mesa_rev
-            if self.mesa_rev == 'system':
-                Util.info('Use system Mesa')
-            else:
-                (rev_dir, self.mesa_rev) = Util.get_rev_dir(self.mesa_build_dir, 'mesa', self.mesa_rev)
-                mesa_dir = self.mesa_build_dir + '/' + rev_dir
-                Util.set_env('LD_LIBRARY_PATH', mesa_dir + '/lib')
-                Util.set_env('LIBGL_DRIVERS_PATH', mesa_dir + '/lib/dri')
-                if mesa_type == 'iris':
-                    Util.set_env('MESA_LOADER_DRIVER_OVERRIDE', 'iris')
-                else:
-                    Util.set_env('MESA_LOADER_DRIVER_OVERRIDE', 'i965')
-                Util.info('Use mesa at %s' % mesa_dir)
+            Util.set_mesa(self.mesa_build_dir, self.mesa_rev, mesa_type)
 
         common_cmd = 'vpython content/test/gpu/run_gpu_integration_test.py webgl_conformance --disable-log-uploads'
         if self.test_chrome == 'build':
             self.chrome_rev = self.test_chrome_rev
-            (_, self.chrome_rev) = Util.get_rev_dir(self.chrome_backup_dir, 'chrome', self.chrome_rev)
+            (_, self.chrome_rev) = Util.get_backup_dir(self.chrome_backup_dir, self.chrome_rev)
 
             Util.chdir(self.chrome_backup_dir)
             if not os.path.exists('%s' % self.chrome_rev):

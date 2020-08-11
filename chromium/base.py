@@ -48,7 +48,7 @@ class Base():
         if out_dir:
             self.out_dir = out_dir
         else:
-            self.out_dir = Util.get_relative_out_dir(target_arch, target_os, symbol_level, no_component_build, dcheck)
+            self.out_dir = Util.cal_relative_out_dir(target_arch, target_os, symbol_level, no_component_build, dcheck)
         self.out_dir = '%s/%s' % (self.out_dir, self.build_type_cap)
         self.symbol_level = symbol_level
         self.target_arch = target_arch
@@ -138,7 +138,6 @@ class Base():
 
         quotation = Util.get_quotation()
         cmd = 'gn --args=%s%s%s gen %s' % (quotation, gn_args, quotation, self.out_dir)
-        Util.info('GN ARGS: {}'.format(gn_args))
         result = self.program.execute(cmd)
         if result[0]:
             Util.error('Failed to makefile')
@@ -185,33 +184,11 @@ class Base():
             rev = self.rev
         else:
             rev = self.repo.get_working_dir_rev()
-        Util.info('Begin to backup rev %s' % rev)
+        backup_dir = Util.cal_backup_dir(rev)
+        Util.info('Begin to backup %s' % backup_dir)
 
-        self.backup_dir = '%s/%s' % (self.backup_dir, rev)
-
-        targets = backup_target.split(',')
-        Util.backup_gn_target(self.src_dir, self.out_dir, self.backup_dir, targets=targets, target_dict=self.backup_target_dict, need_symbol=self.program.args.backup_symbol, target_os=self.target_os)
-
-    def backup_webgl(self):
-        # generate telemetry_gpu_integration_test
-        if self.rev:
-            rev = self.rev
-        else:
-            rev = self.repo.get_working_dir_rev()
-        rev_str = str(rev)
-
-        if not os.path.exists('%s/%s-orig.zip' % (self.backup_dir, rev_str)):
-            Util.chdir(self.src_dir)
-            cmd = 'vpython tools/mb/mb.py zip %s telemetry_gpu_integration_test %s/%s-orig.zip' % (self.out_dir, self.backup_dir, rev_str)
-            result = self.program.execute(cmd)
-            if result[0]:
-                Util.error('Failed to generate telemetry_gpu_integration_test')
-
-        Util.chdir(self.backup_dir)
-        if not os.path.exists(rev_str):
-            zipfile.ZipFile('%s-orig.zip' % rev_str).extractall(rev_str)
-            Util.del_filetype_in_dir(rev_str, 'pdb')
-            shutil.make_archive(rev_str, 'zip', rev_str)
+        self.backup_dir = '%s/%s' % (self.backup_dir, backup_dir)
+        Util.backup_gn_target(self.src_dir, self.out_dir, target_str=backup_target, target_dict=self.backup_target_dict, need_symbol=self.program.args.backup_symbol, target_os=self.target_os)
 
     def run(self, run_extra_args):
         if self.rev:
