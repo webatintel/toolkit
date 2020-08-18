@@ -124,7 +124,7 @@ class Angle():
             self._test(target)
 
     def backup(self):
-        Util.backup_gn_target(self.program.root_dir, self.out_dir, target_str=self.args.backup_target, target_dict=self.backup_target_dict, need_symbol=self.program.args.backup_symbol)
+        Util.backup_gn_target(self.program.root_dir, self.out_dir, Util.cal_backup_dir(), target_str=self.args.backup_target, target_dict=self.backup_target_dict, need_symbol=self.program.args.backup_symbol)
 
     def release(self):
         self.sync()

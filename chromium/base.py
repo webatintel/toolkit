@@ -184,11 +184,7 @@ class Base():
             rev = self.rev
         else:
             rev = self.repo.get_working_dir_rev()
-        backup_dir = Util.cal_backup_dir(rev)
-        Util.info('Begin to backup %s' % backup_dir)
-
-        self.backup_dir = '%s/%s' % (self.backup_dir, backup_dir)
-        Util.backup_gn_target(self.src_dir, self.out_dir, target_str=backup_target, target_dict=self.backup_target_dict, need_symbol=self.program.args.backup_symbol, target_os=self.target_os)
+        Util.backup_gn_target(self.src_dir, self.out_dir, Util.cal_backup_dir(rev), target_str=backup_target, target_dict=self.backup_target_dict, need_symbol=self.program.args.backup_symbol, target_os=self.target_os)
 
     def run(self, run_extra_args):
         if self.rev:
