@@ -49,6 +49,7 @@ class Webgl():
         else:
             self.mesa_dir = '%s/mesa' % root_dir
         self.mesa_build_dir = '%s/build' % self.mesa_dir
+        self.mesa_backup_dir = '%s/backup' % self.mesa_dir
         self.test_dir = '%s/test' % root_dir
         test_chrome = args.test_chrome
         if Util.HOST_OS == Util.DARWIN:
@@ -125,21 +126,13 @@ class Webgl():
         Util.clear_proxy()
 
         if Util.HOST_OS == Util.LINUX:
-            Util.set_mesa(self.mesa_build_dir, self.mesa_rev, mesa_type)
+            Util.set_mesa(self.mesa_backup_dir, self.test_mesa_rev, mesa_type)
 
         common_cmd = 'vpython content/test/gpu/run_gpu_integration_test.py webgl_conformance --disable-log-uploads'
         if self.test_chrome == 'build':
             self.chrome_rev = self.test_chrome_rev
-            (_, self.chrome_rev) = Util.get_backup_dir(self.chrome_backup_dir, self.chrome_rev)
-
-            Util.chdir(self.chrome_backup_dir)
-            if not os.path.exists('%s' % self.chrome_rev):
-                if not os.path.exists('%s.zip' % self.chrome_rev):
-                    Util.error('Could not find Chromium revision %s' % self.chrome_rev)
-                Util.ensure_dir(str(self.chrome_rev))
-                self.program.execute('unzip%s %s.zip -d %s' % (Util.EXEC_SUFFIX, self.chrome_rev, self.chrome_rev))
-
-            chrome_rev_dir = '%s/%s' % (self.chrome_backup_dir, self.chrome_rev)
+            (chrome_rev_dir, self.chrome_rev) = Util.get_backup_dir(self.chrome_backup_dir, self.chrome_rev)
+            chrome_rev_dir = '%s/%s' % (self.chrome_backup_dir, chrome_rev_dir)
             Util.chdir(chrome_rev_dir)
             Util.info('Use Chrome at %s' % chrome_rev_dir)
 
@@ -218,7 +211,7 @@ class Webgl():
             cmd = common_cmd + ' --webgl-conformance-version=%s' % comb[COMB_INDEX_WEBGL]
             self.result_file = ''
             if Util.HOST_OS == Util.LINUX:
-                self.result_file = '%s/%s-%s-%s-%s-%s.log' % (self.result_dir, datetime, self.chrome_rev, mesa_type, self.mesa_rev, comb[COMB_INDEX_WEBGL])
+                self.result_file = '%s/%s-%s-%s-%s-%s.log' % (self.result_dir, datetime, self.chrome_rev, mesa_type, self.test_mesa_rev, comb[COMB_INDEX_WEBGL])
             elif Util.HOST_OS == Util.WINDOWS:
                 extra_browser_args += ' --use-angle=%s' % comb[COMB_INDEX_BACKEND]
                 self.result_file = '%s/%s-%s-%s-%s.log' % (self.result_dir, datetime, self.chrome_rev, comb[COMB_INDEX_WEBGL], comb[COMB_INDEX_BACKEND])
@@ -282,7 +275,7 @@ class Webgl():
                 content += c + '\n'
 
         if Util.HOST_OS == Util.LINUX:
-            subject = 'WebGL CTS on Chrome %s and Mesa %s %s has %s Regression' % (self.chrome_rev, mesa_type, self.mesa_rev, json_result['num_regressions'])
+            subject = 'WebGL CTS on Chrome %s and Mesa %s %s has %s Regression' % (self.chrome_rev, mesa_type, self.test_mesa_rev, json_result['num_regressions'])
         else:
             subject = 'WebGL CTS on Chrome %s has %s Regression' % (self.chrome_rev, json_result['num_regressions'])
 
