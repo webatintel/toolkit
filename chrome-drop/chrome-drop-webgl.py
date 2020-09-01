@@ -126,7 +126,7 @@ class Webgl():
         Util.clear_proxy()
 
         if Util.HOST_OS == Util.LINUX:
-            Util.set_mesa(self.mesa_backup_dir, self.test_mesa_rev, mesa_type)
+            self.test_mesa_rev = Util.set_mesa(self.mesa_backup_dir, self.test_mesa_rev, mesa_type)
 
         common_cmd = 'vpython content/test/gpu/run_gpu_integration_test.py webgl_conformance --disable-log-uploads'
         if self.test_chrome == 'build':
