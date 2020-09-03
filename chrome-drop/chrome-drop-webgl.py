@@ -225,12 +225,19 @@ class Webgl():
             result = self.program.execute(cmd, exit_on_error=False, show_duration=True)
             self.report(str(test_timer.stop()), mesa_type=mesa_type)
 
-        Util.info('Final details:\n%s' % self.final_details)
+        final_details = 'Final details:\n%s' % self.final_details
         if self.build_chrome_dcheck:
             dcheck = 'true'
         else:
             dcheck = 'false'
-        Util.info('Final summary (chrome_rev: %s, dcheck: %s):\n%s' % (self.chrome_rev, dcheck, self.final_summary))
+        final_summary = 'Final summary (chrome_rev: %s, dcheck: %s):\n%s' % (self.chrome_rev, dcheck, self.final_summary)
+
+        Util.info(final_details)
+        Util.info(final_summary)
+
+        log_file = self.program.log_file
+        Util.write_file(log_file, [final_details], mode='a+')
+        Util.write_file(log_file, [final_summary], mode='a+')
 
     def run(self):
         if Util.HOST_OS == Util.LINUX:
