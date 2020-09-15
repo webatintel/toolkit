@@ -109,6 +109,7 @@ examples:
 python %(prog)s --sync -r 678699.1-678699.12 --build
 python %(prog)s --sync -r 678699-678720 --rev-stride 10 --build
 python %(prog)s --sync --runhooks --makefile --build --backup --download
+python %(prog)s --backup --out-dir out --root-dir d:\workspace\chrome
         ''')
 
         parser.add_argument('--is-debug', dest='is_debug', help='is debug', action='store_true')
