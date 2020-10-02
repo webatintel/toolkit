@@ -29,44 +29,10 @@ sys.path.append(script_dir + '/..')
 
 from util.base import * # pylint: disable=unused-wildcard-import
 
-class Angle():
+class Angle(Program):
     def __init__(self):
-        self._parse_arg()
-        args = self.program.args
-        self.angle_dir = '%s/angle' % Util.get_symbolic_link_dir()
-        self.build_skip_sync = args.build_skip_sync
-        self.build_skip_build_angle = args.build_skip_build_angle
-        self._handle_ops()
+        parser = argparse.ArgumentParser(description='Chrome Drop ANGLE')
 
-    def build(self):
-        Util.chdir(self.angle_dir)
-        if not self.build_skip_sync:
-            cmd = 'python angle.py --sync --runhooks --root-dir %s' % self.angle_dir
-            self.program.execute(cmd, exit_on_error=False)
-        Util.ensure_dir('%s/backup' % self.angle_dir)
-        if not self.build_skip_build_angle:
-            self.program.execute('python angle.py --makefile --build --build-target e2e --backup --backup-target e2e --root-dir %s' % self.angle_dir)
-
-    def test(self):
-        Util.chdir(self.angle_dir)
-        self.program.execute('python angle.py --test --test-target e2e --test-angle-rev latest')
-
-    def release(self):
-        self.build()
-        if Util.HOST_OS == 'linux':
-            for mesa_type in self.mesa_types:
-                self.test(mesa_type=mesa_type)
-        else:
-            self.test()
-
-    def _parse_arg(self):
-        parser = argparse.ArgumentParser(description='Chrome Drop ANGLE',
-                                        formatter_class=argparse.RawTextHelpFormatter,
-                                        epilog='''
-examples:
-python %(prog)s --build
-python %(prog)s --test
-    ''')
         parser.add_argument('--build', dest='build', help='build', action='store_true')
         parser.add_argument('--build-skip-sync', dest='build_skip_sync', help='skip sync during build', action='store_true')
         parser.add_argument('--build-skip-build-angle', dest='build_skip_build_angle', help='skip building ANGLE during build', action='store_true')
@@ -79,10 +45,43 @@ python %(prog)s --test
         parser.add_argument('--report', dest='report', help='report file')
         parser.add_argument('--email', dest='email', help='send report as email', action='store_true')
 
-        self.program = Program(parser)
+        parser.epilog = '''
+python %(prog)s --release
+'''
+
+        super().__init__(parser)
+        args = self.args
+
+        self.angle_dir = '%s/angle' % Util.get_symbolic_link_dir()
+        self.build_skip_sync = args.build_skip_sync
+        self.build_skip_build_angle = args.build_skip_build_angle
+        self._handle_ops()
+
+    def build(self):
+        Util.chdir(self.angle_dir)
+        if not self.build_skip_sync:
+            cmd = 'python3 %s --sync --runhooks --root-dir %s' % (Util.GNP_SCRIPT_PATH, self.angle_dir)
+            self._execute(cmd, exit_on_error=False)
+        Util.ensure_dir('%s/backup' % self.angle_dir)
+        if not self.build_skip_build_angle:
+            cmd = 'python3 %s --makefile --build --build-target angle_e2e --backup --backup-target angle_e2e --root-dir %s' % (Util.GNP_SCRIPT_PATH, self.angle_dir)
+            self._execute(cmd)
+
+    def test(self):
+        Util.chdir(self.angle_dir)
+        cmd = 'python3 %s --test --test-target angle_e2e --test-rev latest --root-dir %s' % (Util.GNP_SCRIPT_PATH, self.angle_dir)
+        self._execute(cmd)
+
+    def release(self):
+        self.build()
+        if Util.HOST_OS == 'linux':
+            for mesa_type in self.mesa_types:
+                self.test(mesa_type=mesa_type)
+        else:
+            self.test()
 
     def _handle_ops(self):
-        args = self.program.args
+        args = self.args
         if args.build:
             self.build()
         if args.test:
