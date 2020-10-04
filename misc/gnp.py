@@ -504,7 +504,7 @@ python %(prog)s --backup --out-dir out --root-dir d:\workspace\chrome
                 if tmp_file.startswith(exclude_file):
                     break
             else:
-                src_files.append(tmp_file)
+                src_files.append(tmp_file.rstrip('\r'))
 
         for src_file in src_files:
             src_file = '%s/%s' % (self.out_dir, src_file)
@@ -512,7 +512,8 @@ python %(prog)s --backup --out-dir out --root-dir d:\workspace\chrome
             Util.ensure_dir(os.path.dirname(dst_dir))
             if os.path.isdir(src_file):
                 dst_dir = os.path.dirname(os.path.dirname(dst_dir))
-            self._execute('cp -rf %s %s' % (src_file, dst_dir), show_cmd=True)
+            cmd = 'cp -rf %s %s' % (src_file, dst_dir)
+            self._execute(cmd)
 
             # permission denied
             #shutil.copyfile(file, dst_dir)
