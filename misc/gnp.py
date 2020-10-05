@@ -248,17 +248,16 @@ class GNP(Program):
         parser.add_argument('--backup', dest='backup', help='backup', action='store_true')
         parser.add_argument('--backup-symbol', dest='backup_symbol', help='backup symbol', action='store_true')
         parser.add_argument('--backup-target', dest='backup_target', help='backup target')
-        parser.add_argument('--test', dest='test', help='test', action='store_true')
-        parser.add_argument('--test-target', dest='test_target', help='test target')
-        parser.add_argument('--test-disabled', dest='test_disabled', help='test disabled cases', action='store_true')
-        parser.add_argument('--test-filter', dest='test_filter', help='test filter', default='all')
-        parser.add_argument('--test-rev', dest='test_rev', help='test rev', default='out')
-        parser.add_argument('--test-mesa-rev', dest='test_mesa_rev', help='mesa revision', default='system')
         parser.add_argument('--run', dest='run', help='run', action='store_true')
-        parser.add_argument('--run-args', dest='run_args', help='run with args', default='')
+        parser.add_argument('--run-target', dest='run_target', help='run target')
+        parser.add_argument('--run-args', dest='run_args', help='run args')
+        parser.add_argument('--run-disabled', dest='run_disabled', help='run disabled cases', action='store_true')
+        parser.add_argument('--run-filter', dest='run_filter', help='run filter', default='all')
+        parser.add_argument('--run-rev', dest='run_rev', help='run rev', default='out')
+        parser.add_argument('--run-mesa-rev', dest='run_mesa_rev', help='mesa revision', default='system')
 
         parser.epilog = '''
-python %(prog)s --sync --runhooks --makefile --build --backup --build --test --download
+python %(prog)s --sync --runhooks --makefile --build --backup --build --run --download
 python %(prog)s --backup --out-dir out --root-dir d:\workspace\chrome
 '''
         super().__init__(parser)
@@ -291,6 +290,7 @@ python %(prog)s --backup --out-dir out --root-dir d:\workspace\chrome
         elif self.project == 'chromium':
             default_target = 'chrome'
             self.src_dir = self.root_dir + '/src'
+            Util.chdir(self.src_dir)
             self.repo = ChromiumRepo(self.src_dir)
         elif self.project == 'dawn':
             default_target = 'dawn_e2e'
@@ -529,7 +529,7 @@ python %(prog)s --backup --out-dir out --root-dir d:\workspace\chrome
         if not os.path.exists('%s/%s-orig.zip' % (self.backup_dir, rev_str)):
             Util.chdir(self.src_dir)
             cmd = 'vpython tools/mb/mb.py zip %s telemetry_gpu_integration_test %s/%s-orig.zip' % (self.out_dir, self.backup_dir, rev_str)
-            result = self.program.execute(cmd)
+            result = self._execute(cmd)
             if result[0]:
                 Util.error('Failed to generate telemetry_gpu_integration_test')
 
@@ -539,19 +539,21 @@ python %(prog)s --backup --out-dir out --root-dir d:\workspace\chrome
             Util.del_filetype_in_dir(rev_str, 'pdb')
             shutil.make_archive(rev_str, 'zip', rev_str)
 
-    def test(self):
+    def run(self):
+        Util.clear_proxy()
+
         if Util.HOST_OS == Util.LINUX:
-            Util.set_mesa(Util.PROJECT_MESA_BACKUP_DIR, self.args.test_mesa_rev)
+            Util.set_mesa(Util.PROJECT_MESA_BACKUP_DIR, self.args.run_mesa_rev)
 
-        if self.args.test_rev == 'out':
-            Util.chdir(self.out_dir, verbose=True)
+        if self.args.run_rev == 'out':
+            Util.chdir('%s' % self.out_dir, verbose=True)
         else:
-            rev_dir, _ = Util.get_backup_dir('%s/backup' % self.root_dir, self.args.test_rev)
-            Util.chdir('%s/backup/%s/out/Release' % (self.root_dir, rev_dir), verbose=True)
+            rev_dir, _ = Util.get_backup_dir('backup' % self.args.run_rev)
+            Util.chdir('backup/%s/out/Release' % rev_dir, verbose=True)
 
-        test_target = self.args.test_target
-        if self.args.test_target:
-            targets = self.args.test_target.split(',')
+        run_target = self.args.run_target
+        if run_target:
+            targets = run_target.split(',')
         else:
             targets = [self.default_target]
 
@@ -560,32 +562,7 @@ python %(prog)s --backup --out-dir out --root-dir d:\workspace\chrome
                 targets[targets.index(key)] = value
 
         for target in targets:
-            self._test(target)
-
-    def run(self):
-        run_args = self.args.run_args
-
-        if self.project == 'aquarium':
-            run_binary = '%s/%s/aquarium'  % (self.root_dir, self.out_dir)
-            if run_args == '':
-                run_args = '--backend '
-                if Util.HOST_OS == Util.LINUX:
-                    run_args += 'dawn_vulkan'
-                elif Util.HOST_OS == Util.WINDOWS:
-                    run_args += 'd3d12'
-
-        elif self.project == 'chromium':
-            if self.rev:
-                run_binary = '%s/backup/%s/out/Release' % (self.src_dir, self.rev)
-            else:
-                run_binary = '%s/%s' % (self.src_dir, self.out_dir)
-
-            run_binary += '/chrome'
-        else:
-            return
-
-        cmd = '%s%s %s' % (run_binary, Util.EXEC_SUFFIX, run_args)
-        self._execute(cmd, exit_on_error=False)
+            self._run(target)
 
     def download(self):
         if not self.project == 'chromium':
@@ -649,7 +626,7 @@ python %(prog)s --backup --out-dir out --root-dir d:\workspace\chrome
         self.makefile()
         self.build()
         self.backup()
-        self.test()
+        self.run()
 
     def _execute_gclient(self, cmd_type, job_count=0, extra_cmd='', verbose=False):
         self._set_boto()
@@ -657,7 +634,7 @@ python %(prog)s --backup --out-dir out --root-dir d:\workspace\chrome
         if extra_cmd:
             cmd += ' ' + extra_cmd
         if cmd_type == 'sync':
-            cmd += ' -n -D -R'
+            cmd += ' -n -D --force -R'
 
         if not job_count:
             job_count = Util.CPU_COUNT
@@ -725,16 +702,23 @@ python %(prog)s --backup --out-dir out --root-dir d:\workspace\chrome
         if not branch == 'master':
             Util.error('Repo %s is not on master' % roll_repo)
 
-    def _test(self, type):
-        cmd = '%s%s' % (type, Util.EXEC_SUFFIX)
+    def _run(self, target):
+        if target == 'telemetry_gpu_integration_test':
+            cmd = 'vpython ../../content/test/gpu/run_gpu_integration_test.py'
+        elif target == 'webgpu_blink_web_tests':
+            cmd = 'vpython ../../third_party/blink/tools/run_web_tests.py'
+        else:
+            cmd = '%s%s' % (target, Util.EXEC_SUFFIX)
         if Util.HOST_OS == Util.WINDOWS:
             cmd = Util.use_backslash(cmd)
-        if self.args.test_disabled:
+        if self.args.run_disabled:
             cmd += ' --gtest_also_run_disabled_tests'
-        if not self.args.test_filter == 'all':
-            cmd += ' --gtest_filter=*%s*' % self.args.test_filter
-        if type == 'angle_perftests':
-            cmd += ' --one-frame-only'
+        if not self.args.run_filter == 'all':
+            cmd += ' --gtest_filter=*%s*' % self.args.run_filter
+
+        if self.args.run_args:
+            cmd += ' %s' % self.args.run_args
+
         if Util.HOST_OS == Util.LINUX:
             cmd = './' + cmd
         self._execute(cmd)
@@ -751,12 +735,10 @@ python %(prog)s --backup --out-dir out --root-dir d:\workspace\chrome
             self.build()
         if args.backup:
             self.backup()
-        if args.test:
-            self.test()
-        if args.release:
-            self.release()
         if args.run:
             self.run()
+        if args.release:
+            self.release()
         if args.download:
             self.download()
 
