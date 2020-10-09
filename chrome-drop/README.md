@@ -7,7 +7,7 @@ Chrome Drop contains below binaries:
 # WebGL CTS
 ## Binary
 
-[Chrome-revision].zip
+[yyyymmdd-revision].zip
 
 ## Command
 
@@ -26,7 +26,8 @@ Other useful arguments:<br>
 
 ## Debug
 
-* cd [version]
+* Download binary from http://wp-27.sh.intel.com/chrome-drop/webgl/windows/
+* cd [yyyymmdd-revision]
 * Start browser with “out\Release\chrome.exe --use-angle=[angle-backend]”
 * Start http server using python "python -mSimpleHTTPServer" (python2) or "python -mhttp.server" (python3)
 * Browse to http://127.0.0.1:8000/third_party/webgl/src/sdk/tests/webgl-conformance-tests.html?version=[webgl-conformance-version]
@@ -37,7 +38,7 @@ Other useful arguments:<br>
 
 # ANGLE end2end tests
 ## Binary
-[yyyymmdd]-[short_commit_hash].zip
+[yyyymmdd-revision].zip
 
 ## Command
 
@@ -55,7 +56,8 @@ Other useful arguments:<br>
 
 ## Debug
 
-* cd folder [yyyymmdd]-[short_commit_hash]
+* Download binary from http://wp-27.sh.intel.com/chrome-drop/angle/windows/
+* cd folder [yyyymmdd-revision]
 * angle_end2end_tests.exe --gtest_filter=[filter]
 
 # WebGPU CTS
