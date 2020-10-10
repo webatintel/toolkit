@@ -16,10 +16,39 @@ sys.path.append(script_dir + '/..')
 
 from util.base import * # pylint: disable=unused-wildcard-import
 
-class Mesa():
+class Mesa(Program):
     def __init__(self):
-        self._parse_args()
-        args = self.program.args
+        parser = argparse.ArgumentParser(description='mesa')
+        parser.epilog='''
+examples:
+python %(prog)s --sync --build
+python %(prog)s --build --build-system autotools --rev-stride 50 --build-novulkan --rev 96700-96900
+python %(prog)s --build --dir-install 20200810-126997-f7e7cf637e1 --build-replace
+python %(prog)s --build --dir-install 20200810-126997-f7e7cf637e1 --build-replace --clean  # if build fails
+python %(prog)s --hashtorev e58a10af640ba58b6001f5c5ad750b782547da76
+python %(prog)s --revtohash 1
+'''
+        parser.add_argument('--repo', dest='repo', help='repo, can be freedesktop or chromeos', default='freedesktop')
+        parser.add_argument('--init', dest='init', help='init', action='store_true')
+        parser.add_argument('--sync', dest='sync', help='sync', action='store_true')
+        parser.add_argument('--build', dest='build', help='build', action='store_true')
+        parser.add_argument('--run', dest='run', help='run')
+        parser.add_argument('--type', dest='type', help='type', default='i965')
+        parser.add_argument('--branch', dest='branch', help='branch', default='master')
+        parser.add_argument('--rev', dest='rev', help='rev, can be system, latest, or any specific revision', default='latest')
+        parser.add_argument('--rev-stride', dest='rev_stride', help='rev stride', type=int, default=1)
+        parser.add_argument('--clean', dest='clean', help='clean when build_force', action='store_true')
+        parser.add_argument('--revtohash', dest='revtohash', help='get hash of commit rev starting from 1', type=int)
+        parser.add_argument('--hashtorev', dest='hashtorev', help='get commit rev starting from 1 of hash')
+        parser.add_argument('--build-type', dest='build_type', help='build type', default='release')
+        parser.add_argument('--build-module', dest='build_module', help='build module', default='all')
+        parser.add_argument('--build-force', dest='build_force', help='no reset of source code', action='store_true')
+        parser.add_argument('--build-system', dest='build_system', help='build system', default='meson')
+        parser.add_argument('--build-novulkan', dest='build_novulkan', help='build novulkan', action='store_true')
+
+        super().__init__(parser)
+
+        args = self.args
         self.build_type = args.build_type
         self.branch = args.branch
         build_force = args.build_force
@@ -44,18 +73,18 @@ class Mesa():
 
     def init(self):
         if not os.path.exists(self.drm_dir):
-            self.program.execute('git clone https://gitlab.freedesktop.org/mesa/drm %s' % self.drm_dir)
+            self._execute('git clone https://gitlab.freedesktop.org/mesa/drm %s' % self.drm_dir)
 
         if not os.path.exists(self.mesa_dir):
             if self.args.repo == 'chromeos':
-                self.program.execute('git clone -b %s https://chromium.googlesource.com/chromiumos/third_party/mesa %s' % (self.branch, self.mesa_dir))
+                self._execute('git clone -b %s https://chromium.googlesource.com/chromiumos/third_party/mesa %s' % (self.branch, self.mesa_dir))
             else:
-                self.program.execute('git clone -b %s https://gitlab.freedesktop.org/mesa/mesa %s' % (self.branch, self.mesa_dir))
+                self._execute('git clone -b %s https://gitlab.freedesktop.org/mesa/mesa %s' % (self.branch, self.mesa_dir))
 
     def sync(self):
         for dir in [self.drm_dir, self.mesa_dir]:
-            Util.chdir('%s/%s' % (self.program.root_dir, dir))
-            self.program.execute('git pull --rebase')
+            Util.chdir('%s/%s' % (self.root_dir, dir))
+            self._execute('git pull --rebase')
 
     def build(self):
         self._init_hash()
@@ -96,12 +125,12 @@ class Mesa():
         Util.info('The rev of hash %s is %s' % (tmp_hash, _hash_to_rev(tmp_hash)))
 
     def run(self):
-        Util.set_mesa('%s/backup' % self.program.root_dir, self.rev, self.type)
-        self.program.execute(self.run_cmd)
+        Util.set_mesa('%s/backup' % self.root_dir, self.rev, self.type)
+        self._execute(self.run_cmd)
 
     def _init_hash(self):
         if not self.hashes:
-            Util.chdir('%s/%s' % (self.program.root_dir, self.mesa_dir))
+            Util.chdir('%s/%s' % (self.root_dir, self.mesa_dir))
             self.hashes = Util.get_repo_hashes()
 
     def _rev_to_hash(self, rev):
@@ -116,8 +145,8 @@ class Mesa():
         Util.error('Could not find rev for hash %s' % hash)
 
     def _build_one(self, rev, hash):
-        Util.chdir('%s/%s' % (self.program.root_dir, self.mesa_dir))
-        single_backup_dir = '%s/backup/%s' % (self.program.root_dir, Util.cal_backup_dir())
+        Util.chdir('%s/%s' % (self.root_dir, self.mesa_dir))
+        single_backup_dir = '%s/backup/%s' % (self.root_dir, Util.cal_backup_dir())
         building_dir = single_backup_dir.replace('backup', 'backup/building')
 
         if (os.path.exists(building_dir) or os.path.exists('%s' % single_backup_dir)) and os.path.exists(single_backup_dir + '/lib/dri/i965_dri.so') and not self.build_force:
@@ -132,7 +161,7 @@ class Mesa():
             self._clean(['drm'])
 
         if 'drm' in self.modules:
-            Util.chdir('%s/%s' % (self.program.root_dir, self.drm_dir))
+            Util.chdir('%s/%s' % (self.root_dir, self.drm_dir))
             if self.args.build_system == 'autotools':
                 build_cmd = './autogen.sh CFLAGS="-O2" CXXFLAGS="-O2" --prefix=%s --enable-libkms --enable-intel --disable-vmwgfx --disable-radeon --disable-amdgpu --disable-nouveau' % building_dir
                 if self.build_type == 'debug':
@@ -146,18 +175,18 @@ class Mesa():
                     build_cmd += ' -Dbuildtype=release'
                 build_cmd += ' && ninja -j%s -C build/ install' % Util.CPU_COUNT
 
-            result = self.program.execute(build_cmd)
+            result = self._execute(build_cmd)
             if result[0]:
                 return False
 
         if 'mesa' in self.modules:
-            Util.chdir('%s/%s' % (self.program.root_dir, self.mesa_dir))
+            Util.chdir('%s/%s' % (self.root_dir, self.mesa_dir))
             if not self.build_force:
-                self.program.execute('git reset --hard %s' % hash)
+                self._execute('git reset --hard %s' % hash)
 
             # update git hash
             result = Util.get_repo_head_hash()
-            self.program.execute('echo "#define MESA_GIT_SHA1 \\\"git-%s\\\"" >src/mesa/main/git_sha1.h' % result[1].split()[0])
+            self._execute('echo "#define MESA_GIT_SHA1 \\\"git-%s\\\"" >src/mesa/main/git_sha1.h' % result[1].split()[0])
             if self.args.build_system == 'autotools':
                 build_cmd = 'PKG_CONFIG_PATH=%s/lib/x86_64-linux-gnu/pkgconfig ./autogen.sh --enable-autotools CFLAGS="-O2" CXXFLAGS="-O2" --prefix=%s --with-dri-drivers="i915 i965" --with-dri-driverdir=%s/lib/dri --enable-gles1 --enable-gles2 --enable-shared-glapi --with-gallium-drivers= --with-egl-platforms=x11,drm --enable-texture-float --enable-gbm --enable-glx-tls --enable-dri3' % (building_dir, building_dir, building_dir)
                 if not self.args.build_novulkan:
@@ -176,7 +205,7 @@ class Mesa():
                     build_cmd += ' -Dbuildtype=release'
                 build_cmd += ' && ninja -j%s -C build/ install' % Util.CPU_COUNT
 
-            result = self.program.execute(build_cmd)
+            result = self._execute(build_cmd)
             if result[0]:
                 return False
 
@@ -187,17 +216,17 @@ class Mesa():
             sys.stdout.write(line)
         fileinput.close()
 
-        self.program.execute('mv %s %s' % (building_dir, single_backup_dir))
+        self._execute('mv %s %s' % (building_dir, single_backup_dir))
         return True
 
     def _clean(self, modules):
         if 'drm' in modules:
-            Util.chdir('%s/%s' % (self.program.root_dir, self.drm_dir))
-            self.program.execute('make distclean', exit_on_error=False)
+            Util.chdir('%s/%s' % (self.root_dir, self.drm_dir))
+            self._execute('make distclean', exit_on_error=False)
 
         if 'mesa' in modules:
-            Util.chdir('%s/%s' % (self.program.root_dir, self.mesa_dir))
-            self.program.execute('make distclean', exit_on_error=False)
+            Util.chdir('%s/%s' % (self.root_dir, self.mesa_dir))
+            self._execute('make distclean', exit_on_error=False)
 
     def _unify_to_rev(self, str):
         if len(str) == 40:
@@ -209,41 +238,8 @@ class Mesa():
             Util.error('Input %s is not correct' % str)
         return rev
 
-    def _parse_args(self):
-        parser = argparse.ArgumentParser(description='description',
-                                        formatter_class=argparse.RawTextHelpFormatter,
-                                        epilog='''
-examples:
-python %(prog)s --sync --build
-python %(prog)s --build --build-system autotools --rev-stride 50 --build-novulkan --rev 96700-96900
-python %(prog)s --build --dir-install 20200810-126997-f7e7cf637e1 --build-replace
-python %(prog)s --build --dir-install 20200810-126997-f7e7cf637e1 --build-replace --clean  # if build fails
-python %(prog)s --hashtorev e58a10af640ba58b6001f5c5ad750b782547da76
-python %(prog)s --revtohash 1
-    ''')
-
-        parser.add_argument('--repo', dest='repo', help='repo, can be freedesktop or chromeos', default='freedesktop')
-        parser.add_argument('--init', dest='init', help='init', action='store_true')
-        parser.add_argument('--sync', dest='sync', help='sync', action='store_true')
-        parser.add_argument('--build', dest='build', help='build', action='store_true')
-        parser.add_argument('--run', dest='run', help='run')
-        parser.add_argument('--type', dest='type', help='type', default='i965')
-        parser.add_argument('--branch', dest='branch', help='branch', default='master')
-        parser.add_argument('--rev', dest='rev', help='rev, can be system, latest, or any specific revision', default='latest')
-        parser.add_argument('--rev-stride', dest='rev_stride', help='rev stride', type=int, default=1)
-        parser.add_argument('--clean', dest='clean', help='clean when build_force', action='store_true')
-        parser.add_argument('--revtohash', dest='revtohash', help='get hash of commit rev starting from 1', type=int)
-        parser.add_argument('--hashtorev', dest='hashtorev', help='get commit rev starting from 1 of hash')
-        parser.add_argument('--build-type', dest='build_type', help='build type', default='release')
-        parser.add_argument('--build-module', dest='build_module', help='build module', default='all')
-        parser.add_argument('--build-force', dest='build_force', help='no reset of source code', action='store_true')
-        parser.add_argument('--build-system', dest='build_system', help='build system', default='meson')
-        parser.add_argument('--build-novulkan', dest='build_novulkan', help='build novulkan', action='store_true')
-
-        self.program = Program(parser)
-
     def _handle_ops(self):
-        args = self.program.args
+        args = self.args
         if args.init:
             self.init()
         if args.sync:
