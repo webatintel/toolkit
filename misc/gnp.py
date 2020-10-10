@@ -487,9 +487,10 @@ python %(prog)s --backup --out-dir out --root-dir d:\workspace\chrome
             target_files = self._execute('gn desc %s %s runtime_deps' % (self.out_dir, target), return_out=True)[1].rstrip('\n').split('\n')
             tmp_files = Util.union_list(tmp_files, target_files)
 
-        exclude_files = ['gen/', '../../.vpython']
+        exclude_files = ['gen/']
         src_files = []
         for tmp_file in tmp_files:
+            tmp_file = tmp_file.rstrip('\r')
             if not self.args.backup_symbol and tmp_file.endswith('.pdb'):
                 continue
 
@@ -503,7 +504,7 @@ python %(prog)s --backup --out-dir out --root-dir d:\workspace\chrome
                 if tmp_file.startswith(exclude_file):
                     break
             else:
-                src_files.append(tmp_file.rstrip('\r'))
+                src_files.append(tmp_file)
 
         for src_file in src_files:
             src_file = '%s/%s' % (self.out_dir, src_file)
