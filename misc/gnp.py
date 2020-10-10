@@ -275,7 +275,6 @@ python %(prog)s --backup --out-dir out --root-dir d:\workspace\chrome
             build_type = 'debug'
         else:
             build_type = 'release'
-        self.build_type_cap = build_type.capitalize()
 
         out_dir = args.out_dir
         if out_dir == 'default':
@@ -283,7 +282,7 @@ python %(prog)s --backup --out-dir out --root-dir d:\workspace\chrome
                 out_dir = Util.cal_relative_out_dir(self.target_arch, self.target_os, args.symbol_level, args.no_component_build, args.dcheck)
             else:
                 out_dir = 'out'
-        self.out_dir = '%s/%s' % (out_dir, self.build_type_cap)
+        self.out_dir = '%s/%s' % (out_dir, build_type)
 
         if self.project == 'angle':
             default_target = 'angle_e2e'
