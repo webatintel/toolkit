@@ -86,10 +86,11 @@ class GPUTest(Program):
         parser.add_argument('--debug', dest='debug', help='debug', action='store_true')
         parser.add_argument('--target', dest='target', help='target', default='all')
         parser.add_argument('--check', dest='check', help='check', action='store_true')
-        parser.add_argument('--print', dest='print', help='print', action='store_true')
+        parser.add_argument('--list', dest='list', help='list', action='store_true')
         parser.add_argument('--sync', dest='sync', help='sync', action='store_true')
         parser.add_argument('--build', dest='build', help='build', action='store_true')
         parser.add_argument('--run', dest='run', help='run', action='store_true')
+        parser.add_argument('--run-smoke', dest='run_smoke', help='run smoke tests', action='store_true')
 
         parser.epilog = '''
 python %(prog)s --sync --build --run --target 1-2,4-6,8
@@ -99,10 +100,13 @@ python %(prog)s --sync --build --run --target 1-2,4-6,8
 
         self.chromium_dir = '%s/chromium' % self.root_dir
         self.chromium_src_dir = '%s/src' % self.chromium_dir
+        target_os = self.target_os
+        if target_os == 'default':
+            target_os = Util.HOST_OS
 
         targets = []
         for target in Util.load_json('%s/%s' % (script_dir, self.CONFIG_FILE)):
-            if target[self.TARGET_INDEX_OS] == Util.HOST_OS:
+            if target[self.TARGET_INDEX_OS] == target_os:
                 targets.append(target)
         self.targets = targets
 
@@ -195,38 +199,14 @@ python %(prog)s --sync --build --run --target 1-2,4-6,8
 
                         targets.append(target)
 
-        targets.append([
-            'windows',
-            'aquarium',
-            'aquarium_d3d12',
-            'aquarium',
-            '--test-time 30 --num-fish 30000 --enable-msaa --turn-off-vsync --integrated-gpu --window-size=1920,1080 --print-log --backend d3d12',
-            1,
-        ])
-        targets.append([
-            'windows',
-            'aquarium',
-            'aquarium_dawn_d3d12',
-            'aquarium',
-            '--test-time 30 --num-fish 30000 --enable-msaa --turn-off-vsync --integrated-gpu --window-size=1920,1080 --print-log --backend dawn_d3d12',
-            1,
-        ])
-        targets.append([
-            'windows',
-            'aquarium',
-            'aquarium_dawn_vulkan',
-            'aquarium',
-            '--test-time 30 --num-fish 30000 --enable-msaa --turn-off-vsync --integrated-gpu --window-size=1920,1080 --print-log --backend dawn_vulkan',
-            1,
-        ])
-        targets.append([
-            'linux',
-            'aquarium',
-            'aquarium_dawn_vulkan',
-            'aquarium',
-            '--test-time 30 --num-fish 30000 --enable-msaa --turn-off-vsync --integrated-gpu --window-size=1920,1080 --print-log --backend dawn_vulkan',
-            1,
-        ])
+        os_backends = {
+            'windows': ['d3d12', 'dawn_d3d12', 'dawn_vulkan'],
+            'linux': ['dawn_vulkan']
+        }
+
+        for os in os_backends:
+            for backend in os_backends[os]:
+                targets.append([os, 'aquarium', 'aquarium_%s' % backend, 'aquarium', ['--test-time 30', '--num-fish 30000', '--enable-msaa', '--turn-off-vsync', '--integrated-gpu', '--window-size=1920,1080', '--print-log', '--backend %s' % backend], 1])
 
         targets = sorted(targets, key=operator.itemgetter(0, 1, 3, 2))
         config_targets = Util.load_json('%s/%s' % (script_dir, self.CONFIG_FILE))
@@ -244,7 +224,7 @@ python %(prog)s --sync --build --run --target 1-2,4-6,8
             for target in targets:
                 print(target)
 
-    def print(self):
+    def list(self):
         for index, target in enumerate(self.targets):
             print('%s: %s' % (index, target[self.TARGET_INDEX_VIRTUAL_NAME]))
 
@@ -332,20 +312,32 @@ python %(prog)s --sync --build --run --target 1-2,4-6,8
                         run_args += ' --write-full-results-to=%s/result/%s/%s.json' % (self.root_dir, self.timestamp, virtual_name)
                     #run_args += ' --retry-only-retry-on-failure-tests' # undocumented args
                     self._run(cmd, run_args)
+            elif real_name == 'aquarium':
+                if self.args.run_smoke:
+                    run_args += ' --test-time 1'
+                lines = self._run(cmd, run_args, return_out=True).split('\n')
+                for line in lines:
+                    match = re.match('Avg FPS: (.*)', line)
+                    if match:
+                        print(match.group(1))
+                        break
             else:
                 self._run(cmd, run_args)
 
-    def _run(self, cmd, run_args):
+    def _run(self, cmd, run_args, return_out=False):
         cmd += ' --run-args "%s"' % run_args
-        if self._execute(cmd, exit_on_error=False, dryrun=False)[0]:
-            Util.error('Run failed')
+        ret, out = self._execute(cmd, return_out=return_out, exit_on_error=False, dryrun=False)
+        if ret:
+            Util.warning('Run failed')
+        if return_out:
+            return out
 
     def _handle_ops(self):
         args = self.args
         if args.check:
             self.check()
-        if args.print:
-            self.print()
+        if args.list:
+            self.list()
         if args.sync:
             self.sync()
         if args.build:

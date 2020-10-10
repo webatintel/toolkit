@@ -4,7 +4,16 @@
         "aquarium",
         "aquarium_dawn_vulkan",
         "aquarium",
-        "--test-time 30 --num-fish 30000 --enable-msaa --turn-off-vsync --integrated-gpu --window-size=1920,1080 --print-log --backend dawn_vulkan",
+        [
+            "--test-time 30",
+            "--num-fish 30000",
+            "--enable-msaa",
+            "--turn-off-vsync",
+            "--integrated-gpu",
+            "--window-size=1920,1080",
+            "--print-log",
+            "--backend dawn_vulkan"
+        ],
         1
     ],
     [
@@ -263,7 +272,16 @@
         "aquarium",
         "aquarium_d3d12",
         "aquarium",
-        "--test-time 30 --num-fish 30000 --enable-msaa --turn-off-vsync --integrated-gpu --window-size=1920,1080 --print-log --backend d3d12",
+        [
+            "--test-time 30",
+            "--num-fish 30000",
+            "--enable-msaa",
+            "--turn-off-vsync",
+            "--integrated-gpu",
+            "--window-size=1920,1080",
+            "--print-log",
+            "--backend d3d12"
+        ],
         1
     ],
     [
@@ -271,7 +289,16 @@
         "aquarium",
         "aquarium_dawn_d3d12",
         "aquarium",
-        "--test-time 30 --num-fish 30000 --enable-msaa --turn-off-vsync --integrated-gpu --window-size=1920,1080 --print-log --backend dawn_d3d12",
+        [
+            "--test-time 30",
+            "--num-fish 30000",
+            "--enable-msaa",
+            "--turn-off-vsync",
+            "--integrated-gpu",
+            "--window-size=1920,1080",
+            "--print-log",
+            "--backend dawn_d3d12"
+        ],
         1
     ],
     [
@@ -279,7 +306,16 @@
         "aquarium",
         "aquarium_dawn_vulkan",
         "aquarium",
-        "--test-time 30 --num-fish 30000 --enable-msaa --turn-off-vsync --integrated-gpu --window-size=1920,1080 --print-log --backend dawn_vulkan",
+        [
+            "--test-time 30",
+            "--num-fish 30000",
+            "--enable-msaa",
+            "--turn-off-vsync",
+            "--integrated-gpu",
+            "--window-size=1920,1080",
+            "--print-log",
+            "--backend dawn_vulkan"
+        ],
         1
     ],
     [
