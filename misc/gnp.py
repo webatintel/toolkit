@@ -44,8 +44,8 @@ class ChromiumRepo():
     REV_INFO_INDEX_ROLL_HASH = 2
     REV_INFO_INDEX_ROLL_COUNT = 3
 
-    def __init__(self, src_dir):
-        self.src_dir = src_dir
+    def __init__(self, root_dir):
+        self.root_dir = root_dir
         self.info = [self.FAKE_REV, self.FAKE_REV, {}]
 
     def get_working_dir_rev(self):
@@ -75,7 +75,6 @@ class ChromiumRepo():
         if info_min_rev <= min_rev and info_max_rev >= max_rev:
             return
 
-        Util.chdir(self.src_dir)
         if info[self.INFO_INDEX_MIN_REV] == self.FAKE_REV:
             self._get_info(min_rev, max_rev)
             info[self.INFO_INDEX_MIN_REV] = min_rev
@@ -192,7 +191,6 @@ class ChromiumRepo():
         return (tmp_rev, tmp_hash, tmp_author, tmp_date, tmp_subject, tmp_insertion, tmp_deletion, tmp_is_roll)
 
     def _get_head_rev(self, cmd):
-        Util.chdir(self.src_dir)
         result = Util.execute(cmd, show_cmd=False, return_out=True)
         lines = result[1].split('\n')
         rev_info = {}
@@ -229,7 +227,7 @@ class GNP(Program):
         parser.add_argument('--is-debug', dest='is_debug', help='is debug', action='store_true')
         parser.add_argument('--no-component-build', dest='no_component_build', help='no component build', action='store_true')
         parser.add_argument('--no-warning-as-error', dest='no_warning_as_error', help='not treat warning as error', action='store_true')
-        parser.add_argument('--out-dir', dest='out_dir', help='out dir', default='default')
+        parser.add_argument('--special-out-dir', dest='special_out_dir', help='special out dir', action='store_true')
         parser.add_argument('--rev', dest='rev', help='revision')
         parser.add_argument('--rev-stride', dest='rev_stride', help='rev stride', type=int, default=1)
         parser.add_argument('--symbol-level', dest='symbol_level', help='symbol level', type=int, default=0)
@@ -258,7 +256,7 @@ class GNP(Program):
 
         parser.epilog = '''
 python %(prog)s --sync --runhooks --makefile --build --backup --build --run --download
-python %(prog)s --backup --out-dir out --root-dir d:\workspace\chrome
+python %(prog)s --backup --root-dir d:\workspace\chrome
 '''
         super().__init__(parser)
         args = self.args
@@ -269,6 +267,12 @@ python %(prog)s --backup --out-dir out --root-dir d:\workspace\chrome
             project = args.project
         else:
             project = os.path.basename(self.root_dir)
+            if 'chrome' in project or 'chromium' in project:
+                project = 'chromium'
+        if project == 'chromium':
+            self.root_dir = self.root_dir + '/src'
+            Util.chdir(self.root_dir)
+            self.repo = ChromiumRepo(self.root_dir)
         self.project = project
 
         if args.is_debug:
@@ -276,21 +280,16 @@ python %(prog)s --backup --out-dir out --root-dir d:\workspace\chrome
         else:
             build_type = 'release'
 
-        out_dir = args.out_dir
-        if out_dir == 'default':
-            if self.project == 'chromium':
-                out_dir = Util.cal_relative_out_dir(self.target_arch, self.target_os, args.symbol_level, args.no_component_build, args.dcheck)
-            else:
-                out_dir = 'out'
+        if self.args.special_out_dir:
+            out_dir = Util.cal_relative_out_dir(self.target_arch, self.target_os, args.symbol_level, args.no_component_build, args.dcheck)
+        else:
+            out_dir = 'out'
         self.out_dir = '%s/%s' % (out_dir, build_type)
 
         if self.project == 'angle':
             default_target = 'angle_e2e'
         elif self.project == 'chromium':
             default_target = 'chrome'
-            self.src_dir = self.root_dir + '/src'
-            Util.chdir(self.src_dir)
-            self.repo = ChromiumRepo(self.src_dir)
         elif self.project == 'dawn':
             default_target = 'dawn_e2e'
         else:
@@ -349,8 +348,6 @@ python %(prog)s --backup --out-dir out --root-dir d:\workspace\chrome
             if self.rev:
                 Util.info('Begin to sync rev %s' % self.rev)
 
-            Util.chdir(self.src_dir)
-
             if self.args.sync_reset:
                 self._execute('git reset --hard HEAD && git clean -f -d')
 
@@ -367,14 +364,9 @@ python %(prog)s --backup --out-dir out --root-dir d:\workspace\chrome
             self._execute_gclient(cmd_type='sync')
 
     def runhooks(self):
-        if self.project == 'chromium':
-            Util.chdir(self.src_dir)
         self._execute_gclient(cmd_type='runhooks')
 
     def makefile(self):
-        if self.project == 'chromium':
-            Util.chdir(self.src_dir)
-
         args = self.args
 
         if args.is_debug:
@@ -446,9 +438,9 @@ python %(prog)s --backup --out-dir out --root-dir d:\workspace\chrome
             else:
                 rev = self.repo.get_working_dir_rev()
             Util.info('Begin to build rev %s' % rev)
-            Util.chdir(self.src_dir + '/build/util')
+            Util.chdir(self.root_dir + '/build/util')
             self._execute('python lastchange.py -o LASTCHANGE')
-            Util.chdir(self.src_dir)
+            Util.chdir(self.root_dir)
 
         cmd = 'ninja -k%s -j%s -C %s %s' % (str(self.args.build_max_fail), str(Util.CPU_COUNT), self.out_dir, ' '.join(targets))
         if self.args.build_verbose:
@@ -462,10 +454,9 @@ python %(prog)s --backup --out-dir out --root-dir d:\workspace\chrome
             else:
                 rev = self.repo.get_working_dir_rev()
             backup_dir = Util.cal_backup_dir(rev)
-            backup_path = '%s/backup/%s' % (self.src_dir, backup_dir)
         else:
             backup_dir = Util.cal_backup_dir()
-            backup_path = '%s/backup/%s' % (self.root_dir, backup_dir)
+        backup_path = '%s/backup/%s' % (self.root_dir, backup_dir)
 
         Util.info('Begin to backup %s' % backup_dir)
         if os.path.exists(backup_path):
@@ -527,7 +518,6 @@ python %(prog)s --backup --out-dir out --root-dir d:\workspace\chrome
         rev_str = str(rev)
 
         if not os.path.exists('%s/%s-orig.zip' % (self.backup_dir, rev_str)):
-            Util.chdir(self.src_dir)
             cmd = 'vpython tools/mb/mb.py zip %s telemetry_gpu_integration_test %s/%s-orig.zip' % (self.out_dir, self.backup_dir, rev_str)
             result = self._execute(cmd)
             if result[0]:
