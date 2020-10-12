@@ -258,7 +258,11 @@ class GNP(Program):
 python %(prog)s --sync --runhooks --makefile --build --backup --build --run --download
 python %(prog)s --backup --root-dir d:\workspace\chrome
 '''
-        super().__init__(parser)
+        python_ver = Util.get_python_ver()
+        if python_ver[0] == 3:
+            super().__init__(parser)
+        else:
+            super(GNP, self).__init__(parser)
         args = self.args
 
         Util.prepend_path(Util.PROJECT_DEPOT_TOOLS)
