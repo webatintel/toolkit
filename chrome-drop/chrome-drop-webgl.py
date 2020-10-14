@@ -66,8 +66,12 @@ class Webgl(Program):
         parser.epilog = '''
 python %(prog)s --release
 '''
+        python_ver = Util.get_python_ver()
+        if python_ver[0] == 3:
+            super().__init__(parser)
+        else:
+            super(Webgl, self).__init__(parser)
 
-        super().__init__(parser)
         args = self.args
 
         root_dir = self.root_dir
@@ -134,17 +138,17 @@ python %(prog)s --release
         # build chrome
         if self.test_chrome == 'build':
             if not self.build_skip_sync:
-                cmd = 'python3 %s --sync --runhooks --root-dir %s' % (Util.GNP_SCRIPT_PATH, self.chrome_dir)
+                cmd = 'python %s --sync --runhooks --root-dir %s' % (Util.GNP_SCRIPT_PATH, self.chrome_dir)
                 if self.build_chrome_rev != 'latest':
                     cmd += ' --rev %s' % self.build_chrome_rev
                 self._execute(cmd, exit_on_error=False)
             if not self.build_skip_build_chrome and not self.target_os == Util.CHROMEOS:
-                cmd = 'python3 %s --no-component-build --makefile --symbol-level 0 --build --build-target webgl --out-dir out --root-dir %s' % (Util.GNP_SCRIPT_PATH, self.chrome_dir)
+                cmd = 'python %s --no-component-build --makefile --symbol-level 0 --build --build-target webgl --out-dir out --root-dir %s' % (Util.GNP_SCRIPT_PATH, self.chrome_dir)
                 if self.build_chrome_dcheck:
                     cmd += ' --dcheck'
                 self._execute(cmd)
             if not self.build_skip_backup_chrome:
-                cmd = 'python3 %s --backup --backup-target webgl --out-dir out --root-dir %s' % (Util.GNP_SCRIPT_PATH, self.chrome_dir)
+                cmd = 'python %s --backup --backup-target webgl --out-dir out --root-dir %s' % (Util.GNP_SCRIPT_PATH, self.chrome_dir)
                 if self.target_os == Util.CHROMEOS:
                     cmd += ' --target-os chromeos'
                 self._execute(cmd)

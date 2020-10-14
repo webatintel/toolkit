@@ -46,7 +46,11 @@ python %(prog)s --revtohash 1
         parser.add_argument('--build-system', dest='build_system', help='build system', default='meson')
         parser.add_argument('--build-novulkan', dest='build_novulkan', help='build novulkan', action='store_true')
 
-        super().__init__(parser)
+        python_ver = Util.get_python_ver()
+        if python_ver[0] == 3:
+            super().__init__(parser)
+        else:
+            super(Mesa, self).__init__(parser)
 
         args = self.args
         self.build_type = args.build_type

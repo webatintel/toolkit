@@ -49,7 +49,11 @@ class Angle(Program):
 python %(prog)s --release
 '''
 
-        super().__init__(parser)
+        python_ver = Util.get_python_ver()
+        if python_ver[0] == 3:
+            super().__init__(parser)
+        else:
+            super(Angle, self).__init__(parser)
         args = self.args
 
         self.angle_dir = '%s/angle' % Util.get_symbolic_link_dir()
@@ -60,16 +64,16 @@ python %(prog)s --release
     def build(self):
         Util.chdir(self.angle_dir)
         if not self.build_skip_sync:
-            cmd = 'python3 %s --sync --runhooks --root-dir %s' % (Util.GNP_SCRIPT_PATH, self.angle_dir)
+            cmd = 'python %s --sync --runhooks --root-dir %s' % (Util.GNP_SCRIPT_PATH, self.angle_dir)
             self._execute(cmd, exit_on_error=False)
         Util.ensure_dir('%s/backup' % self.angle_dir)
         if not self.build_skip_build_angle:
-            cmd = 'python3 %s --makefile --build --build-target angle_e2e --backup --backup-target angle_e2e --root-dir %s' % (Util.GNP_SCRIPT_PATH, self.angle_dir)
+            cmd = 'python %s --makefile --build --build-target angle_e2e --backup --backup-target angle_e2e --root-dir %s' % (Util.GNP_SCRIPT_PATH, self.angle_dir)
             self._execute(cmd)
 
     def test(self):
         Util.chdir(self.angle_dir)
-        cmd = 'python3 %s --test --test-target angle_e2e --test-rev latest --root-dir %s' % (Util.GNP_SCRIPT_PATH, self.angle_dir)
+        cmd = 'python %s --test --test-target angle_e2e --test-rev latest --root-dir %s' % (Util.GNP_SCRIPT_PATH, self.angle_dir)
         self._execute(cmd)
 
     def release(self):

@@ -96,7 +96,11 @@ class GPUTest(Program):
 python %(prog)s --sync --build --run --target 1-2,4-6,8
 '''
 
-        super().__init__(parser)
+        python_ver = Util.get_python_ver()
+        if python_ver[0] == 3:
+            super().__init__(parser)
+        else:
+            super(GPUTest, self).__init__(parser)
 
         self.chromium_dir = '%s/chromium' % self.root_dir
         self.chromium_src_dir = '%s/src' % self.chromium_dir
@@ -236,7 +240,7 @@ python %(prog)s --sync --build --run --target 1-2,4-6,8
                 projects.append(project)
 
         for project in projects:
-            cmd = 'python3 %s --root-dir %s/%s --sync --runhooks' % (Util.GNP_SCRIPT_PATH, self.root_dir, project)
+            cmd = 'python %s --root-dir %s/%s --sync --runhooks' % (Util.GNP_SCRIPT_PATH, self.root_dir, project)
             if self._execute(cmd, exit_on_error=False)[0]:
                 Util.error('Sync failed')
 
@@ -251,7 +255,7 @@ python %(prog)s --sync --build --run --target 1-2,4-6,8
                 project_targets[project].append(real_name)
 
         for project in project_targets:
-            cmd = 'python3 %s --out-dir out --root-dir %s/%s --makefile --build --build-target %s' % (Util.GNP_SCRIPT_PATH, self.root_dir, project, ','.join(project_targets[project]))
+            cmd = 'python %s --out-dir out --root-dir %s/%s --makefile --build --build-target %s' % (Util.GNP_SCRIPT_PATH, self.root_dir, project, ','.join(project_targets[project]))
             if self._execute(cmd, exit_on_error=False)[0]:
                 Util.error('Build failed')
 
@@ -274,16 +278,20 @@ python %(prog)s --sync --build --run --target 1-2,4-6,8
                     run_args[i] = ''
 
             run_args = ' '.join(run_args)
-            cmd = 'python3 %s --run --out-dir out --root-dir %s/%s --run-target %s --run-rev out' % (Util.GNP_SCRIPT_PATH, self.root_dir, project, real_name)
+            cmd = 'python %s --run --out-dir out --root-dir %s/%s --run-target %s --run-rev out' % (Util.GNP_SCRIPT_PATH, self.root_dir, project, real_name)
             if real_name in ['angle_end2end_tests', 'angle_perftests', 'gl_tests', 'vulkan_tests']:
                 run_shard = int(self.targets[target_index][self.TARGET_INDEX_RUN_SHARD])
                 for index in range(run_shard):
-                    if run_shard > 1:
+                    if not self.args.run_smoke and run_shard > 1:
                         run_args += ' --test-launcher-total-shards=%s --test-launcher-shard-index=%s --test-launcher-summary-output=%s/result/%s/%s.shard%s.json' % (run_shard, index, self.root_dir, self.timestamp, virtual_name, str(index).zfill(2))
                     else:
-                        run_args += ' --test-launcher-summary-output=%s/result/%s/%s.json' % (run_shard, index, self.root_dir, self.timestamp, virtual_name)
+                        run_args += ' --gtest_output=%s/result/%s/%s.json' % (self.root_dir, self.timestamp, virtual_name)
+                        if real_name == 'angle_end2end_tests':
+                            run_args += ' --gtest_filter=*ActiveTextureCacheTest*'
                     run_args += ' --test-launcher-bot-mode --cfi-diag=0' # undocumented args
                     self._run(cmd, run_args)
+                    if self.args.run_smoke:
+                        break
             # gtest
             elif real_name in ['dawn_end2end_tests', 'dawn_perf_tests']:
                 run_shard = int(self.targets[target_index][self.TARGET_INDEX_RUN_SHARD])

@@ -198,7 +198,7 @@ class ChromiumRepo():
         for key in rev_info:
             return key
 
-class GNP(Program):
+class Gnp(Program):
     BUILD_TARGET_DICT = {
         'angle_e2e': 'angle_end2end_tests',
         'angle_perf': 'angle_perftests',
@@ -262,7 +262,7 @@ python %(prog)s --backup --root-dir d:\workspace\chrome
         if python_ver[0] == 3:
             super().__init__(parser)
         else:
-            super(GNP, self).__init__(parser)
+            super(Gnp, self).__init__(parser)
         args = self.args
 
         Util.prepend_path(Util.PROJECT_DEPOT_TOOLS)
@@ -738,4 +738,4 @@ python %(prog)s --backup --root-dir d:\workspace\chrome
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='GN Script')
-    GNP(parser)
+    Gnp(parser)
