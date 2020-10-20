@@ -177,6 +177,8 @@ python %(prog)s --revtohash 1
                 build_cmd = 'meson build/ -Dprefix=%s -Dlibkms=true -Dintel=true -Dvmwgfx=false -Dradeon=false -Damdgpu=false -Dnouveau=false' % building_dir
                 if self.build_type == 'release':
                     build_cmd += ' -Dbuildtype=release'
+                elif self.build_type == 'debug':
+                    build_cmd += ' -Dbuildtype=debug'
                 build_cmd += ' && ninja -j%s -C build/ install' % Util.CPU_COUNT
 
             result = self._execute(build_cmd)
@@ -207,6 +209,8 @@ python %(prog)s --revtohash 1
                     build_cmd += ' -Dvulkan-drivers=intel'
                 if self.build_type == 'release':
                     build_cmd += ' -Dbuildtype=release'
+                elif self.build_type == 'debug':
+                    build_cmd += ' -Dbuildtype=debug'
                 build_cmd += ' && ninja -j%s -C build/ install' % Util.CPU_COUNT
 
             result = self._execute(build_cmd)
