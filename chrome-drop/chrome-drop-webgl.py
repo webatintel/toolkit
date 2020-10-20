@@ -55,7 +55,7 @@ class Webgl(Program):
         parser.add_argument('--test-chrome', dest='test_chrome', help='test chrome', default='default')
         parser.add_argument('--test-combs', dest='test_combs', help='test combs, split by comma, like "0,2"', default='all')
         parser.add_argument('--test-no-angle', dest='test_no_angle', help='test without angle', action='store_true')
-        parser.add_argument('--release', dest='release', help='release', action='store_true')
+        parser.add_argument('--batch', dest='batch', help='batch', action='store_true')
         parser.add_argument('--run', dest='run', help='run', action='store_true')
         parser.add_argument('--dryrun', dest='dryrun', help='dryrun', action='store_true')
         parser.add_argument('--report', dest='report', help='report file')
@@ -64,7 +64,7 @@ class Webgl(Program):
         parser.add_argument('--mesa-dir', dest='mesa_dir', help='mesa dir')
 
         parser.epilog = '''
-python %(prog)s --release
+python %(prog)s --batch
 '''
         python_ver = Util.get_python_ver()
         if python_ver[0] == 3:
@@ -98,7 +98,7 @@ python %(prog)s --release
         if Util.HOST_OS == Util.LINUX:
             mesa_type = args.mesa_type
             if mesa_type == 'default':
-                if args.release:
+                if args.batch:
                     mesa_type = 'i965,iris'
                 else:
                     mesa_type = 'i965'
@@ -323,10 +323,10 @@ python %(prog)s --release
         Util.info(subject)
         Util.info(content)
 
-        if self.args.release and Util.HOST_OS == Util.LINUX or self.email:
+        if self.args.batch and Util.HOST_OS == Util.LINUX or self.email:
             Util.send_email('webperf@intel.com', 'yang.gu@intel.com', subject, content)
 
-    def release(self):
+    def batch(self):
         self.build()
         if Util.HOST_OS == Util.LINUX:
             for mesa_type in self.mesa_types:
@@ -348,8 +348,8 @@ python %(prog)s --release
             self.report(mesa_type=args.mesa_type)
         if args.run:
             self.run()
-        if args.release:
-            self.release()
+        if args.batch:
+            self.batch()
 
     def _parse_result(self, key, val, path):
         if 'expected' in val:

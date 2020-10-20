@@ -40,13 +40,13 @@ class Angle(Program):
         parser.add_argument('--test-angle-rev', dest='test_angle_rev', help='ANGLE revision', default='latest')
         parser.add_argument('--test-filter', dest='test_filter', help='WebGL CTS suite to test against', default='all')  # For smoke test, we may use conformance_attribs
         parser.add_argument('--test-verbose', dest='test_verbose', help='verbose mode of test', action='store_true')
-        parser.add_argument('--release', dest='release', help='release', action='store_true')
+        parser.add_argument('--batch', dest='batch', help='batch', action='store_true')
         parser.add_argument('--dryrun', dest='dryrun', help='dryrun', action='store_true')
         parser.add_argument('--report', dest='report', help='report file')
         parser.add_argument('--email', dest='email', help='send report as email', action='store_true')
 
         parser.epilog = '''
-python %(prog)s --release
+python %(prog)s --batch
 '''
 
         python_ver = Util.get_python_ver()
@@ -76,7 +76,7 @@ python %(prog)s --release
         cmd = 'python %s --test --test-target angle_e2e --test-rev latest --root-dir %s' % (Util.GNP_SCRIPT_PATH, self.angle_dir)
         self._execute(cmd)
 
-    def release(self):
+    def batch(self):
         self.build()
         if Util.HOST_OS == 'linux':
             for mesa_type in self.mesa_types:
@@ -90,8 +90,8 @@ python %(prog)s --release
             self.build()
         if args.test:
             self.test()
-        if args.release:
-            self.release()
+        if args.batch:
+            self.batch()
 
 if __name__ == '__main__':
     Angle()

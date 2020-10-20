@@ -231,7 +231,7 @@ class Gnp(Program):
         parser.add_argument('--rev', dest='rev', help='revision')
         parser.add_argument('--rev-stride', dest='rev_stride', help='rev stride', type=int, default=1)
         parser.add_argument('--symbol-level', dest='symbol_level', help='symbol level', type=int, default=0)
-        parser.add_argument('--release', dest='release', help='release', action='store_true')
+        parser.add_argument('--batch', dest='batch', help='batch', action='store_true')
         parser.add_argument('--download', dest='download', help='download', action='store_true')
 
         parser.add_argument('--sync', dest='sync', help='sync', action='store_true')
@@ -614,7 +614,7 @@ python %(prog)s --backup --root-dir d:\workspace\chrome
             else:
                 self._execute('mv %s ../' % rev_zip)
 
-    def release(self):
+    def batch(self):
         self.sync()
         self.runhooks()
         self.makefile()
@@ -731,8 +731,8 @@ python %(prog)s --backup --root-dir d:\workspace\chrome
             self.backup()
         if args.run:
             self.run()
-        if args.release:
-            self.release()
+        if args.batch:
+            self.batch()
         if args.download:
             self.download()
 
