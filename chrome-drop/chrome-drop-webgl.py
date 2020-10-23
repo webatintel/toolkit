@@ -50,16 +50,15 @@ class Webgl(Program):
         parser.add_argument('--test', dest='test', help='test', action='store_true')
         parser.add_argument('--test-chrome-rev', dest='test_chrome_rev', help='Chromium revision', default='latest')
         parser.add_argument('--test-mesa-rev', dest='test_mesa_rev', help='mesa revision', default='latest')
-        parser.add_argument('--test-filter', dest='test_filter', help='WebGL CTS suite to test against', default='all')  # For smoke test, we may use conformance_attribs
+        parser.add_argument('--test-filter', dest='test_filter', help='WebGL CTS suite to test against', default='all')  # For smoke test, we may use conformance/attribs
         parser.add_argument('--test-verbose', dest='test_verbose', help='verbose mode of test', action='store_true')
         parser.add_argument('--test-chrome', dest='test_chrome', help='test chrome', default='default')
-        parser.add_argument('--test-combs', dest='test_combs', help='test combs, split by comma, like "0,2"', default='all')
+        parser.add_argument('--test-target', dest='test_target', help='test target, split by comma, like "0,2"', default='all')
         parser.add_argument('--test-no-angle', dest='test_no_angle', help='test without angle', action='store_true')
         parser.add_argument('--batch', dest='batch', help='batch', action='store_true')
         parser.add_argument('--run', dest='run', help='run', action='store_true')
         parser.add_argument('--dryrun', dest='dryrun', help='dryrun', action='store_true')
-        parser.add_argument('--report', dest='report', help='report file')
-        parser.add_argument('--email', dest='email', help='send report as email', action='store_true')
+        parser.add_argument('--email', dest='email', help='send test result via email', action='store_true')
         parser.add_argument('--mesa-type', dest='mesa_type', help='mesa type', default='default')
         parser.add_argument('--mesa-dir', dest='mesa_dir', help='mesa dir')
 
@@ -115,11 +114,9 @@ python %(prog)s --batch
         self.test_filter = args.test_filter
         self.test_verbose = args.test_verbose
         self.test_chrome_rev = args.test_chrome_rev
-        self.test_combs = args.test_combs
+        self.test_target = args.test_target
         self.email = args.email
         self.test_no_angle = args.test_no_angle
-        self.final_details = ''
-        self.final_summary = ''
 
         self.target_os = args.target_os
         if not self.target_os:
@@ -206,7 +203,7 @@ python %(prog)s --batch
             return
 
         if self.test_filter != 'all':
-            common_cmd += ' --test-filter=%s' % self.test_filter
+            common_cmd += ' --test-filter=*%s*' % self.test_filter
         skip_filter = self.SKIP_CASES[Util.HOST_OS]
         if skip_filter:
             for skip_tmp in skip_filter:
@@ -231,39 +228,43 @@ python %(prog)s --batch
             ]
 
         test_combs = []
-        if self.test_combs == 'all':
+        if self.test_target == 'all':
             test_combs = all_combs
         else:
-            for i in self.test_combs.split(','):
+            for i in self.test_target.split(','):
                 test_combs.append(all_combs[int(i)])
 
+        final_num_regressions = 0
+        if self.build_chrome_dcheck:
+            dcheck = 'true'
+        else:
+            dcheck = 'false'
+        final_summary = 'Final summary (chrome_rev: %s, dcheck: %s):\n' % (self.chrome_rev, dcheck)
+        final_details = 'Final details:\n'
         for comb in test_combs:
             extra_browser_args = '--disable-backgrounding-occluded-windows'
             if Util.HOST_OS == Util.LINUX and self.test_no_angle:
                 extra_browser_args += ',--use-gl=desktop'
             cmd = common_cmd + ' --webgl-conformance-version=%s' % comb[COMB_INDEX_WEBGL]
-            self.result_file = ''
+            result_file = ''
             if Util.HOST_OS == Util.LINUX:
-                self.result_file = '%s/%s-%s-%s-%s-%s.log' % (self.result_dir, datetime, self.chrome_rev, mesa_type, self.test_mesa_rev, comb[COMB_INDEX_WEBGL])
+                result_file = '%s/%s-%s-%s-%s-%s.log' % (self.result_dir, datetime, self.chrome_rev, mesa_type, self.test_mesa_rev, comb[COMB_INDEX_WEBGL])
             elif Util.HOST_OS == Util.WINDOWS:
                 extra_browser_args += ' --use-angle=%s' % comb[COMB_INDEX_BACKEND]
-                self.result_file = '%s/%s-%s-%s-%s.log' % (self.result_dir, datetime, self.chrome_rev, comb[COMB_INDEX_WEBGL], comb[COMB_INDEX_BACKEND])
+                result_file = '%s/%s-%s-%s-%s.log' % (self.result_dir, datetime, self.chrome_rev, comb[COMB_INDEX_WEBGL], comb[COMB_INDEX_BACKEND])
             elif Util.HOST_OS == Util.DARWIN:
-                self.result_file = '%s/%s-%s-%s.log' % (self.result_dir, datetime, self.chrome_rev, comb[COMB_INDEX_WEBGL])
+                result_file = '%s/%s-%s-%s.log' % (self.result_dir, datetime, self.chrome_rev, comb[COMB_INDEX_WEBGL])
 
             if extra_browser_args:
                 cmd += ' --extra-browser-args="%s"' % extra_browser_args
-            cmd += ' --write-full-results-to %s' % self.result_file
+            cmd += ' --write-full-results-to %s' % result_file
             test_timer = Timer()
             result = self._execute(cmd, exit_on_error=False, show_duration=True)
-            self.report(str(test_timer.stop()), mesa_type=mesa_type)
-
-        final_details = 'Final details:\n%s' % self.final_details
-        if self.build_chrome_dcheck:
-            dcheck = 'true'
-        else:
-            dcheck = 'false'
-        final_summary = 'Final summary (chrome_rev: %s, dcheck: %s):\n%s' % (self.chrome_rev, dcheck, self.final_summary)
+            num_regressions, result = Util.get_gpu_integration_result(result_file)
+            final_num_regressions += num_regressions
+            final_summary += result.split('\n')[0] + '\n'
+            final_details += result
+            Util.info(result)
 
         Util.info(final_details)
         Util.info(final_summary)
@@ -271,6 +272,14 @@ python %(prog)s --batch
         log_file = self.log_file
         Util.write_file(log_file, [final_details], mode='a+')
         Util.write_file(log_file, [final_summary], mode='a+')
+
+
+        if Util.HOST_OS == Util.LINUX:
+            subject = 'WebGL CTS on Chrome %s and Mesa %s %s has %s Regression' % (self.chrome_rev, mesa_type, self.test_mesa_rev, num_regressions)
+        else:
+            subject = 'WebGL CTS on Chrome %s has %s Regression' % (self.chrome_rev, num_regressions)
+        if self.args.batch and Util.HOST_OS == Util.LINUX or self.email:
+            Util.send_email('webperf@intel.com', 'yang.gu@intel.com', subject, '%s\n%s' % (final_summary, final_details))
 
     def run(self):
         if Util.HOST_OS == Util.LINUX:
@@ -280,51 +289,6 @@ python %(prog)s --batch
             self.test(mesa_type=mesa_type)
         else:
             self.test()
-
-    def report(self, test_duration='0', mesa_type=''):
-        self.fail_fail = []
-        self.fail_pass = []
-        self.pass_fail = []
-        self.pass_pass = []
-
-        if self.args.report:
-            self.result_file = '%s/%s' % (self.result_dir, self.args.report)
-            self.chrome_rev = self.args.report.split('-')[1]
-
-        json_result = json.load(open(self.result_file))
-        result_type = json_result['num_failures_by_type']
-        test_results = json_result['tests']
-        for key, val in test_results.items():
-            self._parse_result(key, val, key)
-
-        content = 'FAIL: %s (New: %s, Expected: %s), PASS: %s (New: %s, Expected: %s), SKIP: %s, Duration: %s\n' % (result_type['FAIL'], len(self.pass_fail), len(self.fail_fail), result_type['PASS'], len(self.fail_pass), len(self.pass_pass), result_type['SKIP'], test_duration)
-        self.final_summary+= '\n' + content
-        content += '[PASS_FAIL(%s)]\n' % len(self.pass_fail)
-        if self.pass_fail:
-            for c in self.pass_fail:
-                content += c + '\n'
-
-        content += '[FAIL_PASS(%s)]\n' % len(self.fail_pass)
-        if self.fail_pass:
-            for c in self.fail_pass:
-                content += c + '\n'
-
-        content += '[FAIL_FAIL(%s)]\n' % len(self.fail_fail)
-        if self.fail_fail:
-            for c in self.fail_fail:
-                content += c + '\n'
-
-        if Util.HOST_OS == Util.LINUX:
-            subject = 'WebGL CTS on Chrome %s and Mesa %s %s has %s Regression' % (self.chrome_rev, mesa_type, self.test_mesa_rev, json_result['num_regressions'])
-        else:
-            subject = 'WebGL CTS on Chrome %s has %s Regression' % (self.chrome_rev, json_result['num_regressions'])
-
-        self.final_details += subject + '\n' + content
-        Util.info(subject)
-        Util.info(content)
-
-        if self.args.batch and Util.HOST_OS == Util.LINUX or self.email:
-            Util.send_email('webperf@intel.com', 'yang.gu@intel.com', subject, content)
 
     def batch(self):
         self.build()
@@ -342,28 +306,10 @@ python %(prog)s --batch
             if re.search(',', args.mesa_type) and Util.HOST_OS == Util.LINUX:
                 Util.error('Only one mesa_type can be designated!')
             self.test(mesa_type=args.mesa_type)
-        if args.report:
-            if re.search(',', args.mesa_type) and Util.HOST_OS == Util.LINUX:
-                Util.error('Only one mesa_type can be designated!')
-            self.report(mesa_type=args.mesa_type)
         if args.run:
             self.run()
         if args.batch:
             self.batch()
-
-    def _parse_result(self, key, val, path):
-        if 'expected' in val:
-            if val['expected'] == 'FAIL' and val['actual'].startswith('FAIL'):
-                self.fail_fail.append(path)
-            elif val['expected'] == 'FAIL' and val['actual'] == 'PASS':
-                self.fail_pass.append(path)
-            elif val['expected'] == 'PASS' and val['actual'].startswith('FAIL'):
-                self.pass_fail.append(path)
-            elif val['expected'] == 'PASS' and val['actual'] == 'PASS':
-                self.pass_pass.append(path)
-        else:
-            for new_key, new_val in val.items():
-                self._parse_result(new_key, new_val, '%s/%s' % (path, new_key))
 
 if __name__ == '__main__':
     Webgl()
