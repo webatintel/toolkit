@@ -1,593 +1,633 @@
 [
     [
-        "linux",
-        "aquarium",
-        "aquarium_dawn_vulkan",
-        "aquarium",
-        [
-            "--test-time 30",
-            "--num-fish 30000",
-            "--enable-msaa",
-            "--turn-off-vsync",
-            "--integrated-gpu",
-            "--window-size=1920,1080",
-            "--print-log",
-            "--backend dawn_vulkan"
-        ],
-        1
+      "linux",
+      "aquarium",
+      "aquarium_dawn_vulkan",
+      "aquarium",
+      "aquarium",
+      [
+        "--test-time 30",
+        "--num-fish 30000",
+        "--enable-msaa",
+        "--turn-off-vsync",
+        "--integrated-gpu",
+        "--window-size=1920,1080",
+        "--print-log",
+        "--backend dawn_vulkan"
+      ],
+      1
     ],
     [
-        "linux",
-        "chromium",
-        "angle_end2end_tests",
-        "angle_end2end_tests",
-        [
-            "--test-launcher-retry-limit=0",
-            "--test-launcher-batch-limit=256",
-            "--gtest_filter=-*Vulkan_SwiftShader*",
-            "--use-gpu-in-tests",
-            "--no-xvfb"
-        ],
-        4
+      "linux",
+      "chromium",
+      "angle_end2end_tests",
+      "angle_end2end_tests",
+      "gtest",
+      [
+        "--test-launcher-retry-limit=0",
+        "--test-launcher-batch-limit=256",
+        "--gtest_filter=-*Vulkan_SwiftShader*",
+        "--use-gpu-in-tests",
+        "--no-xvfb"
+      ],
+      4
     ],
     [
-        "linux",
-        "chromium",
-        "angle_perftests",
-        "angle_perftests",
-        [
-            "--gtest-benchmark-name=angle_perftests",
-            "-v",
-            "--one-frame-only"
-        ],
-        1
+      "linux",
+      "chromium",
+      "angle_perftests",
+      "angle_perftests",
+      "gtest",
+      [
+        "--gtest-benchmark-name=angle_perftests",
+        "-v",
+        "--one-frame-only"
+      ],
+      1
     ],
     [
-        "linux",
-        "chromium",
-        "dawn_end2end_skip_validation_tests",
-        "dawn_end2end_tests",
-        [
-            "--skip-validation",
-            "--no-xvfb",
-            "--use-gpu-in-tests",
-            "--test-launcher-retry-limit=0",
-            "--exclusive-device-type-preference=discrete,integrated"
-        ],
-        1
+      "linux",
+      "chromium",
+      "dawn_end2end_skip_validation_tests",
+      "dawn_end2end_tests",
+      "gtest",
+      [
+        "--skip-validation",
+        "--no-xvfb",
+        "--use-gpu-in-tests",
+        "--test-launcher-retry-limit=0",
+        "--exclusive-device-type-preference=discrete,integrated"
+      ],
+      1
     ],
     [
-        "linux",
-        "chromium",
-        "dawn_end2end_tests",
-        "dawn_end2end_tests",
-        [
-            "--no-xvfb",
-            "--use-gpu-in-tests",
-            "--test-launcher-retry-limit=0",
-            "--exclusive-device-type-preference=discrete,integrated"
-        ],
-        1
+      "linux",
+      "chromium",
+      "dawn_end2end_tests",
+      "dawn_end2end_tests",
+      "gtest",
+      [
+        "--no-xvfb",
+        "--use-gpu-in-tests",
+        "--test-launcher-retry-limit=0",
+        "--exclusive-device-type-preference=discrete,integrated"
+      ],
+      1
     ],
     [
-        "linux",
-        "chromium",
-        "dawn_end2end_validation_layers_tests",
-        "dawn_end2end_tests",
-        [
-            "--enable-backend-validation",
-            "--no-xvfb",
-            "--use-gpu-in-tests",
-            "--test-launcher-retry-limit=0",
-            "--exclusive-device-type-preference=discrete,integrated"
-        ],
-        1
+      "linux",
+      "chromium",
+      "dawn_end2end_validation_layers_tests",
+      "dawn_end2end_tests",
+      "gtest",
+      [
+        "--enable-backend-validation",
+        "--no-xvfb",
+        "--use-gpu-in-tests",
+        "--test-launcher-retry-limit=0",
+        "--exclusive-device-type-preference=discrete,integrated"
+      ],
+      1
     ],
     [
-        "linux",
-        "chromium",
-        "dawn_end2end_wire_tests",
-        "dawn_end2end_tests",
-        [
-            "--use-wire",
-            "--no-xvfb",
-            "--use-gpu-in-tests",
-            "--test-launcher-retry-limit=0",
-            "--exclusive-device-type-preference=discrete,integrated"
-        ],
-        1
+      "linux",
+      "chromium",
+      "dawn_end2end_wire_tests",
+      "dawn_end2end_tests",
+      "gtest",
+      [
+        "--use-wire",
+        "--no-xvfb",
+        "--use-gpu-in-tests",
+        "--test-launcher-retry-limit=0",
+        "--exclusive-device-type-preference=discrete,integrated"
+      ],
+      1
     ],
     [
-        "linux",
-        "chromium",
-        "dawn_perf_tests",
-        "dawn_perf_tests",
-        [
-            "--override-steps=1",
-            "--gtest-benchmark-name=dawn_perf_tests",
-            "-v"
-        ],
-        1
+      "linux",
+      "chromium",
+      "dawn_perf_tests",
+      "dawn_perf_tests",
+      "gtest",
+      [
+        "--override-steps=1",
+        "--gtest-benchmark-name=dawn_perf_tests",
+        "-v"
+      ],
+      1
     ],
     [
-        "linux",
-        "chromium",
-        "gl_tests_passthrough",
-        "gl_tests",
-        [
-            "--use-cmd-decoder=passthrough",
-            "--use-gl=angle",
-            "--use-gpu-in-tests",
-            "--no-xvfb"
-        ],
-        1
+      "linux",
+      "chromium",
+      "gl_tests_passthrough",
+      "gl_tests",
+      "gtest",
+      [
+        "--use-cmd-decoder=passthrough",
+        "--use-gl=angle",
+        "--use-gpu-in-tests",
+        "--no-xvfb"
+      ],
+      1
     ],
     [
-        "linux",
-        "chromium",
-        "info_collection_tests",
-        "telemetry_gpu_integration_test",
-        [
-            "info_collection",
-            "--show-stdout",
-            "--browser=release",
-            "--passthrough",
-            "-v",
-            "--extra-browser-args=--enable-logging=stderr --js-flags=--expose-gc --force_high_performance_gpu",
-            "--expected-vendor-id",
-            "8086",
-            "--expected-device-id",
-            "5912"
-        ],
-        1
+      "linux",
+      "chromium",
+      "vulkan_tests",
+      "vulkan_tests",
+      "gtest",
+      [
+        "--enable-gpu",
+        "--test-launcher-bot-mode",
+        "--test-launcher-jobs=1",
+        "--disable-headless-mode",
+        "--no-xvfb"
+      ],
+      1
     ],
     [
-        "linux",
-        "chromium",
+      "linux",
+      "chromium",
+      "info_collection_tests",
+      "telemetry_gpu_integration_test",
+      "telemetry_gpu_integration_test",
+      [
+        "info_collection",
+        "--show-stdout",
+        "--browser=release",
+        "--passthrough",
+        "-v",
+        "--extra-browser-args=--enable-logging=stderr --js-flags=--expose-gc --force_high_performance_gpu",
+        "--expected-vendor-id",
+        "8086",
+        "--expected-device-id",
+        "3e92"
+      ],
+      1
+    ],
+    [
+      "linux",
+      "chromium",
+      "trace_test",
+      "telemetry_gpu_integration_test",
+      "telemetry_gpu_integration_test",
+      [
         "trace_test",
-        "telemetry_gpu_integration_test",
-        [
-            "trace_test",
-            "--show-stdout",
-            "--browser=release",
-            "--passthrough",
-            "-v",
-            "--extra-browser-args=--enable-logging=stderr --js-flags=--expose-gc"
-        ],
-        1
+        "--show-stdout",
+        "--browser=release",
+        "--passthrough",
+        "-v",
+        "--extra-browser-args=--enable-logging=stderr --js-flags=--expose-gc"
+      ],
+      1
     ],
     [
-        "linux",
-        "chromium",
-        "webgl2_conformance_gl_passthrough_tests",
-        "telemetry_gpu_integration_test",
-        [
-            "webgl_conformance",
-            "--show-stdout",
-            "--browser=release",
-            "--passthrough",
-            "-v",
-            "--extra-browser-args=--enable-logging=stderr --js-flags=--expose-gc --use-gl=angle --use-angle=gl --use-cmd-decoder=passthrough --force_high_performance_gpu",
-            "--webgl-conformance-version=2.0.1",
-            "--read-abbreviated-json-results-from=../../content/test/data/gpu/webgl2_conformance_tests_output.json"
-        ],
-        20
+      "linux",
+      "chromium",
+      "webgl2_conformance_gl_passthrough_tests",
+      "telemetry_gpu_integration_test",
+      "telemetry_gpu_integration_test",
+      [
+        "webgl_conformance",
+        "--show-stdout",
+        "--browser=release",
+        "--passthrough",
+        "-v",
+        "--extra-browser-args=--enable-logging=stderr --js-flags=--expose-gc --use-gl=angle --use-angle=gl --use-cmd-decoder=passthrough --force_high_performance_gpu",
+        "--webgl-conformance-version=2.0.1",
+        "--read-abbreviated-json-results-from=../../content/test/data/gpu/webgl2_conformance_tests_output.json"
+      ],
+      20
     ],
     [
-        "linux",
-        "chromium",
-        "webgl2_conformance_validating_tests",
-        "telemetry_gpu_integration_test",
-        [
-            "webgl_conformance",
-            "--show-stdout",
-            "--browser=release",
-            "--passthrough",
-            "-v",
-            "--extra-browser-args=--enable-logging=stderr --js-flags=--expose-gc --use-cmd-decoder=validating --force_high_performance_gpu",
-            "--webgl-conformance-version=2.0.1",
-            "--read-abbreviated-json-results-from=../../content/test/data/gpu/webgl2_conformance_tests_output.json"
-        ],
-        20
+      "linux",
+      "chromium",
+      "webgl2_conformance_validating_tests",
+      "telemetry_gpu_integration_test",
+      "telemetry_gpu_integration_test",
+      [
+        "webgl_conformance",
+        "--show-stdout",
+        "--browser=release",
+        "--passthrough",
+        "-v",
+        "--extra-browser-args=--enable-logging=stderr --js-flags=--expose-gc --use-cmd-decoder=validating --force_high_performance_gpu",
+        "--webgl-conformance-version=2.0.1",
+        "--read-abbreviated-json-results-from=../../content/test/data/gpu/webgl2_conformance_tests_output.json"
+      ],
+      20
     ],
     [
-        "linux",
-        "chromium",
-        "webgl_conformance_gl_passthrough_tests",
-        "telemetry_gpu_integration_test",
-        [
-            "webgl_conformance",
-            "--show-stdout",
-            "--browser=release",
-            "--passthrough",
-            "-v",
-            "--extra-browser-args=--enable-logging=stderr --js-flags=--expose-gc --use-gl=angle --use-angle=gl --use-cmd-decoder=passthrough --force_high_performance_gpu",
-            "--read-abbreviated-json-results-from=../../content/test/data/gpu/webgl_conformance_tests_output.json"
-        ],
-        2
+      "linux",
+      "chromium",
+      "webgl_conformance_gl_passthrough_tests",
+      "telemetry_gpu_integration_test",
+      "telemetry_gpu_integration_test",
+      [
+        "webgl_conformance",
+        "--show-stdout",
+        "--browser=release",
+        "--passthrough",
+        "-v",
+        "--extra-browser-args=--enable-logging=stderr --js-flags=--expose-gc --use-gl=angle --use-angle=gl --use-cmd-decoder=passthrough --force_high_performance_gpu",
+        "--read-abbreviated-json-results-from=../../content/test/data/gpu/webgl_conformance_tests_output.json"
+      ],
+      2
     ],
     [
-        "linux",
-        "chromium",
-        "webgl_conformance_validating_tests",
-        "telemetry_gpu_integration_test",
-        [
-            "webgl_conformance",
-            "--show-stdout",
-            "--browser=release",
-            "--passthrough",
-            "-v",
-            "--extra-browser-args=--enable-logging=stderr --js-flags=--expose-gc --use-cmd-decoder=validating --force_high_performance_gpu",
-            "--read-abbreviated-json-results-from=../../content/test/data/gpu/webgl_conformance_tests_output.json"
-        ],
-        2
+      "linux",
+      "chromium",
+      "webgl_conformance_validating_tests",
+      "telemetry_gpu_integration_test",
+      "telemetry_gpu_integration_test",
+      [
+        "webgl_conformance",
+        "--show-stdout",
+        "--browser=release",
+        "--passthrough",
+        "-v",
+        "--extra-browser-args=--enable-logging=stderr --js-flags=--expose-gc --use-cmd-decoder=validating --force_high_performance_gpu",
+        "--read-abbreviated-json-results-from=../../content/test/data/gpu/webgl_conformance_tests_output.json"
+      ],
+      2
     ],
     [
-        "linux",
-        "chromium",
-        "vulkan_tests",
-        "vulkan_tests",
-        [
-            "--enable-gpu",
-            "--test-launcher-bot-mode",
-            "--test-launcher-jobs=1",
-            "--disable-headless-mode",
-            "--no-xvfb"
-        ],
-        1
+      "linux",
+      "chromium",
+      "webgpu_blink_web_tests",
+      "webgpu_blink_web_tests",
+      "webgpu_blink_web_tests",
+      [
+        "--driver-logging",
+        "--jobs=1",
+        "--order=natural",
+        "--additional-driver-flag=--use-gpu-in-tests",
+        "--no-xvfb",
+        "--additional-driver-flag=--use-vulkan=native"
+      ],
+      1
     ],
     [
-        "linux",
-        "chromium",
-        "webgpu_blink_web_tests",
-        "webgpu_blink_web_tests",
-        [
-            "--driver-logging",
-            "--jobs=1",
-            "--order=natural",
-            "--additional-driver-flag=--use-gpu-in-tests",
-            "--no-xvfb",
-            "--additional-driver-flag=--use-vulkan=native"
-        ],
-        1
+      "linux",
+      "chromium",
+      "webgpu_blink_web_tests_with_backend_validation",
+      "webgpu_blink_web_tests",
+      "webgpu_blink_web_tests",
+      [
+        "--driver-logging",
+        "--jobs=1",
+        "--order=natural",
+        "--additional-driver-flag=--enable-dawn-backend-validation",
+        "--additional-driver-flag=--use-gpu-in-tests",
+        "--no-xvfb",
+        "--additional-driver-flag=--use-vulkan=native"
+      ],
+      1
     ],
     [
-        "linux",
-        "chromium",
-        "webgpu_blink_web_tests_with_backend_validation",
-        "webgpu_blink_web_tests",
-        [
-            "--driver-logging",
-            "--jobs=1",
-            "--order=natural",
-            "--additional-driver-flag=--enable-dawn-backend-validation",
-            "--additional-driver-flag=--use-gpu-in-tests",
-            "--no-xvfb",
-            "--additional-driver-flag=--use-vulkan=native"
-        ],
-        1
+      "windows",
+      "aquarium",
+      "aquarium_d3d12",
+      "aquarium",
+      "aquarium",
+      [
+        "--test-time 30",
+        "--num-fish 30000",
+        "--enable-msaa",
+        "--turn-off-vsync",
+        "--integrated-gpu",
+        "--window-size=1920,1080",
+        "--print-log",
+        "--backend d3d12"
+      ],
+      1
     ],
     [
-        "windows",
-        "aquarium",
-        "aquarium_d3d12",
-        "aquarium",
-        [
-            "--test-time 30",
-            "--num-fish 30000",
-            "--enable-msaa",
-            "--turn-off-vsync",
-            "--integrated-gpu",
-            "--window-size=1920,1080",
-            "--print-log",
-            "--backend d3d12"
-        ],
-        1
+      "windows",
+      "aquarium",
+      "aquarium_dawn_d3d12",
+      "aquarium",
+      "aquarium",
+      [
+        "--test-time 30",
+        "--num-fish 30000",
+        "--enable-msaa",
+        "--turn-off-vsync",
+        "--integrated-gpu",
+        "--window-size=1920,1080",
+        "--print-log",
+        "--backend dawn_d3d12"
+      ],
+      1
     ],
     [
-        "windows",
-        "aquarium",
-        "aquarium_dawn_d3d12",
-        "aquarium",
-        [
-            "--test-time 30",
-            "--num-fish 30000",
-            "--enable-msaa",
-            "--turn-off-vsync",
-            "--integrated-gpu",
-            "--window-size=1920,1080",
-            "--print-log",
-            "--backend dawn_d3d12"
-        ],
-        1
+      "windows",
+      "aquarium",
+      "aquarium_dawn_vulkan",
+      "aquarium",
+      "aquarium",
+      [
+        "--test-time 30",
+        "--num-fish 30000",
+        "--enable-msaa",
+        "--turn-off-vsync",
+        "--integrated-gpu",
+        "--window-size=1920,1080",
+        "--print-log",
+        "--backend dawn_vulkan"
+      ],
+      1
     ],
     [
-        "windows",
-        "aquarium",
-        "aquarium_dawn_vulkan",
-        "aquarium",
-        [
-            "--test-time 30",
-            "--num-fish 30000",
-            "--enable-msaa",
-            "--turn-off-vsync",
-            "--integrated-gpu",
-            "--window-size=1920,1080",
-            "--print-log",
-            "--backend dawn_vulkan"
-        ],
-        1
+      "windows",
+      "chromium",
+      "angle_end2end_tests",
+      "angle_end2end_tests",
+      "gtest",
+      [
+        "--test-launcher-retry-limit=0",
+        "--test-launcher-batch-limit=256",
+        "--gtest_filter=-*Vulkan_SwiftShader*",
+        "--use-gpu-in-tests"
+      ],
+      4
     ],
     [
-        "windows",
-        "chromium",
-        "angle_end2end_tests",
-        "angle_end2end_tests",
-        [
-            "--test-launcher-retry-limit=0",
-            "--test-launcher-batch-limit=256",
-            "--gtest_filter=-*Vulkan_SwiftShader*",
-            "--use-gpu-in-tests"
-        ],
-        4
+      "windows",
+      "chromium",
+      "angle_perftests",
+      "angle_perftests",
+      "gtest",
+      [
+        "--gtest-benchmark-name=angle_perftests",
+        "-v",
+        "--one-frame-only"
+      ],
+      1
     ],
     [
-        "windows",
-        "chromium",
-        "angle_perftests",
-        "angle_perftests",
-        [
-            "--gtest-benchmark-name=angle_perftests",
-            "-v",
-            "--one-frame-only"
-        ],
-        1
+      "windows",
+      "chromium",
+      "dawn_end2end_skip_validation_tests",
+      "dawn_end2end_tests",
+      "gtest",
+      [
+        "--skip-validation",
+        "--use-gpu-in-tests",
+        "--test-launcher-retry-limit=0",
+        "--exclusive-device-type-preference=discrete,integrated"
+      ],
+      1
     ],
     [
-        "windows",
-        "chromium",
-        "dawn_end2end_skip_validation_tests",
-        "dawn_end2end_tests",
-        [
-            "--skip-validation",
-            "--use-gpu-in-tests",
-            "--test-launcher-retry-limit=0",
-            "--exclusive-device-type-preference=discrete,integrated"
-        ],
-        1
+      "windows",
+      "chromium",
+      "dawn_end2end_tests",
+      "dawn_end2end_tests",
+      "gtest",
+      [
+        "--use-gpu-in-tests",
+        "--test-launcher-retry-limit=0",
+        "--exclusive-device-type-preference=discrete,integrated"
+      ],
+      1
     ],
     [
-        "windows",
-        "chromium",
-        "dawn_end2end_tests",
-        "dawn_end2end_tests",
-        [
-            "--use-gpu-in-tests",
-            "--test-launcher-retry-limit=0",
-            "--exclusive-device-type-preference=discrete,integrated"
-        ],
-        1
+      "windows",
+      "chromium",
+      "dawn_end2end_validation_layers_tests",
+      "dawn_end2end_tests",
+      "gtest",
+      [
+        "--enable-backend-validation",
+        "--use-gpu-in-tests",
+        "--test-launcher-retry-limit=0",
+        "--exclusive-device-type-preference=discrete,integrated"
+      ],
+      1
     ],
     [
-        "windows",
-        "chromium",
-        "dawn_end2end_validation_layers_tests",
-        "dawn_end2end_tests",
-        [
-            "--enable-backend-validation",
-            "--use-gpu-in-tests",
-            "--test-launcher-retry-limit=0",
-            "--exclusive-device-type-preference=discrete,integrated"
-        ],
-        1
+      "windows",
+      "chromium",
+      "dawn_end2end_wire_tests",
+      "dawn_end2end_tests",
+      "gtest",
+      [
+        "--use-wire",
+        "--use-gpu-in-tests",
+        "--test-launcher-retry-limit=0",
+        "--exclusive-device-type-preference=discrete,integrated"
+      ],
+      1
     ],
     [
-        "windows",
-        "chromium",
-        "dawn_end2end_wire_tests",
-        "dawn_end2end_tests",
-        [
-            "--use-wire",
-            "--use-gpu-in-tests",
-            "--test-launcher-retry-limit=0",
-            "--exclusive-device-type-preference=discrete,integrated"
-        ],
-        1
+      "windows",
+      "chromium",
+      "dawn_perf_tests",
+      "dawn_perf_tests",
+      "gtest",
+      [
+        "--override-steps=1",
+        "--gtest-benchmark-name=dawn_perf_tests",
+        "-v"
+      ],
+      1
     ],
     [
-        "windows",
-        "chromium",
-        "dawn_perf_tests",
-        "dawn_perf_tests",
-        [
-            "--override-steps=1",
-            "--gtest-benchmark-name=dawn_perf_tests",
-            "-v"
-        ],
-        1
+      "windows",
+      "chromium",
+      "gl_tests_passthrough",
+      "gl_tests",
+      "gtest",
+      [
+        "--use-cmd-decoder=passthrough",
+        "--use-gl=angle",
+        "--use-gpu-in-tests"
+      ],
+      1
     ],
     [
-        "windows",
-        "chromium",
-        "gl_tests_passthrough",
-        "gl_tests",
-        [
-            "--use-cmd-decoder=passthrough",
-            "--use-gl=angle",
-            "--use-gpu-in-tests"
-        ],
-        1
+      "windows",
+      "chromium",
+      "vulkan_tests",
+      "vulkan_tests",
+      "gtest",
+      [
+        "--use-gpu-in-tests"
+      ],
+      1
     ],
     [
-        "windows",
-        "chromium",
-        "info_collection_tests",
-        "telemetry_gpu_integration_test",
-        [
-            "info_collection",
-            "--show-stdout",
-            "--browser=release_x64",
-            "--passthrough",
-            "-v",
-            "--extra-browser-args=--enable-logging=stderr --js-flags=--expose-gc --force_high_performance_gpu",
-            "--expected-vendor-id",
-            "8086",
-            "--expected-device-id",
-            "3e92",
-            "--expected-device-id",
-            "5912"
-        ],
-        1
+      "windows",
+      "chromium",
+      "info_collection_tests",
+      "telemetry_gpu_integration_test",
+      "telemetry_gpu_integration_test",
+      [
+        "info_collection",
+        "--show-stdout",
+        "--browser=release_x64",
+        "--passthrough",
+        "-v",
+        "--extra-browser-args=--enable-logging=stderr --js-flags=--expose-gc --force_high_performance_gpu",
+        "--expected-vendor-id",
+        "8086",
+        "--expected-device-id",
+        "3e92",
+        "--expected-device-id",
+        "5912"
+      ],
+      1
     ],
     [
-        "windows",
-        "chromium",
+      "windows",
+      "chromium",
+      "trace_test",
+      "telemetry_gpu_integration_test",
+      "telemetry_gpu_integration_test",
+      [
         "trace_test",
-        "telemetry_gpu_integration_test",
-        [
-            "trace_test",
-            "--show-stdout",
-            "--browser=release_x64",
-            "--passthrough",
-            "-v",
-            "--extra-browser-args=--enable-logging=stderr --js-flags=--expose-gc"
-        ],
-        1
+        "--show-stdout",
+        "--browser=release_x64",
+        "--passthrough",
+        "-v",
+        "--extra-browser-args=--enable-logging=stderr --js-flags=--expose-gc"
+      ],
+      1
     ],
     [
-        "windows",
-        "chromium",
-        "webgl2_conformance_d3d11_passthrough_tests",
-        "telemetry_gpu_integration_test",
-        [
-            "webgl_conformance",
-            "--show-stdout",
-            "--browser=release_x64",
-            "--passthrough",
-            "-v",
-            "--extra-browser-args=--enable-logging=stderr --js-flags=--expose-gc --use-gl=angle --use-angle=d3d11 --use-cmd-decoder=passthrough --force_high_performance_gpu",
-            "--webgl-conformance-version=2.0.1",
-            "--read-abbreviated-json-results-from=../../content/test/data/gpu/webgl2_conformance_tests_output.json"
-        ],
-        20
+      "windows",
+      "chromium",
+      "webgl2_conformance_d3d11_passthrough_tests",
+      "telemetry_gpu_integration_test",
+      "telemetry_gpu_integration_test",
+      [
+        "webgl_conformance",
+        "--show-stdout",
+        "--browser=release_x64",
+        "--passthrough",
+        "-v",
+        "--extra-browser-args=--enable-logging=stderr --js-flags=--expose-gc --use-gl=angle --use-angle=d3d11 --use-cmd-decoder=passthrough --force_high_performance_gpu",
+        "--webgl-conformance-version=2.0.1",
+        "--read-abbreviated-json-results-from=../../content/test/data/gpu/webgl2_conformance_tests_output.json"
+      ],
+      20
     ],
     [
-        "windows",
-        "chromium",
-        "webgl2_conformance_gl_passthrough_tests",
-        "telemetry_gpu_integration_test",
-        [
-            "webgl_conformance",
-            "--show-stdout",
-            "--browser=release_x64",
-            "--passthrough",
-            "-v",
-            "--extra-browser-args=--enable-logging=stderr --js-flags=--expose-gc --use-gl=angle --use-angle=gl --use-cmd-decoder=passthrough --force_high_performance_gpu",
-            "--webgl-conformance-version=2.0.1",
-            "--read-abbreviated-json-results-from=../../content/test/data/gpu/webgl2_conformance_tests_output.json"
-        ],
-        20
+      "windows",
+      "chromium",
+      "webgl2_conformance_gl_passthrough_tests",
+      "telemetry_gpu_integration_test",
+      "telemetry_gpu_integration_test",
+      [
+        "webgl_conformance",
+        "--show-stdout",
+        "--browser=release_x64",
+        "--passthrough",
+        "-v",
+        "--extra-browser-args=--enable-logging=stderr --js-flags=--expose-gc --use-gl=angle --use-angle=gl --use-cmd-decoder=passthrough --force_high_performance_gpu",
+        "--webgl-conformance-version=2.0.1",
+        "--read-abbreviated-json-results-from=../../content/test/data/gpu/webgl2_conformance_tests_output.json"
+      ],
+      20
     ],
     [
-        "windows",
-        "chromium",
-        "webgl_conformance_d3d11_passthrough_tests",
-        "telemetry_gpu_integration_test",
-        [
-            "webgl_conformance",
-            "--show-stdout",
-            "--browser=release_x64",
-            "--passthrough",
-            "-v",
-            "--extra-browser-args=--enable-logging=stderr --js-flags=--expose-gc --use-gl=angle --use-angle=d3d11 --use-cmd-decoder=passthrough --force_high_performance_gpu",
-            "--read-abbreviated-json-results-from=../../content/test/data/gpu/webgl_conformance_tests_output.json"
-        ],
-        2
+      "windows",
+      "chromium",
+      "webgl_conformance_d3d11_passthrough_tests",
+      "telemetry_gpu_integration_test",
+      "telemetry_gpu_integration_test",
+      [
+        "webgl_conformance",
+        "--show-stdout",
+        "--browser=release_x64",
+        "--passthrough",
+        "-v",
+        "--extra-browser-args=--enable-logging=stderr --js-flags=--expose-gc --use-gl=angle --use-angle=d3d11 --use-cmd-decoder=passthrough --force_high_performance_gpu",
+        "--read-abbreviated-json-results-from=../../content/test/data/gpu/webgl_conformance_tests_output.json"
+      ],
+      2
     ],
     [
-        "windows",
-        "chromium",
-        "webgl_conformance_d3d9_passthrough_tests",
-        "telemetry_gpu_integration_test",
-        [
-            "webgl_conformance",
-            "--show-stdout",
-            "--browser=release_x64",
-            "--passthrough",
-            "-v",
-            "--extra-browser-args=--enable-logging=stderr --js-flags=--expose-gc --use-gl=angle --use-angle=d3d9 --use-cmd-decoder=passthrough --force_high_performance_gpu",
-            "--read-abbreviated-json-results-from=../../content/test/data/gpu/webgl_conformance_tests_output.json"
-        ],
-        2
+      "windows",
+      "chromium",
+      "webgl_conformance_d3d9_passthrough_tests",
+      "telemetry_gpu_integration_test",
+      "telemetry_gpu_integration_test",
+      [
+        "webgl_conformance",
+        "--show-stdout",
+        "--browser=release_x64",
+        "--passthrough",
+        "-v",
+        "--extra-browser-args=--enable-logging=stderr --js-flags=--expose-gc --use-gl=angle --use-angle=d3d9 --use-cmd-decoder=passthrough --force_high_performance_gpu",
+        "--read-abbreviated-json-results-from=../../content/test/data/gpu/webgl_conformance_tests_output.json"
+      ],
+      2
     ],
     [
-        "windows",
-        "chromium",
-        "webgl_conformance_gl_passthrough_tests",
-        "telemetry_gpu_integration_test",
-        [
-            "webgl_conformance",
-            "--show-stdout",
-            "--browser=release_x64",
-            "--passthrough",
-            "-v",
-            "--extra-browser-args=--enable-logging=stderr --js-flags=--expose-gc --use-gl=angle --use-angle=gl --use-cmd-decoder=passthrough --force_high_performance_gpu",
-            "--read-abbreviated-json-results-from=../../content/test/data/gpu/webgl_conformance_tests_output.json"
-        ],
-        2
+      "windows",
+      "chromium",
+      "webgl_conformance_gl_passthrough_tests",
+      "telemetry_gpu_integration_test",
+      "telemetry_gpu_integration_test",
+      [
+        "webgl_conformance",
+        "--show-stdout",
+        "--browser=release_x64",
+        "--passthrough",
+        "-v",
+        "--extra-browser-args=--enable-logging=stderr --js-flags=--expose-gc --use-gl=angle --use-angle=gl --use-cmd-decoder=passthrough --force_high_performance_gpu",
+        "--read-abbreviated-json-results-from=../../content/test/data/gpu/webgl_conformance_tests_output.json"
+      ],
+      2
     ],
     [
-        "windows",
-        "chromium",
-        "webgl_conformance_vulkan_passthrough_tests",
-        "telemetry_gpu_integration_test",
-        [
-            "webgl_conformance",
-            "--show-stdout",
-            "--browser=release_x64",
-            "--passthrough",
-            "-v",
-            "--extra-browser-args=--enable-logging=stderr --js-flags=--expose-gc --use-angle=vulkan --use-cmd-decoder=passthrough --force_high_performance_gpu"
-        ],
-        2
+      "windows",
+      "chromium",
+      "webgl_conformance_vulkan_passthrough_tests",
+      "telemetry_gpu_integration_test",
+      "telemetry_gpu_integration_test",
+      [
+        "webgl_conformance",
+        "--show-stdout",
+        "--browser=release_x64",
+        "--passthrough",
+        "-v",
+        "--extra-browser-args=--enable-logging=stderr --js-flags=--expose-gc --use-angle=vulkan --use-cmd-decoder=passthrough --force_high_performance_gpu"
+      ],
+      2
     ],
     [
-        "windows",
-        "chromium",
-        "vulkan_tests",
-        "vulkan_tests",
-        [
-            "--use-gpu-in-tests"
-        ],
-        1
+      "windows",
+      "chromium",
+      "webgpu_blink_web_tests",
+      "webgpu_blink_web_tests",
+      "webgpu_blink_web_tests",
+      [
+        "--driver-logging",
+        "--jobs=1",
+        "--order=natural",
+        "--additional-driver-flag=--use-gpu-in-tests",
+        "--target=Release_x64"
+      ],
+      1
     ],
     [
-        "windows",
-        "chromium",
-        "webgpu_blink_web_tests",
-        "webgpu_blink_web_tests",
-        [
-            "--driver-logging",
-            "--jobs=1",
-            "--order=natural",
-            "--additional-driver-flag=--use-gpu-in-tests",
-            "--target=Release_x64"
-        ],
-        1
-    ],
-    [
-        "windows",
-        "chromium",
-        "webgpu_blink_web_tests_with_backend_validation",
-        "webgpu_blink_web_tests",
-        [
-            "--driver-logging",
-            "--jobs=1",
-            "--order=natural",
-            "--additional-driver-flag=--enable-dawn-backend-validation",
-            "--additional-driver-flag=--use-gpu-in-tests",
-            "--target=Release_x64"
-        ],
-        1
+      "windows",
+      "chromium",
+      "webgpu_blink_web_tests_with_backend_validation",
+      "webgpu_blink_web_tests",
+      "webgpu_blink_web_tests",
+      [
+        "--driver-logging",
+        "--jobs=1",
+        "--order=natural",
+        "--additional-driver-flag=--enable-dawn-backend-validation",
+        "--additional-driver-flag=--use-gpu-in-tests",
+        "--target=Release_x64"
+      ],
+      1
     ]
-]
+  ]
