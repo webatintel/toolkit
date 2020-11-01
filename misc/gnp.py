@@ -606,7 +606,7 @@ python %(prog)s --backup --root-dir d:\workspace\chrome
             # win64: Win_x64/<rev>/chrome-win32.zip
             # mac64: Mac/<rev>/chrome-mac.zip
             if Util.HOST_OS == Util.WINDOWS:
-                wget = Util.use_backslash('%s/wget64.exe' % ScriptRepo.TOOL_DIR)
+                wget = Util.format_slash('%s/wget64.exe' % ScriptRepo.TOOL_DIR)
             else:
                 wget = 'wget'
 
@@ -713,7 +713,7 @@ python %(prog)s --backup --root-dir d:\workspace\chrome
         else:
             cmd = '%s%s' % (target, Util.EXEC_SUFFIX)
         if Util.HOST_OS == Util.WINDOWS:
-            cmd = Util.use_backslash(cmd)
+            cmd = Util.format_slash(cmd)
         if self.args.run_disabled:
             cmd += ' --gtest_also_run_disabled_tests'
         if not self.args.run_filter == 'all':
