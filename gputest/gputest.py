@@ -119,14 +119,18 @@ class GPUTest(Program):
 
         parser.add_argument('--list', dest='list', help='list', action='store_true')
         parser.add_argument('--sync', dest='sync', help='sync', action='store_true')
+        parser.add_argument('--sync-skip-mesa', dest='sync_skip_mesa', help='sync skip mesa', action='store_true')
         #parser.add_argument('--sync-skip-roll-dawn', dest='sync_skip_roll_dawn', help='sync skip roll dawn', action='store_true')
         parser.add_argument('--sync-roll-dawn', dest='sync_roll_dawn', help='sync roll dawn', action='store_true')
         parser.add_argument('--build', dest='build', help='build', action='store_true')
+        parser.add_argument('--build-skip-mesa', dest='build_skip_mesa', help='build skip mesa', action='store_true')
         parser.add_argument('--run', dest='run', help='run', action='store_true')
+        parser.add_argument('--run-mesa-rev', dest='run_mesa_rev', help='mesa revision', default='latest')
         parser.add_argument('--dryrun', dest='dryrun', help='dryrun', action='store_true')
         parser.add_argument('--dryrun-with-shard', dest='dryrun_with_shard', help='dryrun with shard', action='store_true')
         parser.add_argument('--report', dest='report', help='report')
         parser.add_argument('--batch', dest='batch', help='batch', action='store_true')
+        parser.add_argument('--mesa-type', dest='mesa_type', help='mesa type', default='iris')
 
         parser.epilog = '''
 python %(prog)s --sync --build --run --dryrun --email
@@ -193,9 +197,15 @@ python %(prog)s --sync --build --run --dryrun --email
             if project not in projects:
                 projects.append(project)
 
+        if self.target_os == Util.LINUX and not self.args.sync_skip_mesa:
+            projects.append('mesa')
+
         for project in projects:
             timer = Timer()
-            cmd = 'python %s --root-dir %s/%s --sync --runhooks' % (Util.GNP_SCRIPT_PATH, self.root_dir, project)
+            if project == 'mesa':
+                cmd = 'python %s/mesa/mesa.py --root-dir %s/mesa --sync' % (ScriptRepo.ROOT_DIR, self.root_dir)
+            else:
+                cmd = 'python %s --root-dir %s/%s --sync --runhooks' % (Util.GNP_SCRIPT_PATH, self.root_dir, project)
             dryrun = self.args.dryrun
             if self._execute(cmd, exit_on_error=False, dryrun=dryrun)[0]:
                 Util.error('Sync failed')
@@ -219,9 +229,15 @@ python %(prog)s --sync --build --run --dryrun --email
             elif real_name not in project_targets[project]:
                 project_targets[project].append(real_name)
 
+        if self.target_os == Util.LINUX and not self.args.build_skip_mesa:
+            project_targets['mesa'] = ''
+
         for project in project_targets:
             timer = Timer()
-            cmd = 'python %s --root-dir %s/%s --makefile --build --build-target %s' % (Util.GNP_SCRIPT_PATH, self.root_dir, project, ','.join(project_targets[project]))
+            if project == 'mesa':
+                cmd = 'python %s/mesa/mesa.py --root-dir %s/mesa --build' % (ScriptRepo.ROOT_DIR, self.root_dir)
+            else:
+                cmd = 'python %s --root-dir %s/%s --makefile --build --build-target %s' % (Util.GNP_SCRIPT_PATH, self.root_dir, project, ','.join(project_targets[project]))
             if self._execute(cmd, exit_on_error=False, dryrun=self.args.dryrun)[0]:
                 error = '[GPUTest] Project %s build failed' % project
                 if self.email:
@@ -235,9 +251,23 @@ python %(prog)s --sync --build --run --dryrun --email
     def run(self):
         all_timer = Timer()
         Util.clear_proxy()
+
+        Util.append_file(self.exec_log, 'OS Version;%s' % Util.HOST_OS_RELEASE)
+
+        if Util.HOST_OS == Util.LINUX:
+            self.run_mesa_rev = Util.set_mesa('%s/mesa/backup' % self.root_dir, self.args.run_mesa_rev, self.args.mesa_type)
+            info = 'Mesa revision;%s' % self.run_mesa_rev
+            Util.append_file(self.exec_log, info)
+
         args = self.args
+        chromium_printed = False
         for index, target_index in enumerate(self.target_indexes):
             project = self.os_targets[target_index][self.TARGET_INDEX_PROJECT]
+            if project == 'chromium' and not chromium_printed:
+                repo = ChromiumRepo('%s/chromium' % self.root_dir)
+                info = 'Chromium revision;%s' % repo.get_working_dir_rev()
+                Util.append_file(self.exec_log, info)
+                chromium_printed = True
             virtual_name = self.os_targets[target_index][self.TARGET_INDEX_VIRTUAL_NAME]
             real_name = self.os_targets[target_index][self.TARGET_INDEX_REAL_NAME]
             real_type = self.os_targets[target_index][self.TARGET_INDEX_REAL_TYPE]
@@ -332,7 +362,7 @@ python %(prog)s --sync --build --run --dryrun --email
         total_regressions = 0
         for line in open(self.exec_log):
             fields = line.split(';')
-            results.append('== %s spent %s ==' % (fields[0], fields[1]))
+            results.append('== %s: %s ==' % (fields[0], fields[1].rstrip('\n')))
             name = fields[0]
             if name.startswith('run') and name != 'run all':
                 op = name.replace('run ', '')
@@ -341,7 +371,7 @@ python %(prog)s --sync --build --run --dryrun --email
                 total_regressions += num_regressions
                 results += target_results
 
-        subject = '[GPUTest] Test on %s has %s regressions' % (self.timestamp, total_regressions)
+        subject = '[GPUTest] Host %s Datetime %s Regressions %s' % (Util.HOST_NAME, self.timestamp, total_regressions)
         for result in [subject] + results:
             print(result)
 

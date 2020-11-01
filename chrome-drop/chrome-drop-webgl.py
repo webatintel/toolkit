@@ -48,8 +48,8 @@ class Webgl(Program):
         parser.add_argument('--build-skip-chrome', dest='build_skip_chrome', help='skip building chrome during build', action='store_true')
         parser.add_argument('--build-skip-backup', dest='build_skip_backup', help='skip backing up chrome during build', action='store_true')
         parser.add_argument('--run', dest='run', help='run', action='store_true')
-        parser.add_argument('--run-chrome-rev', dest='test_chrome_rev', help='Chromium revision', default='latest')
-        parser.add_argument('--run-mesa-rev', dest='test_mesa_rev', help='mesa revision', default='latest')
+        parser.add_argument('--run-chrome-rev', dest='run_chrome_rev', help='Chromium revision', default='latest')
+        parser.add_argument('--run-mesa-rev', dest='run_mesa_rev', help='mesa revision', default='latest')
         parser.add_argument('--run-filter', dest='test_filter', help='WebGL CTS suite to run against', default='all')  # For smoke run, we may use conformance/attribs
         parser.add_argument('--run-verbose', dest='test_verbose', help='verbose mode of run', action='store_true')
         parser.add_argument('--run-chrome', dest='test_chrome', help='run chrome', default='default')
@@ -93,10 +93,10 @@ python %(prog)s --batch
         self.test_chrome = test_chrome
         self.result_dir = '%s/result' % root_dir
 
-        self.test_mesa_rev = args.test_mesa_rev
+        self.run_mesa_rev = args.run_mesa_rev
         self.test_filter = args.test_filter
         self.test_verbose = args.test_verbose
-        self.test_chrome_rev = args.test_chrome_rev
+        self.run_chrome_rev = args.run_chrome_rev
         self.test_target = args.test_target
         self.test_no_angle = args.test_no_angle
 
@@ -139,11 +139,11 @@ python %(prog)s --batch
         Util.clear_proxy()
 
         if Util.HOST_OS == Util.LINUX:
-            self.test_mesa_rev = Util.set_mesa(self.mesa_backup_dir, self.test_mesa_rev, self.args.mesa_type)
+            self.run_mesa_rev = Util.set_mesa(self.mesa_backup_dir, self.run_mesa_rev, self.args.mesa_type)
 
         common_cmd = 'vpython content/test/gpu/run_gpu_integration_test.py webgl_conformance --disable-log-uploads'
         if self.test_chrome == 'build':
-            self.chrome_rev = self.test_chrome_rev
+            self.chrome_rev = self.run_chrome_rev
             (chrome_rev_dir, self.chrome_rev) = Util.get_backup_dir(self.chrome_backup_dir, self.chrome_rev)
             chrome_rev_dir = '%s/%s' % (self.chrome_backup_dir, chrome_rev_dir)
             Util.chdir(chrome_rev_dir, verbose=True)
@@ -231,7 +231,7 @@ python %(prog)s --batch
             cmd = common_cmd + ' --webgl-conformance-version=%s' % comb[COMB_INDEX_WEBGL]
             result_file = ''
             if Util.HOST_OS == Util.LINUX:
-                result_file = '%s/%s-%s-%s-%s-%s.log' % (self.result_dir, datetime, self.chrome_rev, self.args.mesa_type, self.test_mesa_rev, comb[COMB_INDEX_WEBGL])
+                result_file = '%s/%s-%s-%s-%s-%s.log' % (self.result_dir, datetime, self.chrome_rev, self.args.mesa_type, self.run_mesa_rev, comb[COMB_INDEX_WEBGL])
             elif Util.HOST_OS == Util.WINDOWS:
                 extra_browser_args += ' --use-angle=%s' % comb[COMB_INDEX_BACKEND]
                 result_file = '%s/%s-%s-%s-%s.log' % (self.result_dir, datetime, self.chrome_rev, comb[COMB_INDEX_WEBGL], comb[COMB_INDEX_BACKEND])
@@ -256,11 +256,11 @@ python %(prog)s --batch
         Util.append_file(log_file, final_details)
         Util.append_file(log_file, final_summary)
 
-
+        subject = '[WebGL CTS]'
         if Util.HOST_OS == Util.LINUX:
-            subject = 'WebGL CTS on Chrome %s and Mesa %s %s has %s Regression' % (self.chrome_rev, self.args.mesa_type, self.test_mesa_rev, num_regressions)
-        else:
-            subject = 'WebGL CTS on Chrome %s has %s Regression' % (self.chrome_rev, num_regressions)
+            subject += ' Mesa %s' % self.run_mesa_rev
+        subject += 'Chrome %s Regression %s' % (self.chrome_rev, num_regressions)
+
         if self.args.batch and self.args.email:
             Util.send_email('webperf@intel.com', 'yang.gu@intel.com', subject, '%s\n%s' % (final_summary, final_details))
 
