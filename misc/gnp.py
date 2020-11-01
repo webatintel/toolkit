@@ -233,6 +233,7 @@ class Gnp(Program):
         parser.add_argument('--symbol-level', dest='symbol_level', help='symbol level', type=int, default=0)
         parser.add_argument('--batch', dest='batch', help='batch', action='store_true')
         parser.add_argument('--download', dest='download', help='download', action='store_true')
+        parser.add_argument('--no-exit-on-error', dest='no_exit_on_error', help='no exit on error', action='store_true')
 
         parser.add_argument('--sync', dest='sync', help='sync', action='store_true')
         parser.add_argument('--sync-reset', dest='sync_reset', help='do a reset before syncing', action='store_true')
@@ -300,6 +301,11 @@ python %(prog)s --backup --root-dir d:\workspace\chrome
             default_target = ''
         self.default_target = default_target
 
+        if args.no_exit_on_error:
+            self.exit_on_error = False
+        else:
+            self.exit_on_error = True
+
         if args.rev:
             if re.search('-', args.rev):
                 tmp_revs = args.rev.split('-')
@@ -353,7 +359,7 @@ python %(prog)s --backup --root-dir d:\workspace\chrome
                 Util.info('Begin to sync rev %s' % self.rev)
 
             if self.args.sync_reset:
-                self._execute('git reset --hard HEAD && git clean -f -d')
+                self._execute('git reset --hard HEAD && git clean -f -d', exit_on_error=self.exit_on_error)
 
             if self.integer_rev:
                 self.repo.get_info(self.integer_rev)
@@ -364,7 +370,7 @@ python %(prog)s --backup --root-dir d:\workspace\chrome
             if self.decimal_rev:
                 self._chromium_sync_decimal_rev()
         else:
-            self._execute('git pull')
+            self._execute('git pull', exit_on_error=self.exit_on_error)
             self._execute_gclient(cmd_type='sync')
 
     def runhooks(self):
@@ -423,7 +429,7 @@ python %(prog)s --backup --root-dir d:\workspace\chrome
         cmd = 'gn --args=%s%s%s gen %s' % (quotation, gn_args, quotation, self.out_dir)
         Util.ensure_dir(self.out_dir)
         Util.info('GN ARGS: {}'.format(gn_args))
-        self._execute(cmd)
+        self._execute(cmd, exit_on_error=self.exit_on_error)
 
     def build(self):
         build_target = self.args.build_target
@@ -443,7 +449,7 @@ python %(prog)s --backup --root-dir d:\workspace\chrome
                 rev = self.repo.get_working_dir_rev()
             Util.info('Begin to build rev %s' % rev)
             Util.chdir(self.root_dir + '/build/util')
-            self._execute('python lastchange.py -o LASTCHANGE')
+            self._execute('python lastchange.py -o LASTCHANGE', exit_on_error=self.exit_on_error)
             Util.chdir(self.root_dir)
 
         cmd = 'ninja -k%s -j%s -C %s %s' % (str(self.args.build_max_fail), str(Util.CPU_COUNT), self.out_dir, ' '.join(targets))
@@ -461,6 +467,7 @@ python %(prog)s --backup --root-dir d:\workspace\chrome
         else:
             backup_dir = Util.cal_backup_dir()
         backup_path = '%s/backup/%s' % (self.root_dir, backup_dir)
+        Util.ensure_dir('%s/backup' % self.root_dir)
 
         Util.info('Begin to backup %s' % backup_dir)
         if os.path.exists(backup_path):
@@ -479,7 +486,7 @@ python %(prog)s --backup --root-dir d:\workspace\chrome
 
         tmp_files = []
         for target in targets:
-            target_files = self._execute('gn desc %s %s runtime_deps' % (self.out_dir, target), return_out=True)[1].rstrip('\n').split('\n')
+            target_files = self._execute('gn desc %s %s runtime_deps' % (self.out_dir, target), return_out=True, exit_on_error=self.exit_on_error)[1].rstrip('\n').split('\n')
             tmp_files = Util.union_list(tmp_files, target_files)
 
         exclude_files = ['gen/']
@@ -508,7 +515,8 @@ python %(prog)s --backup --root-dir d:\workspace\chrome
             if os.path.isdir(src_file):
                 dst_dir = os.path.dirname(os.path.dirname(dst_dir))
             cmd = 'cp -rf %s %s' % (src_file, dst_dir)
-            self._execute(cmd)
+            self._execute(cmd, exit_on_error=self.exit_on_error)
+            #Util.execute(cmd=cmd, show_cmd=True, exit_on_error=self.exit_on_error)
 
             # permission denied
             #shutil.copyfile(file, dst_dir)
@@ -523,7 +531,7 @@ python %(prog)s --backup --root-dir d:\workspace\chrome
 
         if not os.path.exists('%s/%s-orig.zip' % (self.backup_dir, rev_str)):
             cmd = 'vpython tools/mb/mb.py zip %s telemetry_gpu_integration_test %s/%s-orig.zip' % (self.out_dir, self.backup_dir, rev_str)
-            result = self._execute(cmd)
+            result = self._execute(cmd, exit_on_error=self.exit_on_error)
             if result[0]:
                 Util.error('Failed to generate telemetry_gpu_integration_test')
 
@@ -540,11 +548,12 @@ python %(prog)s --backup --root-dir d:\workspace\chrome
             Util.set_mesa(Util.PROJECT_MESA_BACKUP_DIR, self.args.run_mesa_rev)
 
         if self.args.run_rev == 'out':
-            Util.chdir('%s' % self.out_dir, verbose=True)
+            run_dir = self.out_dir
         else:
-            rev_dir, _ = Util.get_backup_dir('backup' % self.args.run_rev)
-            Util.chdir('backup/%s/out/Release' % rev_dir, verbose=True)
+            rev_dir, _ = Util.get_backup_dir('backup', self.args.run_rev)
+            run_dir = 'backup/%s/out/release' % rev_dir
 
+        Util.chdir(run_dir, verbose=True)
         run_target = self.args.run_target
         if run_target:
             targets = run_target.split(',')
@@ -607,12 +616,12 @@ python %(prog)s --backup --root-dir d:\workspace\chrome
                 archive_url = '"https://www.googleapis.com/download/storage/v1/b/chromium-browser-snapshots/o/Android%2F' + rev + '%2Fchrome-android.zip?generation=1542192867201693&alt=media"'
             else:
                 archive_url = 'http://commondatastorage.googleapis.com/chromium-browser-snapshots/%s%s/%s/chrome-%s.zip' % (target_os_tmp, target_arch_tmp, rev, target_os_tmp2)
-            self._execute('%s %s --show-progress -O %s' % (wget, archive_url, rev_zip))
+            self._execute('%s %s --show-progress -O %s' % (wget, archive_url, rev_zip), exit_on_error=self.exit_on_error)
             if (os.path.getsize(rev_zip) == 0):
                 Util.warning('Could not find revision %s' % rev)
-                self._execute('rm %s' % rev_zip)
+                self._execute('rm %s' % rev_zip, exit_on_error=self.exit_on_error)
             else:
-                self._execute('mv %s ../' % rev_zip)
+                self._execute('mv %s ../' % rev_zip, exit_on_error=self.exit_on_error)
 
     def batch(self):
         self.sync()
@@ -640,7 +649,7 @@ python %(prog)s --backup --root-dir d:\workspace\chrome
         if not Util.has_depot_tools_in_path() and os.path.exists(Util.PROJECT_DEPOT_TOOLS):
             Util.prepend_path(Util.PROJECT_DEPOT_TOOLS)
 
-        result = self._execute(cmd=cmd)
+        result = self._execute(cmd=cmd, exit_on_error=self.exit_on_error)
 
         if not Util.has_depot_tools_in_path() and os.path.exists(Util.PROJECT_DEPOT_TOOLS):
             Util.remove_path(Util.PROJECT_DEPOT_TOOLS)
@@ -663,7 +672,7 @@ python %(prog)s --backup --root-dir d:\workspace\chrome
         if tmp_hash:
             extra_cmd = '--revision src@' + tmp_hash
         else:
-            self._execute('git pull')
+            self._execute('git pull', exit_on_error=self.exit_on_error)
             extra_cmd = ''
 
         if not self.args.sync_src_only:
@@ -690,9 +699,9 @@ python %(prog)s --backup --root-dir d:\workspace\chrome
             Util.error('The decimal part of rev should be less than %s' % roll_count)
         Util.chdir('%s/%s' % (self.root_dir, roll_repo))
         cmd = 'git reset --hard %s~%s' % (roll_hash, roll_count_diff)
-        self._execute(cmd)
+        self._execute(cmd, exit_on_error=self.exit_on_error)
         cmd = 'git rev-parse --abbrev-ref HEAD'
-        branch = self._execute(cmd, return_out=True, show_cmd=False)[1].strip()
+        branch = self._execute(cmd, return_out=True, show_cmd=False, exit_on_error=self.exit_on_error)[1].strip()
         if not branch == 'master':
             Util.error('Repo %s is not on master' % roll_repo)
 
@@ -715,7 +724,7 @@ python %(prog)s --backup --root-dir d:\workspace\chrome
 
         if Util.HOST_OS == Util.LINUX:
             cmd = './' + cmd
-        self._execute(cmd)
+        self._execute(cmd, exit_on_error=self.exit_on_error)
 
     def _handle_ops(self):
         args = self.args

@@ -33,14 +33,14 @@ class Angle(Program):
     def __init__(self):
         parser = argparse.ArgumentParser(description='Chrome Drop ANGLE')
 
+        parser.add_argument('--sync', dest='sync', help='sync', action='store_true')
         parser.add_argument('--build', dest='build', help='build', action='store_true')
-        parser.add_argument('--build-skip-sync', dest='build_skip_sync', help='skip sync during build', action='store_true')
-        parser.add_argument('--build-skip-build-angle', dest='build_skip_build_angle', help='skip building ANGLE during build', action='store_true')
-        parser.add_argument('--test', dest='test', help='test', action='store_true')
-        parser.add_argument('--test-angle-rev', dest='test_angle_rev', help='ANGLE revision', default='latest')
-        parser.add_argument('--test-filter', dest='test_filter', help='WebGL CTS suite to test against', default='all')  # For smoke test, we may use conformance_attribs
-        parser.add_argument('--test-verbose', dest='test_verbose', help='verbose mode of test', action='store_true')
+        parser.add_argument('--run', dest='run', help='run', action='store_true')
         parser.add_argument('--batch', dest='batch', help='batch', action='store_true')
+
+        parser.add_argument('--run-angle-rev', dest='test_angle_rev', help='ANGLE revision', default='latest')
+        parser.add_argument('--run-filter', dest='test_filter', help='WebGL CTS suite to run against', default='all')
+        parser.add_argument('--run-verbose', dest='test_verbose', help='verbose mode of run', action='store_true')
         parser.add_argument('--dryrun', dest='dryrun', help='dryrun', action='store_true')
         parser.add_argument('--report', dest='report', help='report file')
         parser.add_argument('--email', dest='email', help='send report as email', action='store_true')
@@ -57,39 +57,33 @@ python %(prog)s --batch
         args = self.args
 
         self.angle_dir = '%s/angle' % Util.get_symbolic_link_dir()
-        self.build_skip_sync = args.build_skip_sync
-        self.build_skip_build_angle = args.build_skip_build_angle
         self._handle_ops()
 
-    def build(self):
-        Util.chdir(self.angle_dir)
-        if not self.build_skip_sync:
-            cmd = 'python %s --sync --runhooks --root-dir %s' % (Util.GNP_SCRIPT_PATH, self.angle_dir)
-            self._execute(cmd, exit_on_error=False)
-        Util.ensure_dir('%s/backup' % self.angle_dir)
-        if not self.build_skip_build_angle:
-            cmd = 'python %s --makefile --build --build-target angle_e2e --backup --backup-target angle_e2e --root-dir %s' % (Util.GNP_SCRIPT_PATH, self.angle_dir)
-            self._execute(cmd)
+    def sync(self):
+        cmd = 'python %s --sync --runhooks --root-dir %s' % (Util.GNP_SCRIPT_PATH, self.angle_dir)
+        self._execute(cmd)
 
-    def test(self):
-        Util.chdir(self.angle_dir)
-        cmd = 'python %s --test --test-target angle_e2e --test-rev latest --root-dir %s' % (Util.GNP_SCRIPT_PATH, self.angle_dir)
+    def build(self):
+        cmd = 'python %s --makefile --build --build-target angle_e2e --backup --backup-target angle_e2e --root-dir %s' % (Util.GNP_SCRIPT_PATH, self.angle_dir)
+        self._execute(cmd)
+
+    def run(self):
+        cmd = 'python %s --run --run-target angle_e2e --run-rev latest --root-dir %s' % (Util.GNP_SCRIPT_PATH, self.angle_dir)
         self._execute(cmd)
 
     def batch(self):
+        self.sync()
         self.build()
-        if Util.HOST_OS == 'linux':
-            for mesa_type in self.mesa_types:
-                self.test(mesa_type=mesa_type)
-        else:
-            self.test()
+        self.run()
 
     def _handle_ops(self):
         args = self.args
+        if args.sync:
+            self.sync()
         if args.build:
             self.build()
-        if args.test:
-            self.test()
+        if args.run:
+            self.run()
         if args.batch:
             self.batch()
 

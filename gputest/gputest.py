@@ -43,8 +43,18 @@ class GPUTest(Program):
         }
     }
 
+    REAL_TYPE_INFO_INDEX_FILTER = 0
+    REAL_TYPE_INFO_INDEX_EXTRA_ARGS = 1
+    REAL_TYPE_INFO = {
+        'aquarium': ['--test-time', ''],
+        'gtest': ['--gtest_filter', ''], # --cfi-diag=0
+        'telemetry_gpu_integration_test': ['--test-filter', '--retry-limit 1 --retry-only-retry-on-failure-tests'],
+        'webgpu_blink_web_tests': ['--isolated-script-test-filter', '--seed 4 --jobs=1 --driver-logging --no-show-results --clobber-old-results --no-retry-failures --order=natural --isolated-script-test-filter=wpt_internal/webgpu/* --ignore-default-expectations --additional-expectations=../../third_party/blink/web_tests/WebGPUExpectations --additional-driver-flag=--enable-unsafe-webgpu --additional-driver-flag=--disable-gpu-sandbox'],
+    }
+
     VIRTUAL_NAME_INFO_INDEX_REAL_TYPE = 0
-    VIRTUAL_NAME_INFO_INDEX_SMOKE = 1
+    VIRTUAL_NAME_INFO_INDEX_DRYRUN = 1
+    VIRTUAL_NAME_INFO_INDEX_EXTRA_ARGS = 2
     VIRTUAL_NAME_INFO = {
         'aquarium_d3d12': ['aquarium', '1'],
         'aquarium_dawn_d3d12': ['aquarium', '1'],
@@ -56,7 +66,7 @@ class GPUTest(Program):
         'dawn_end2end_tests': ['gtest', 'BindGroupTests'],
         'dawn_end2end_validation_layers_tests': ['gtest', 'BindGroupTests'],
         'dawn_end2end_wire_tests': ['gtest', 'BindGroupTests'],
-        'dawn_perf_tests': ['gtest', 'BufferUploadPerf.Run/D3D12_Intel'],
+        'dawn_perf_tests': ['gtest', 'BufferUploadPerf.Run/D3D12_Intel', '--override-steps=1'],
         'gl_tests_passthrough': ['gtest', 'SharedImageFactoryTest'],
         'vulkan_tests': ['gtest', 'BasicVulkanTest'],
 
@@ -71,17 +81,8 @@ class GPUTest(Program):
         'webgl_conformance_validating_tests': ['telemetry_gpu_integration_test', 'conformance/attribs'],
         'webgl_conformance_vulkan_passthrough_tests': ['telemetry_gpu_integration_test', 'conformance/attribs'],
 
-        'webgpu_blink_web_tests': ['webgpu_blink_web_tests', ''],
-        'webgpu_blink_web_tests_with_backend_validation': ['webgpu_blink_web_tests', ''],
-    }
-
-    REAL_TYPE_INFO_INDEX_FILTER = 0
-    REAL_TYPE_INFO_INDEX_EXTRA_ARGS = 1
-    REAL_TYPE_INFO = {
-        'aquarium': ['--test-time', ''],
-        'gtest': ['--gtest_filter', '--test-launcher-bot-mode --cfi-diag=0'],
-        'telemetry_gpu_integration_test': ['--test-filter', '--retry-limit 1 --retry-only-retry-on-failure-tests'],
-        'webgpu_blink_web_tests': ['--gtest_filter', '--isolated-script-test-filter=wpt_internal/webgpu/* --ignore-default-expectations --additional-expectations=../../third_party/blink/web_tests/WebGPUExpectations --additional-driver-flag=--enable-unsafe-webgpu --additional-driver-flag=--disable-gpu-sandbox'],
+        'webgpu_blink_web_tests': ['webgpu_blink_web_tests', 'wpt_internal/webgpu/cts.html?q=webgpu:api,validation,setViewport:*'],
+        'webgpu_blink_web_tests_with_backend_validation': ['webgpu_blink_web_tests', 'wpt_internal/webgpu/cts.html?q=webgpu:api,validation,setViewport:*'],
     }
 
     CHROME_CONFIG_FILES = ['chromium.gpu.fyi.json', 'chromium.dawn.json']
@@ -100,14 +101,10 @@ class GPUTest(Program):
     index += 1
     TARGET_INDEX_RUN_ARGS = index
     index += 1
-    TARGET_INDEX_RUN_SHARD = index
+    TARGET_INDEX_TOTAL_SHARDS = index
     TARGET_INDEX_MAX = index
 
-    UNITTEST_PATTERN_FAIL = r'^\d+ test(s?) failed:$'
-    UNITTEST_PATTERN_FAIL_EXPECTED = r'^\d+ test(s?) failed as expected:$'
-    UNITTEST_PATTERN_CRASH = r'^\d+ test(s?) crashed:$'
-    UNITTEST_PATTERN_TIMEOUT = r'^\d+ test(s?) timed out:$'
-    UNITTEST_PATTERN_SKIP = r'^\d+ test(s?) not run:$'
+    RESULT_FILE_PATTERN = r'^.*-(.*).log$'
 
     EMAIL_SENDER = 'webgraphics@intel.com'
     EMAIL_ADMIN = 'yang.gu@intel.com'
@@ -118,23 +115,29 @@ class GPUTest(Program):
 
         parser.add_argument('--debug', dest='debug', help='debug', action='store_true')
         parser.add_argument('--target', dest='target', help='target', default='all')
-        parser.add_argument('--check', dest='check', help='check', action='store_true')
-        parser.add_argument('--list', dest='list', help='list', action='store_true')
-        parser.add_argument('--sync', dest='sync', help='sync', action='store_true')
-        parser.add_argument('--build', dest='build', help='build', action='store_true')
-        parser.add_argument('--run', dest='run', help='run', action='store_true')
-        parser.add_argument('--run-smoke', dest='run_smoke', help='run smoke tests', action='store_true')
         parser.add_argument('--email', dest='email', help='email', action='store_true')
 
-        parser.epilog = '''
-python %(prog)s --sync --build --run --run-smoke --email
-'''
+        parser.add_argument('--list', dest='list', help='list', action='store_true')
+        parser.add_argument('--sync', dest='sync', help='sync', action='store_true')
+        #parser.add_argument('--sync-skip-roll-dawn', dest='sync_skip_roll_dawn', help='sync skip roll dawn', action='store_true')
+        parser.add_argument('--sync-roll-dawn', dest='sync_roll_dawn', help='sync roll dawn', action='store_true')
+        parser.add_argument('--build', dest='build', help='build', action='store_true')
+        parser.add_argument('--run', dest='run', help='run', action='store_true')
+        parser.add_argument('--dryrun', dest='dryrun', help='dryrun', action='store_true')
+        parser.add_argument('--dryrun-with-shard', dest='dryrun_with_shard', help='dryrun with shard', action='store_true')
+        parser.add_argument('--report', dest='report', help='report')
+        parser.add_argument('--batch', dest='batch', help='batch', action='store_true')
 
+        parser.epilog = '''
+python %(prog)s --sync --build --run --dryrun --email
+'''
         python_ver = Util.get_python_ver()
         if python_ver[0] == 3:
             super().__init__(parser)
         else:
             super(GPUTest, self).__init__(parser)
+
+        args = self.args
 
         self.chromium_dir = '%s/chromium' % self.root_dir
         self.chromium_src_dir = '%s/src' % self.chromium_dir
@@ -142,35 +145,212 @@ python %(prog)s --sync --build --run --run-smoke --email
         if target_os == 'default':
             target_os = Util.HOST_OS
 
-        targets = []
-        for target in Util.load_json('%s/%s' % (script_dir, self.CONFIG_FILE)):
+        self._get_targets()
+        os_targets = []
+        for target in self.targets:
             if target[self.TARGET_INDEX_OS] == target_os:
-                targets.append(target)
-        self.targets = targets
+                os_targets.append(target)
+        self.os_targets = os_targets
 
         target_indexes = []
-        target_str = self.args.target
-        if target_str == 'all':
-            target_str = '0-%s' % (len(self.targets) - 1)
-        targets = target_str.split(',')
-        for target in targets:
-            if '-' in target:
-                tmp_targets = target.split('-')
+        arg_target = args.target
+        if arg_target == 'all':
+            arg_target = '0-%d' % (len(self.os_targets) - 1)
+        arg_targets = arg_target.split(',')
+        for tmp_target in arg_targets:
+            if '-' in tmp_target:
+                tmp_targets = tmp_target.split('-')
                 target_min = int(tmp_targets[0])
                 target_max = int(tmp_targets[1])
                 target_indexes.extend(range(target_min, target_max + 1))
             else:
-                target_indexes.append(int(target))
+                target_indexes.append(int(tmp_target))
         target_indexes = sorted(target_indexes)
         self.target_indexes = target_indexes
-        self.total_target_count = len(target_indexes)
-        self.target_index = 1
 
-        self.run_results = []
+        if args.report:
+            self.result_dir = args.report
+        else:
+            self.result_dir = '%s/result/%s' % (self.root_dir, self.timestamp)
+            Util.ensure_dir(self.result_dir)
+        self.exec_log = '%s/exec.log' % self.result_dir
+
+        if args.email or args.batch:
+            self.email = True
+        else:
+            self.email = False
 
         self._handle_ops()
 
-    def check(self):
+    def list(self):
+        for index, target in enumerate(self.os_targets):
+            print('%s: %s' % (index, target[self.TARGET_INDEX_VIRTUAL_NAME]))
+
+    def sync(self):
+        projects = []
+        for target_index in self.target_indexes:
+            project = self.os_targets[target_index][self.TARGET_INDEX_PROJECT]
+            if project not in projects:
+                projects.append(project)
+
+        for project in projects:
+            timer = Timer()
+            cmd = 'python %s --root-dir %s/%s --sync --runhooks' % (Util.GNP_SCRIPT_PATH, self.root_dir, project)
+            dryrun = self.args.dryrun
+            if self._execute(cmd, exit_on_error=False, dryrun=dryrun)[0]:
+                Util.error('Sync failed')
+
+            if project == 'aquarium' and self.args.sync_roll_dawn:
+                Util.chdir('%s/aquarium/third_party/dawn' % self.root_dir)
+                self._execute('git checkout master && git pull', dryrun=dryrun)
+                Util.info('Roll Dawn in Aquarium to %s on %s' % (Util.get_repo_head_hash(), Util.get_repo_head_date()))
+
+            info = 'sync %s;%s;%s' % (project, timer.stop(), cmd)
+            Util.info(info)
+            Util.append_file(self.exec_log, info)
+
+    def build(self):
+        project_targets = {}
+        for target_index in self.target_indexes:
+            project = self.os_targets[target_index][self.TARGET_INDEX_PROJECT]
+            real_name = self.os_targets[target_index][self.TARGET_INDEX_REAL_NAME]
+            if project not in project_targets:
+                project_targets[project] = [real_name]
+            elif real_name not in project_targets[project]:
+                project_targets[project].append(real_name)
+
+        for project in project_targets:
+            timer = Timer()
+            cmd = 'python %s --root-dir %s/%s --makefile --build --build-target %s' % (Util.GNP_SCRIPT_PATH, self.root_dir, project, ','.join(project_targets[project]))
+            if self._execute(cmd, exit_on_error=False, dryrun=self.args.dryrun)[0]:
+                error = '[GPUTest] Project %s build failed' % project
+                if self.email:
+                    Util.send_email(self.EMAIL_SENDER, self.EMAIL_ADMIN, error, '')
+                Util.error(error)
+
+            info = 'build %s;%s;%s' % (project, timer.stop(), cmd)
+            Util.info(info)
+            Util.append_file(self.exec_log, info)
+
+    def run(self):
+        all_timer = Timer()
+        Util.clear_proxy()
+        args = self.args
+        for index, target_index in enumerate(self.target_indexes):
+            project = self.os_targets[target_index][self.TARGET_INDEX_PROJECT]
+            virtual_name = self.os_targets[target_index][self.TARGET_INDEX_VIRTUAL_NAME]
+            real_name = self.os_targets[target_index][self.TARGET_INDEX_REAL_NAME]
+            real_type = self.os_targets[target_index][self.TARGET_INDEX_REAL_TYPE]
+            config_cmd = 'python %s --run --root-dir %s/%s --run-target %s --run-rev out' % (Util.GNP_SCRIPT_PATH, self.root_dir, project, real_name)
+
+            run_args = self.os_targets[target_index][self.TARGET_INDEX_RUN_ARGS]
+            for i, run_arg in reversed(list(enumerate(run_args))):
+                if run_arg.startswith('--extra-browser-args'):
+                    run_arg = run_arg.replace('--extra-browser-args=', '')
+                    run_args[i] = '--extra-browser-args=\\\"%s --disable-backgrounding-occluded-windows\\\"' % run_arg
+                elif run_arg == '--browser=release_x64':
+                    run_args[i] = '--browser=release'
+                elif run_arg.startswith('--gtest-benchmark-name'):
+                    run_args.remove(run_arg)
+                elif run_arg in ['-v', '--show-stdout', 'angle_end2end_tests', 'angle_perftests', '--print-test-stdout']:
+                    run_args.remove(run_arg)
+                elif run_arg == '--target=Release_x64':
+                    run_args[i] = '--target=release'
+                # we use 5912 and 3e98 in test
+                elif run_arg == '3e92':
+                    run_args[i] = '3e98'
+            config_args = ' '.join(run_args)
+
+            extra_args = self.REAL_TYPE_INFO[real_type][self.REAL_TYPE_INFO_INDEX_EXTRA_ARGS]
+            if extra_args:
+                config_args += ' %s' % extra_args
+
+            dryrun_cond = self.VIRTUAL_NAME_INFO[virtual_name][self.VIRTUAL_NAME_INFO_INDEX_DRYRUN]
+            if args.dryrun and dryrun_cond:
+                if real_type not in ['aquarium', 'webgpu_blink_web_tests']:
+                    dryrun_cond = '*%s*' % dryrun_cond
+                config_args += ' %s=%s' % (self.REAL_TYPE_INFO[real_type][self.REAL_TYPE_INFO_INDEX_FILTER], dryrun_cond)
+
+            if real_type in ['telemetry_gpu_integration_test', 'webgpu_blink_web_tests']:
+                total_shards_arg = '--total-shards'
+                shard_index_arg = '--shard-index'
+                output_arg = '--write-full-results-to'
+
+            total_shards = int(self.os_targets[target_index][self.TARGET_INDEX_TOTAL_SHARDS])
+            if real_type == 'gtest':
+                total_shards = 1
+
+            for shard_index in range(total_shards):
+                shard_args = ''
+                if total_shards > 1:
+                    shard_args += ' %s=%s %s=%s' % (total_shards_arg, total_shards, shard_index_arg, shard_index)
+
+                total_target_indexes = len(self.target_indexes)
+                total_target_indexes_str = str(total_target_indexes)
+                total_target_indexes_str_len = len(total_target_indexes_str)
+                total_shards_str = str(total_shards)
+                total_shards_str_len = len(total_shards_str)
+                op = '%s_%s-%s_%s-%s' % (str(index + 1).zfill(total_target_indexes_str_len), total_target_indexes_str, str(shard_index + 1).zfill(total_shards_str_len), total_shards_str, virtual_name)
+                result_file = '%s/%s.log' % (self.result_dir, op)
+
+                if real_type in ['aquarium']:
+                    shard_args += ' > %s' % result_file
+                elif real_type in ['telemetry_gpu_integration_test', 'webgpu_blink_web_tests']:
+                    shard_args += ' %s=' % output_arg
+                    if real_type == 'gtest':
+                        shard_args += 'json:'
+
+                    shard_args += result_file
+                    Util.ensure_file(result_file)
+
+                cmd = '%s --run-args "%s%s"' % (config_cmd, config_args, shard_args)
+                timer = Timer()
+                self._execute(cmd, exit_on_error=False)
+                info = 'run %s;%s;%s' % (op, timer.stop(), cmd)
+                Util.info(info)
+                Util.append_file(self.exec_log, info)
+
+                if real_type in ['gtest']:
+                    shutil.copyfile('%s/chromium/src/out/release/output.json' % self.root_dir, result_file)
+                self._parse_result(result_file, verbose=True)
+                if args.dryrun and not args.dryrun_with_shard:
+                    break
+
+        all_info = 'run all;%s;run()' % all_timer.stop()
+        Util.info(all_info)
+        Util.append_file(self.exec_log, all_info)
+
+        self.report()
+
+    def batch(self):
+        self.sync()
+        self.build()
+        self.run()
+
+    def report(self):
+        results = []
+        total_regressions = 0
+        for line in open(self.exec_log):
+            fields = line.split(';')
+            results.append('== %s spent %s ==' % (fields[0], fields[1]))
+            name = fields[0]
+            if name.startswith('run') and name != 'run all':
+                op = name.replace('run ', '')
+                result_file = '%s/%s.log' % (self.result_dir, op)
+                num_regressions, target_results = self._parse_result(result_file)
+                total_regressions += num_regressions
+                results += target_results
+
+        subject = '[GPUTest] Test on %s has %s regressions' % (self.timestamp, total_regressions)
+        for result in [subject] + results:
+            print(result)
+
+        Util.append_file('%s/report.log' % self.result_dir, [subject] + results)
+
+        if self.email:
+            Util.send_email(self.EMAIL_SENDER, self.EMAIL_TO, subject, results)
+
+    def _get_targets(self):
         targets = []
         recorded_os_virtual_name = []
         if self.args.debug:
@@ -227,7 +407,7 @@ python %(prog)s --sync --build --run --run-smoke --email
 
                         # init
                         target = [0] * (self.TARGET_INDEX_MAX + 1)
-                        target[self.TARGET_INDEX_RUN_SHARD] = 1
+                        target[self.TARGET_INDEX_TOTAL_SHARDS] = 1
                         target[self.TARGET_INDEX_OS] = target_os
                         target[self.TARGET_INDEX_PROJECT] = 'chromium'
                         target[self.TARGET_INDEX_VIRTUAL_NAME] = virtual_name
@@ -238,7 +418,7 @@ python %(prog)s --sync --build --run --run-smoke --email
 
                         target[self.TARGET_INDEX_RUN_ARGS] = target_run_args
                         if 'swarming' in target_detail and 'shards' in target_detail['swarming']:
-                            target[self.TARGET_INDEX_RUN_SHARD] = target_detail['swarming']['shards']
+                            target[self.TARGET_INDEX_TOTAL_SHARDS] = target_detail['swarming']['shards']
 
                         targets.append(target)
 
@@ -252,15 +432,8 @@ python %(prog)s --sync --build --run --run-smoke --email
                 targets.append([os, 'aquarium', 'aquarium_%s' % backend, 'aquarium', 'aquarium', ['--test-time 30', '--num-fish 30000', '--enable-msaa', '--turn-off-vsync', '--integrated-gpu', '--window-size=1920,1080', '--print-log', '--backend %s' % backend], 1])
 
         targets = sorted(targets, key=operator.itemgetter(self.TARGET_INDEX_OS, self.TARGET_INDEX_PROJECT, self.TARGET_INDEX_REAL_TYPE, self.TARGET_INDEX_VIRTUAL_NAME))
-        config_targets = Util.load_json('%s/%s' % (script_dir, self.CONFIG_FILE))
-        if config_targets != targets:
-            warning = '[GPUTest] There is an update about config'
-            Util.warning(warning)
-            if self.args.email:
-                Util.send_email(self.EMAIL_SENDER, self.EMAIL_ADMIN, warning, '')
-            tmp_config = '%s/%s-%s' % (script_dir, Util.get_datetime(format='%Y%m%d'), self.CONFIG_FILE)
-            Util.ensure_file(tmp_config)
-            Util.dump_json(tmp_config, targets)
+        Util.dump_json('%s/gputest/config.json' % ScriptRepo.IGNORE_DIR, targets)
+        self.targets = targets
 
         if self.args.debug:
             print(len(recorded_virtual_name))
@@ -270,128 +443,15 @@ python %(prog)s --sync --build --run --run-smoke --email
             for target in targets:
                 print(target)
 
-    def list(self):
-        for index, target in enumerate(self.targets):
-            print('%s: %s' % (index, target[self.TARGET_INDEX_VIRTUAL_NAME]))
-
-    def sync(self):
-        projects = []
-        for target_index in self.target_indexes:
-            project = self.targets[target_index][self.TARGET_INDEX_PROJECT]
-            if project not in projects:
-                projects.append(project)
-
-        for project in projects:
-            cmd = 'python %s --root-dir %s/%s --sync --runhooks' % (Util.GNP_SCRIPT_PATH, self.root_dir, project)
-            if self._execute(cmd, exit_on_error=False)[0]:
-                Util.error('Sync failed')
-
-    def build(self):
-        project_targets = {}
-        for target_index in self.target_indexes:
-            project = self.targets[target_index][self.TARGET_INDEX_PROJECT]
-            real_name = self.targets[target_index][self.TARGET_INDEX_REAL_NAME]
-            if project not in project_targets:
-                project_targets[project] = [real_name]
-            elif real_name not in project_targets[project]:
-                project_targets[project].append(real_name)
-
-        for project in project_targets:
-            cmd = 'python %s --root-dir %s/%s --makefile --build --build-target %s' % (Util.GNP_SCRIPT_PATH, self.root_dir, project, ','.join(project_targets[project]))
-            if self._execute(cmd, exit_on_error=False)[0]:
-                error = '[GPUTest] Project %s build failed' % project
-                if self.args.email:
-                    Util.send_email(self.EMAIL_SENDER, self.EMAIL_ADMIN, error, '')
-                Util.error(error)
-
-    def run(self):
-        Util.clear_proxy()
-        args = self.args
-        self.num_regressions = 0
-        for target_index in self.target_indexes:
-            project = self.targets[target_index][self.TARGET_INDEX_PROJECT]
-            virtual_name = self.targets[target_index][self.TARGET_INDEX_VIRTUAL_NAME]
-            real_name = self.targets[target_index][self.TARGET_INDEX_REAL_NAME]
-            real_type = self.targets[target_index][self.TARGET_INDEX_REAL_TYPE]
-            run_args = self.targets[target_index][self.TARGET_INDEX_RUN_ARGS]
-            for i, run_arg in reversed(list(enumerate(run_args))):
-                if run_arg.startswith('--extra-browser-args'):
-                    run_arg = run_arg.replace('--extra-browser-args=', '')
-                    run_args[i] = '--extra-browser-args=\\\"%s --disable-backgrounding-occluded-windows\\\"' % run_arg
-                elif run_arg == '--browser=release_x64':
-                    run_args[i] = '--browser=release'
-                elif run_arg.startswith('--gtest-benchmark-name'):
-                    run_args.remove(run_arg)
-                elif run_arg in ['-v', '--show-stdout']:
-                    run_args.remove(run_arg)
-                elif run_arg == '--target=Release_x64':
-                    run_args[i] = '--target=release'
-                # we use 5912 and 3e98 in test
-                elif run_arg == '3e92':
-                    run_args[i] = '3e98'
-
-            run_args = ' '.join(run_args)
-            cmd = 'python %s --run --root-dir %s/%s --run-target %s --run-rev out' % (Util.GNP_SCRIPT_PATH, self.root_dir, project, real_name)
-            run_shard = int(self.targets[target_index][self.TARGET_INDEX_RUN_SHARD])
-
-            if real_type == 'gtest':
-                total_shards_arg = '--test-launcher-total-shards'
-                shard_index_arg = '--test-launcher-shard-index'
-                output_arg = '--gtest_output'
-            elif real_type in ['telemetry_gpu_integration_test', 'webgpu_blink_web_tests']:
-                total_shards_arg = '--total-shards'
-                shard_index_arg = '--shard-index'
-                output_arg = '--write-full-results-to'
-
-            for shard_index in range(run_shard):
-                if not args.run_smoke and run_shard > 1:
-                    output_file = '%s/result/%s/%s.shard%s.json' % (self.root_dir, self.timestamp, virtual_name, str(shard_index).zfill(2))
-                    run_args += ' %s=%s %s=%s' % (total_shards_arg, run_shard, shard_index_arg, shard_index)
-                else:
-                    output_file = '%s/result/%s/%s.json' % (self.root_dir, self.timestamp, virtual_name)
-                    smoke = self.VIRTUAL_NAME_INFO[virtual_name][self.VIRTUAL_NAME_INFO_INDEX_SMOKE]
-                    if args.run_smoke and smoke:
-                        if real_type != 'aquarium':
-                            smoke = '*%s*' % smoke
-                        run_args += ' %s=%s' % (self.REAL_TYPE_INFO[real_type][self.REAL_TYPE_INFO_INDEX_FILTER], smoke)
-
-                # output
-                if real_type != 'aquarium':
-                    run_args += ' %s=' % output_arg
-                    if real_type == 'gtest':
-                        run_args += 'json:'
-                    run_args += output_file
-                    Util.ensure_file(output_file)
-
-                run_args += ' %s' % self.REAL_TYPE_INFO[real_type][self.REAL_TYPE_INFO_INDEX_EXTRA_ARGS]
-                self._run(virtual_name, real_type, cmd, run_args, output_file)
-                if args.run_smoke:
-                    break
-
-        subject = '[GPUTest] Test on %s has %s Regressions' % (self.timestamp, self.num_regressions)
-
-        for run_result in [subject] + self.run_results:
-            print(run_result)
-
-        Util.write_file('%s/result/%s/all.log' % (self.root_dir, self.timestamp), [subject] + self.run_results, mode='a+')
-
-        if self.args.email:
-            Util.send_email(self.EMAIL_SENDER, self.EMAIL_TO, subject, self.run_results)
-
-    def _run(self, virtual_name, real_type, cmd, run_args, output_file=''):
-        cmd += ' --run-args "%s"' % run_args
-        if real_type in ['aquarium', 'gtest']:
-            return_out = True
-        else:
-            return_out = False
-        test_timer = Timer()
-        ret, out = self._execute(cmd, return_out=return_out, exit_on_error=False, dryrun=False)
-        test_timer.stop()
+    def _parse_result(self, result_file, verbose=False):
+        file_name = os.path.basename(result_file)
+        op = file_name.replace('.log', '')
+        match = re.match(self.RESULT_FILE_PATTERN, file_name)
+        virtual_name = match.group(1)
+        real_type = self.VIRTUAL_NAME_INFO[virtual_name][self.VIRTUAL_NAME_INFO_INDEX_REAL_TYPE]
 
         if real_type == 'aquarium':
-            if self.args.debug:
-                print(out)
-            lines = out.split('\r\n')
+            lines = open(result_file).readlines()
             for line in lines:
                 match = re.match('Avg FPS: (.*)', line)
                 if match:
@@ -407,56 +467,16 @@ python %(prog)s --sync --build --run --run-smoke --email
                     else:
                         change_type = 'IMPROVEMENT'
                         num_regressions = 0
-                    self.num_regressions += num_regressions
-                    run_result = '%s: %s -> %s' % (change_type, base_fps, run_fps)
+                    results = ['%s: %s -> %s' % (change_type, base_fps, run_fps)]
                     break
-        elif real_type == 'gtest':
-            if self.args.debug:
-                print(out)
-            lines = out.split('\r\n')
-            error_type = ''
-            results = {}
-            num_regressions = 0
-            for line in lines:
-                if error_type:
-                    match = re.match(r'^(.+) \(.+:\d+\)$', line)
-                    if match:
-                        if error_type in ['PASS_FAIL', 'CRASH', 'TIMEOUT']:
-                            self.num_regressions += 1
-                        if error_type not in results:
-                            results[error_type] = [match.group(1)]
-                        else:
-                            results[error_type].append(match.group(1))
-                        continue
 
-                if re.match(self.UNITTEST_PATTERN_FAIL, line):
-                    error_type = 'PASS_FAIL'
-                elif re.match(self.UNITTEST_PATTERN_FAIL_EXPECTED, line):
-                    error_type = 'FAIL_FAIL'
-                elif re.match(self.UNITTEST_PATTERN_CRASH, line):
-                    error_type = 'CRASH'
-                elif re.match(self.UNITTEST_PATTERN_TIMEOUT, line):
-                    error_type = 'TIMEOUT'
-                elif re.match(self.UNITTEST_PATTERN_SKIP, line):
-                    error_type = 'SKIP'
+        elif real_type in ['gtest', 'telemetry_gpu_integration_test', 'webgpu_blink_web_tests']:
+            num_regressions, results = Util.get_test_result(result_file)
 
-            run_result = ''
-            for error_type in results:
-                run_result += '[%s]\n%s' % (error_type, '\n'.join(results[error_type]))
-            else:
-                run_result += 'PASS: All'
-
-        elif real_type in ['telemetry_gpu_integration_test', 'webgpu_blink_web_tests']:
-            num_regressions, run_result = Util.get_gpu_integration_result(output_file)
-            self.num_regressions += num_regressions
-
-        self.run_results.append('[%s/%s, %s, %s Regressions]\n%s\n' % (self.target_index, self.total_target_count, virtual_name, num_regressions, run_result))
-        self.target_index += 1
+        return num_regressions, results
 
     def _handle_ops(self):
         args = self.args
-        if args.check:
-            self.check()
         if args.list:
             self.list()
         if args.sync:
@@ -465,6 +485,10 @@ python %(prog)s --sync --build --run --run-smoke --email
             self.build()
         if args.run:
             self.run()
+        if args.batch:
+            self.batch()
+        if args.report:
+            self.report()
 
 if __name__ == '__main__':
     GPUTest()

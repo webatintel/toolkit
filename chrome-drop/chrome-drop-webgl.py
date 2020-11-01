@@ -40,26 +40,26 @@ class Webgl(Program):
     def __init__(self):
         parser = argparse.ArgumentParser(description='Chrome Drop WebGL')
 
+        parser.add_argument('--sync', dest='sync', help='sync', action='store_true')
         parser.add_argument('--build', dest='build', help='build', action='store_true')
         parser.add_argument('--build-chrome-rev', dest='build_chrome_rev', help='Chrome rev to build', default='latest')
         parser.add_argument('--build-chrome-dcheck', dest='build_chrome_dcheck', help='Build Chrome with dcheck', action='store_true')
-        parser.add_argument('--build-skip-sync', dest='build_skip_sync', help='skip sync during build', action='store_true')
-        parser.add_argument('--build-skip-build-chrome', dest='build_skip_build_chrome', help='skip building chrome during build', action='store_true')
-        parser.add_argument('--build-skip-backup-chrome', dest='build_skip_backup_chrome', help='skip backing up chrome during build', action='store_true')
-        parser.add_argument('--build-skip-mesa', dest='build_skip_mesa', help='skip skip building mesa during build', action='store_true')
-        parser.add_argument('--test', dest='test', help='test', action='store_true')
-        parser.add_argument('--test-chrome-rev', dest='test_chrome_rev', help='Chromium revision', default='latest')
-        parser.add_argument('--test-mesa-rev', dest='test_mesa_rev', help='mesa revision', default='latest')
-        parser.add_argument('--test-filter', dest='test_filter', help='WebGL CTS suite to test against', default='all')  # For smoke test, we may use conformance/attribs
-        parser.add_argument('--test-verbose', dest='test_verbose', help='verbose mode of test', action='store_true')
-        parser.add_argument('--test-chrome', dest='test_chrome', help='test chrome', default='default')
-        parser.add_argument('--test-target', dest='test_target', help='test target, split by comma, like "0,2"', default='all')
-        parser.add_argument('--test-no-angle', dest='test_no_angle', help='test without angle', action='store_true')
+        parser.add_argument('--build-skip-mesa', dest='build_skip_build_mesa', help='skip building mesa during build', action='store_true')
+        parser.add_argument('--build-skip-chrome', dest='build_skip_chrome', help='skip building chrome during build', action='store_true')
+        parser.add_argument('--build-skip-backup', dest='build_skip_backup', help='skip backing up chrome during build', action='store_true')
+        parser.add_argument('--run', dest='run', help='run', action='store_true')
+        parser.add_argument('--run-chrome-rev', dest='test_chrome_rev', help='Chromium revision', default='latest')
+        parser.add_argument('--run-mesa-rev', dest='test_mesa_rev', help='mesa revision', default='latest')
+        parser.add_argument('--run-filter', dest='test_filter', help='WebGL CTS suite to run against', default='all')  # For smoke run, we may use conformance/attribs
+        parser.add_argument('--run-verbose', dest='test_verbose', help='verbose mode of run', action='store_true')
+        parser.add_argument('--run-chrome', dest='test_chrome', help='run chrome', default='default')
+        parser.add_argument('--run-target', dest='test_target', help='run target, split by comma, like "0,2"', default='all')
+        parser.add_argument('--run-no-angle', dest='test_no_angle', help='run without angle', action='store_true')
         parser.add_argument('--batch', dest='batch', help='batch', action='store_true')
         parser.add_argument('--run', dest='run', help='run', action='store_true')
         parser.add_argument('--dryrun', dest='dryrun', help='dryrun', action='store_true')
-        parser.add_argument('--email', dest='email', help='send test result via email', action='store_true')
-        parser.add_argument('--mesa-type', dest='mesa_type', help='mesa type', default='default')
+        parser.add_argument('--email', dest='email', help='send run result via email', action='store_true')
+        parser.add_argument('--mesa-type', dest='mesa_type', help='mesa type', default='iris')
         parser.add_argument('--mesa-dir', dest='mesa_dir', help='mesa dir')
 
         parser.epilog = '''
@@ -83,7 +83,6 @@ python %(prog)s --batch
             self.mesa_dir = '%s/mesa' % root_dir
         self.mesa_build_dir = '%s/build' % self.mesa_dir
         self.mesa_backup_dir = '%s/backup' % self.mesa_dir
-        self.test_dir = '%s/test' % root_dir
         test_chrome = args.test_chrome
         if Util.HOST_OS == Util.DARWIN:
             if test_chrome == 'default':
@@ -92,30 +91,13 @@ python %(prog)s --batch
             if test_chrome == 'default':
                 test_chrome = 'build'
         self.test_chrome = test_chrome
-        self.result_dir = '%s/result' % self.test_dir
+        self.result_dir = '%s/result' % root_dir
 
-        if Util.HOST_OS == Util.LINUX:
-            mesa_type = args.mesa_type
-            if mesa_type == 'default':
-                if args.batch:
-                    mesa_type = 'i965,iris'
-                else:
-                    mesa_type = 'i965'
-            self.mesa_types = mesa_type.split(',')
-
-        self.proxy = args.proxy
-        self.build_skip_sync = args.build_skip_sync
-        self.build_skip_build_chrome = args.build_skip_build_chrome
-        self.build_skip_backup_chrome = args.build_skip_backup_chrome
-        self.build_skip_mesa = args.build_skip_mesa
-        self.build_chrome_rev = args.build_chrome_rev
-        self.build_chrome_dcheck = args.build_chrome_dcheck
         self.test_mesa_rev = args.test_mesa_rev
         self.test_filter = args.test_filter
         self.test_verbose = args.test_verbose
         self.test_chrome_rev = args.test_chrome_rev
         self.test_target = args.test_target
-        self.email = args.email
         self.test_no_angle = args.test_no_angle
 
         self.target_os = args.target_os
@@ -124,39 +106,40 @@ python %(prog)s --batch
 
         self._handle_ops()
 
+    def sync(self):
+        if self.target_os == Util.LINUX:
+            self._execute('python %s/mesa/mesa.py --sync --root-dir %s' % (ScriptRepo.ROOT_DIR, self.mesa_dir))
+
+        cmd = 'python %s --sync --runhooks --root-dir %s' % (Util.GNP_SCRIPT_PATH, self.chrome_dir)
+        if self.args.build_chrome_rev != 'latest':
+            cmd += ' --rev %s' % self.args.build_chrome_rev
+        self._execute(cmd)
+
     def build(self):
         # build mesa
-        if Util.HOST_OS == Util.LINUX and not self.build_skip_mesa and not self.target_os == Util.CHROMEOS:
-            Util.chdir(self.mesa_dir)
-            if not self.build_skip_sync:
-                self._execute('python %s/mesa/mesa.py --sync --root-dir %s' % (ScriptRepo.ROOT_DIR, self.mesa_dir))
+        if self.target_os == Util.LINUX and not self.args.build_skip_mesa:
             self._execute('python %s/mesa/mesa.py --build --root-dir %s' % (ScriptRepo.ROOT_DIR, self.mesa_dir))
 
         # build chrome
         if self.test_chrome == 'build':
-            if not self.build_skip_sync:
-                cmd = 'python %s --sync --runhooks --root-dir %s' % (Util.GNP_SCRIPT_PATH, self.chrome_dir)
-                if self.build_chrome_rev != 'latest':
-                    cmd += ' --rev %s' % self.build_chrome_rev
-                self._execute(cmd, exit_on_error=False)
-            if not self.build_skip_build_chrome and not self.target_os == Util.CHROMEOS:
-                cmd = 'python %s --no-component-build --makefile --symbol-level 0 --build --build-target webgl --out-dir out --root-dir %s' % (Util.GNP_SCRIPT_PATH, self.chrome_dir)
-                if self.build_chrome_dcheck:
+            if not self.args.build_skip_chrome:
+                cmd = 'python %s --no-component-build --makefile --symbol-level 0 --build --build-target webgl --root-dir %s' % (Util.GNP_SCRIPT_PATH, self.chrome_dir)
+                if self.args.build_chrome_dcheck:
                     cmd += ' --dcheck'
                 self._execute(cmd)
-            if not self.build_skip_backup_chrome:
-                cmd = 'python %s --backup --backup-target webgl --out-dir out --root-dir %s' % (Util.GNP_SCRIPT_PATH, self.chrome_dir)
+            if not self.args.build_skip_backup:
+                cmd = 'python %s --backup --backup-target webgl --root-dir %s' % (Util.GNP_SCRIPT_PATH, self.chrome_dir)
                 if self.target_os == Util.CHROMEOS:
                     cmd += ' --target-os chromeos'
                 self._execute(cmd)
 
-    def test(self, mesa_type=''):
+    def run(self):
         if self.target_os == Util.CHROMEOS:
             return
         Util.clear_proxy()
 
         if Util.HOST_OS == Util.LINUX:
-            self.test_mesa_rev = Util.set_mesa(self.mesa_backup_dir, self.test_mesa_rev, mesa_type)
+            self.test_mesa_rev = Util.set_mesa(self.mesa_backup_dir, self.test_mesa_rev, self.args.mesa_type)
 
         common_cmd = 'vpython content/test/gpu/run_gpu_integration_test.py webgl_conformance --disable-log-uploads'
         if self.test_chrome == 'build':
@@ -235,7 +218,7 @@ python %(prog)s --batch
                 test_combs.append(all_combs[int(i)])
 
         final_num_regressions = 0
-        if self.build_chrome_dcheck:
+        if self.args.build_chrome_dcheck:
             dcheck = 'true'
         else:
             dcheck = 'false'
@@ -248,7 +231,7 @@ python %(prog)s --batch
             cmd = common_cmd + ' --webgl-conformance-version=%s' % comb[COMB_INDEX_WEBGL]
             result_file = ''
             if Util.HOST_OS == Util.LINUX:
-                result_file = '%s/%s-%s-%s-%s-%s.log' % (self.result_dir, datetime, self.chrome_rev, mesa_type, self.test_mesa_rev, comb[COMB_INDEX_WEBGL])
+                result_file = '%s/%s-%s-%s-%s-%s.log' % (self.result_dir, datetime, self.chrome_rev, self.args.mesa_type, self.test_mesa_rev, comb[COMB_INDEX_WEBGL])
             elif Util.HOST_OS == Util.WINDOWS:
                 extra_browser_args += ' --use-angle=%s' % comb[COMB_INDEX_BACKEND]
                 result_file = '%s/%s-%s-%s-%s.log' % (self.result_dir, datetime, self.chrome_rev, comb[COMB_INDEX_WEBGL], comb[COMB_INDEX_BACKEND])
@@ -270,42 +253,28 @@ python %(prog)s --batch
         Util.info(final_summary)
 
         log_file = self.log_file
-        Util.write_file(log_file, [final_details], mode='a+')
-        Util.write_file(log_file, [final_summary], mode='a+')
+        Util.append_file(log_file, final_details)
+        Util.append_file(log_file, final_summary)
 
 
         if Util.HOST_OS == Util.LINUX:
-            subject = 'WebGL CTS on Chrome %s and Mesa %s %s has %s Regression' % (self.chrome_rev, mesa_type, self.test_mesa_rev, num_regressions)
+            subject = 'WebGL CTS on Chrome %s and Mesa %s %s has %s Regression' % (self.chrome_rev, self.args.mesa_type, self.test_mesa_rev, num_regressions)
         else:
             subject = 'WebGL CTS on Chrome %s has %s Regression' % (self.chrome_rev, num_regressions)
-        if self.args.batch and Util.HOST_OS == Util.LINUX or self.email:
+        if self.args.batch and self.args.email:
             Util.send_email('webperf@intel.com', 'yang.gu@intel.com', subject, '%s\n%s' % (final_summary, final_details))
 
-    def run(self):
-        if Util.HOST_OS == Util.LINUX:
-            if len(self.mesa_types) > 1:
-                Util.error('Only one mesa_type is support for run')
-            mesa_type = self.mesa_types[0]
-            self.test(mesa_type=mesa_type)
-        else:
-            self.test()
-
     def batch(self):
+        self.sync()
         self.build()
-        if Util.HOST_OS == Util.LINUX:
-            for mesa_type in self.mesa_types:
-                self.test(mesa_type=mesa_type)
-        else:
-            self.test()
+        self.run()
 
     def _handle_ops(self):
         args = self.args
+        if args.sync:
+            self.sync()
         if args.build:
             self.build()
-        if args.test:
-            if re.search(',', args.mesa_type) and Util.HOST_OS == Util.LINUX:
-                Util.error('Only one mesa_type can be designated!')
-            self.test(mesa_type=args.mesa_type)
         if args.run:
             self.run()
         if args.batch:
