@@ -264,7 +264,7 @@ python %(prog)s --sync --build --run --dryrun --email
         for index, target_index in enumerate(self.target_indexes):
             project = self.os_targets[target_index][self.TARGET_INDEX_PROJECT]
             if project == 'chromium' and not chromium_printed:
-                repo = ChromiumRepo('%s/chromium' % self.root_dir)
+                repo = ChromiumRepo('%s/chromium/src' % self.root_dir)
                 info = 'Chromium revision;%s' % repo.get_working_dir_rev()
                 Util.append_file(self.exec_log, info)
                 chromium_printed = True
