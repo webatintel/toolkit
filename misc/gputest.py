@@ -292,13 +292,12 @@ python %(prog)s --sync --build --run --dryrun --email
             config_args = ' '.join(run_args)
 
             real_type_extra_args = self.REAL_TYPE_INFO[real_type][self.REAL_TYPE_INFO_INDEX_EXTRA_ARGS]
-            if len(self.VIRTUAL_NAME_INFO[virtual_name]) > self.VIRTUAL_NAME_INFO_INDEX_EXTRA_ARGS:
-                virtual_name_extra_args = self.VIRTUAL_NAME_INFO[virtual_name][self.VIRTUAL_NAME_INFO_INDEX_EXTRA_ARGS]
-
             if real_type_extra_args:
                 config_args += ' %s' % real_type_extra_args
-            if virtual_name_extra_args:
-                config_args += ' %s' % virtual_name_extra_args
+            if len(self.VIRTUAL_NAME_INFO[virtual_name]) > self.VIRTUAL_NAME_INFO_INDEX_EXTRA_ARGS:
+                virtual_name_extra_args = self.VIRTUAL_NAME_INFO[virtual_name][self.VIRTUAL_NAME_INFO_INDEX_EXTRA_ARGS]
+                if virtual_name_extra_args:
+                    config_args += ' %s' % virtual_name_extra_args
 
             dryrun_cond = self.VIRTUAL_NAME_INFO[virtual_name][self.VIRTUAL_NAME_INFO_INDEX_DRYRUN]
             if args.dryrun and dryrun_cond:
@@ -338,7 +337,10 @@ python %(prog)s --sync --build --run --dryrun --email
                     shard_args += result_file
                     Util.ensure_file(result_file)
 
-                cmd = '%s --run-args \'%s%s\'' % (config_cmd, config_args, shard_args)
+                if Util.HOST_OS == Util.WINDOWS:
+                    cmd = '%s --run-args="%s%s"' % (config_cmd, config_args, shard_args)
+                else:
+                    cmd = '%s --run-args=\'%s%s\'' % (config_cmd, config_args, shard_args)
                 timer = Timer()
                 self._execute(cmd, exit_on_error=False)
                 info = 'run %s;%s;%s' % (op, timer.stop(), cmd)
