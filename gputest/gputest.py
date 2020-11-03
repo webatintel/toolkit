@@ -341,7 +341,7 @@ python %(prog)s --sync --build --run --dryrun --email
                 Util.append_file(self.exec_log, info)
 
                 if real_type in ['gtest']:
-                    shutil.copyfile('%s/chromium/src/out/release/output.json' % self.root_dir, result_file)
+                    shutil.move('%s/chromium/src/out/release/output.json' % self.root_dir, result_file)
                 self._parse_result(result_file, verbose=True)
                 if args.dryrun and not args.dryrun_with_shard:
                     break
