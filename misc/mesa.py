@@ -93,7 +93,7 @@ python %(prog)s --revtohash 1
     def build(self):
         self._init_hash()
 
-        if Util.HOST_OS == 'linux' and Util.HOST_OS_ID == 'ubuntu':
+        if Util.HOST_OS == 'linux' and Util.HOST_OS_RELEASE == 'ubuntu':
             Util.ensure_pkg('meson libomxil-bellagio-dev libpciaccess-dev x11proto-dri3-dev x11proto-present-dev xutils-dev python-mako x11proto-gl-dev x11proto-dri2-dev libxcb-dri3-dev libxcb-present-dev libxshmfence-dev libx11-xcb-dev libxcb-glx0-dev libxcb-dri2-0-dev libxxf86vm-dev python3-mako')
 
         if re.search('-', str(self.rev)):

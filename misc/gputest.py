@@ -62,7 +62,7 @@ class GPUTest(Program):
 
         'angle_end2end_tests': ['gtest', 'EGLAndroidFrameBufferTargetTest'],
         'angle_perftests': ['gtest', 'BindingsBenchmark'],
-        'dawn_end2end_skip_validation_tests': ['gtest', 'BindGroupTests'],
+        'dawn_end2end_skip_validation_tests': ['gtest', 'BindGroupTests', '--adapter-vendor-id=0x8086'],
         'dawn_end2end_tests': ['gtest', 'BindGroupTests'],
         'dawn_end2end_validation_layers_tests': ['gtest', 'BindGroupTests'],
         'dawn_end2end_wire_tests': ['gtest', 'BindGroupTests'],
@@ -192,20 +192,20 @@ python %(prog)s --sync --build --run --dryrun --email
 
     def sync(self):
         projects = []
+        if self.target_os == Util.LINUX and not self.args.sync_skip_mesa:
+            projects.append('mesa')
+
         for target_index in self.target_indexes:
             project = self.os_targets[target_index][self.TARGET_INDEX_PROJECT]
             if project not in projects:
                 projects.append(project)
 
-        if self.target_os == Util.LINUX and not self.args.sync_skip_mesa:
-            projects.append('mesa')
-
         for project in projects:
             timer = Timer()
             if project == 'mesa':
-                cmd = 'python %s/mesa/mesa.py --root-dir %s/mesa --sync' % (ScriptRepo.ROOT_DIR, self.root_dir)
+                cmd = 'python %s --root-dir %s/mesa --sync' % (Util.MESA_SCRIPT, self.root_dir)
             else:
-                cmd = 'python %s --root-dir %s/%s --sync --runhooks' % (Util.GNP_SCRIPT_PATH, self.root_dir, project)
+                cmd = 'python %s --root-dir %s/%s --sync --runhooks' % (Util.GNP_SCRIPT, self.root_dir, project)
             dryrun = self.args.dryrun
             if self._execute(cmd, exit_on_error=False, dryrun=dryrun)[0]:
                 Util.error('Sync failed')
@@ -235,9 +235,9 @@ python %(prog)s --sync --build --run --dryrun --email
         for project in project_targets:
             timer = Timer()
             if project == 'mesa':
-                cmd = 'python %s/mesa/mesa.py --root-dir %s/mesa --build' % (ScriptRepo.ROOT_DIR, self.root_dir)
+                cmd = 'python %s --root-dir %s/mesa --build' % (Util.MESA_SCRIPT, self.root_dir)
             else:
-                cmd = 'python %s --root-dir %s/%s --makefile --build --build-target %s' % (Util.GNP_SCRIPT_PATH, self.root_dir, project, ','.join(project_targets[project]))
+                cmd = 'python %s --root-dir %s/%s --makefile --build --build-target %s' % (Util.GNP_SCRIPT, self.root_dir, project, ','.join(project_targets[project]))
             if self._execute(cmd, exit_on_error=False, dryrun=self.args.dryrun)[0]:
                 error = '[GPUTest] Project %s build failed' % project
                 if self.email:
@@ -271,7 +271,7 @@ python %(prog)s --sync --build --run --dryrun --email
             virtual_name = self.os_targets[target_index][self.TARGET_INDEX_VIRTUAL_NAME]
             real_name = self.os_targets[target_index][self.TARGET_INDEX_REAL_NAME]
             real_type = self.os_targets[target_index][self.TARGET_INDEX_REAL_TYPE]
-            config_cmd = 'python %s --run --root-dir %s/%s --run-target %s --run-rev out' % (Util.GNP_SCRIPT_PATH, self.root_dir, project, real_name)
+            config_cmd = 'python %s --run --root-dir %s/%s --run-target %s --run-rev out' % (Util.GNP_SCRIPT, self.root_dir, project, real_name)
 
             run_args = self.os_targets[target_index][self.TARGET_INDEX_RUN_ARGS]
             for i, run_arg in reversed(list(enumerate(run_args))):
@@ -291,9 +291,14 @@ python %(prog)s --sync --build --run --dryrun --email
                     run_args[i] = '3e98'
             config_args = ' '.join(run_args)
 
-            extra_args = self.REAL_TYPE_INFO[real_type][self.REAL_TYPE_INFO_INDEX_EXTRA_ARGS]
-            if extra_args:
-                config_args += ' %s' % extra_args
+            real_type_extra_args = self.REAL_TYPE_INFO[real_type][self.REAL_TYPE_INFO_INDEX_EXTRA_ARGS]
+            if len(self.VIRTUAL_NAME_INFO[virtual_name]) > self.VIRTUAL_NAME_INFO_INDEX_EXTRA_ARGS:
+                virtual_name_extra_args = self.VIRTUAL_NAME_INFO[virtual_name][self.VIRTUAL_NAME_INFO_INDEX_EXTRA_ARGS]
+
+            if real_type_extra_args:
+                config_args += ' %s' % real_type_extra_args
+            if virtual_name_extra_args:
+                config_args += ' %s' % virtual_name_extra_args
 
             dryrun_cond = self.VIRTUAL_NAME_INFO[virtual_name][self.VIRTUAL_NAME_INFO_INDEX_DRYRUN]
             if args.dryrun and dryrun_cond:
@@ -333,7 +338,7 @@ python %(prog)s --sync --build --run --dryrun --email
                     shard_args += result_file
                     Util.ensure_file(result_file)
 
-                cmd = '%s --run-args "%s%s"' % (config_cmd, config_args, shard_args)
+                cmd = '%s --run-args \'%s%s\'' % (config_cmd, config_args, shard_args)
                 timer = Timer()
                 self._execute(cmd, exit_on_error=False)
                 info = 'run %s;%s;%s' % (op, timer.stop(), cmd)
