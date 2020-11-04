@@ -127,11 +127,11 @@ class GPUTest(Program):
         parser.add_argument('--build', dest='build', help='build', action='store_true')
         parser.add_argument('--build-skip-mesa', dest='build_skip_mesa', help='build skip mesa', action='store_true')
         parser.add_argument('--run', dest='run', help='run', action='store_true')
-        parser.add_argument('--run-mesa-rev', dest='run_mesa_rev', help='mesa revision', default='latest')
         parser.add_argument('--dryrun', dest='dryrun', help='dryrun', action='store_true')
         parser.add_argument('--dryrun-with-shard', dest='dryrun_with_shard', help='dryrun with shard', action='store_true')
         parser.add_argument('--report', dest='report', help='report')
         parser.add_argument('--batch', dest='batch', help='batch', action='store_true')
+        parser.add_argument('--mesa-rev', dest='mesa_rev', help='mesa revision', default='system')
         parser.add_argument('--mesa-type', dest='mesa_type', help='mesa type', default='iris')
 
         parser.epilog = '''
@@ -195,7 +195,7 @@ python %(prog)s --sync --build --run --dryrun --email
     def sync(self):
         all_timer = Timer()
         projects = []
-        if self.target_os == Util.LINUX and not self.args.sync_skip_mesa:
+        if self.target_os == Util.LINUX and not self.args.sync_skip_mesa and self.args.mesa_rev != 'system':
             projects.append('mesa')
 
         for target_index in self.target_indexes:
@@ -232,7 +232,7 @@ python %(prog)s --sync --build --run --dryrun --email
             elif real_name not in project_targets[project]:
                 project_targets[project].append(real_name)
 
-        if self.target_os == Util.LINUX and not self.args.build_skip_mesa:
+        if self.target_os == Util.LINUX and not self.args.build_skip_mesa and self.args.mesa_rev != 'system':
             project_targets['mesa'] = ''
 
         for project in project_targets:
@@ -254,16 +254,15 @@ python %(prog)s --sync --build --run --dryrun --email
         all_timer = Timer()
         Util.clear_proxy()
 
-        gpu_name, gpu_driver = Util.get_gpu_info()
+        if Util.HOST_OS == Util.LINUX and self.args.mesa_rev != 'system':
+            gpu_driver = 'Mesa %s' % Util.set_mesa('%s/mesa/backup' % self.root_dir, self.args.mesa_rev, self.args.mesa_type)
+            gpu_name, _ = Util.get_gpu_info()
+        else:
+            gpu_name, gpu_driver = Util.get_gpu_info()
+
+        Util.append_file(self.exec_log, 'OS Version%s%s' % (self.SEPARATOR, Util.HOST_OS_RELEASE))
         Util.append_file(self.exec_log, 'GPU Name%s%s' % (self.SEPARATOR, gpu_name))
         Util.append_file(self.exec_log, 'GPU Driver%s%s' % (self.SEPARATOR, gpu_driver))
-        Util.append_file(self.exec_log, 'OS Version%s%s' % (self.SEPARATOR, Util.HOST_OS_RELEASE))
-
-
-        if Util.HOST_OS == Util.LINUX:
-            self.run_mesa_rev = Util.set_mesa('%s/mesa/backup' % self.root_dir, self.args.run_mesa_rev, self.args.mesa_type)
-            info = 'Mesa Revision%s%s' % (self.SEPARATOR, self.run_mesa_rev)
-            Util.append_file(self.exec_log, info)
 
         args = self.args
         chromium_printed = False
