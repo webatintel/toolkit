@@ -110,6 +110,8 @@ class GPUTest(Program):
     EMAIL_ADMIN = 'yang.gu@intel.com'
     EMAIL_TO = 'yang.gu@intel.com'
 
+    SEPARATOR = '|'
+
     def __init__(self):
         parser = argparse.ArgumentParser(description='GPU Test')
 
@@ -191,6 +193,7 @@ python %(prog)s --sync --build --run --dryrun --email
             print('%s: %s' % (index, target[self.TARGET_INDEX_VIRTUAL_NAME]))
 
     def sync(self):
+        all_timer = Timer()
         projects = []
         if self.target_os == Util.LINUX and not self.args.sync_skip_mesa:
             projects.append('mesa')
@@ -215,12 +218,12 @@ python %(prog)s --sync --build --run --dryrun --email
                 self._execute('git checkout master && git pull', dryrun=dryrun)
                 Util.info('Roll Dawn in Aquarium to %s on %s' % (Util.get_repo_head_hash(), Util.get_repo_head_date()))
 
-            info = 'sync %s;%s;%s' % (project, timer.stop(), cmd)
-            Util.info(info)
-            Util.append_file(self.exec_log, info)
+            self._log_exec(timer.stop(), project, cmd)
+        self._log_exec(all_timer.stop())
 
     def build(self):
-        project_targets = {}
+        all_timer = Timer()
+        project_targets = []
         for target_index in self.target_indexes:
             project = self.os_targets[target_index][self.TARGET_INDEX_PROJECT]
             real_name = self.os_targets[target_index][self.TARGET_INDEX_REAL_NAME]
@@ -244,19 +247,22 @@ python %(prog)s --sync --build --run --dryrun --email
                     Util.send_email(self.EMAIL_SENDER, self.EMAIL_ADMIN, error, '')
                 Util.error(error)
 
-            info = 'build %s;%s;%s' % (project, timer.stop(), cmd)
-            Util.info(info)
-            Util.append_file(self.exec_log, info)
+            self._log_exec(timer.stop(), project, cmd)
+        self._log_exec(all_timer.stop())
 
     def run(self):
         all_timer = Timer()
         Util.clear_proxy()
 
-        Util.append_file(self.exec_log, 'OS Version;%s' % Util.HOST_OS_RELEASE)
+        gpu_name, gpu_driver = Util.get_gpu_info()
+        Util.append_file(self.exec_log, 'GPU Name%s%s' % (self.SEPARATOR, gpu_name))
+        Util.append_file(self.exec_log, 'GPU Driver%s%s' % (self.SEPARATOR, gpu_driver))
+        Util.append_file(self.exec_log, 'OS Version%s%s' % (self.SEPARATOR, Util.HOST_OS_RELEASE))
+
 
         if Util.HOST_OS == Util.LINUX:
             self.run_mesa_rev = Util.set_mesa('%s/mesa/backup' % self.root_dir, self.args.run_mesa_rev, self.args.mesa_type)
-            info = 'Mesa revision;%s' % self.run_mesa_rev
+            info = 'Mesa Revision%s%s' % (self.SEPARATOR, self.run_mesa_rev)
             Util.append_file(self.exec_log, info)
 
         args = self.args
@@ -265,7 +271,7 @@ python %(prog)s --sync --build --run --dryrun --email
             project = self.os_targets[target_index][self.TARGET_INDEX_PROJECT]
             if project == 'chromium' and not chromium_printed:
                 repo = ChromiumRepo('%s/chromium/src' % self.root_dir)
-                info = 'Chromium revision;%s' % repo.get_working_dir_rev()
+                info = 'Chromium Revision%s%s' % (self.SEPARATOR, repo.get_working_dir_rev())
                 Util.append_file(self.exec_log, info)
                 chromium_printed = True
             virtual_name = self.os_targets[target_index][self.TARGET_INDEX_VIRTUAL_NAME]
@@ -343,22 +349,19 @@ python %(prog)s --sync --build --run --dryrun --email
                     cmd = '%s --run-args=\'%s%s\'' % (config_cmd, config_args, shard_args)
                 timer = Timer()
                 self._execute(cmd, exit_on_error=False)
-                info = 'run %s;%s;%s' % (op, timer.stop(), cmd)
-                Util.info(info)
-                Util.append_file(self.exec_log, info)
+                self._log_exec(timer.stop(), op, cmd)
 
                 if real_type in ['gtest']:
                     output_file = '%s/chromium/src/out/release/output.json' % self.root_dir
                     if os.path.exists(output_file):
                         shutil.move(output_file, result_file)
+                    else:
+                        Util.ensure_file(result_file)
                 self._parse_result(result_file, verbose=True)
                 if args.dryrun and not args.dryrun_with_shard:
                     break
 
-        all_info = 'run all;%s;run()' % all_timer.stop()
-        Util.info(all_info)
-        Util.append_file(self.exec_log, all_info)
-
+        self._log_exec(all_timer.stop())
         self.report()
 
     def batch(self):
@@ -367,24 +370,73 @@ python %(prog)s --sync --build --run --dryrun --email
         self.run()
 
     def report(self):
-        results = []
+        html = '''
+<head>
+  <meta http-equiv="content-type" content="text/html; charset=windows-1252">
+  <style type="text/css">
+    table {
+      border: 2px solid black;
+      border-collapse: collapse;
+      border-spacing: 0;
+      text-align: left;
+    }
+    table tr td {
+      border: 1px solid black;
+    }
+  </style>
+</head>
+<body>
+  <h2>Overall</h2>
+    <ul>'''
+        for line in open(self.exec_log):
+            fields = line.rstrip('\n').split(self.SEPARATOR)
+            name = fields[0]
+            if not name.startswith('run'):
+                html += '''
+      <li>%s: %s</li>''' % (name, fields[1])
+
+        html += '''
+    </ul>
+  <h2>Details</h2>
+  <table>
+    <tr>
+      <td><strong>Name</strong>  </td>
+      <td><strong>Time</strong></td>
+      <td><strong>PASS_FAIL</strong></td>
+      <td><strong>FAIL_PASS</strong></td>
+      <td><strong>FAIL_FAIL</strong></td>
+      <td><strong>PASS_PASS</strong></td>
+    </tr>'''
+
         total_regressions = 0
         for line in open(self.exec_log):
-            fields = line.split(';')
-            results.append('== %s: %s ==' % (fields[0], fields[1].rstrip('\n')))
+            fields = line.split(self.SEPARATOR)
             name = fields[0]
-            if name.startswith('run') and name != 'run all':
+            if name.startswith('run'):
                 op = name.replace('run ', '')
                 result_file = '%s/%s.log' % (self.result_dir, op)
-                num_regressions, target_results = self._parse_result(result_file)
-                total_regressions += num_regressions
-                results += target_results
+                pass_fail, fail_pass, fail_fail, pass_pass_len = self._parse_result(result_file)
+                total_regressions += len(pass_fail)
+                duration = fields[1]
+                pass_fail_info = '%s<p>%s' % (len(pass_fail), '\n'.join(pass_fail[:10]))
+                fail_pass_info = '%s<p>%s' % (len(fail_pass), '\n'.join(fail_pass[:10]))
+                html += '''
+    <tr>
+      <td>%s</td>
+      <td>%s</td>
+      <td>%s</td>
+      <td>%s</td>
+      <td>%s</td>
+      <td>%s</td>
+    </tr>''' % (op, fields[1], pass_fail_info, fail_pass_info, len(fail_fail), pass_pass_len)
 
+        html += '''
+  </table>
+</body>'''
+        report_file = '%s/report.html' % self.result_dir
+        Util.ensure_nofile(report_file)
+        Util.append_file(report_file, html)
         subject = '[GPUTest] Host %s Datetime %s Regressions %s' % (Util.HOST_NAME, self.timestamp, total_regressions)
-        for result in [subject] + results:
-            print(result)
-
-        Util.append_file('%s/report.log' % self.result_dir, [subject] + results)
 
         if self.email:
             Util.send_email(self.EMAIL_SENDER, self.EMAIL_TO, subject, results)
@@ -409,7 +461,7 @@ python %(prog)s --sync --build --run --dryrun --email
                     continue
 
                 if self.args.debug:
-                    print(config)
+                    Util.debug(config)
 
                 target_types = configs[config]
                 for target_type in target_types:
@@ -434,7 +486,7 @@ python %(prog)s --sync --build --run --dryrun --email
                             continue
 
                         if self.args.debug:
-                            print(virtual_name)
+                            Util.debug(virtual_name)
 
                         if self.args.debug and virtual_name not in recorded_virtual_name:
                             recorded_name.append(virtual_name)
@@ -475,20 +527,36 @@ python %(prog)s --sync --build --run --dryrun --email
         self.targets = targets
 
         if self.args.debug:
-            print(len(recorded_virtual_name))
+            Util.debug(len(recorded_virtual_name))
             recorded_virtual_name = sorted(recorded_virtual_name)
             for virtual_name in recorded_virtual_name:
-                print(virtual_name)
+                Util.debug(virtual_name)
             for target in targets:
-                print(target)
+                Util.debug(target)
+
+    def _log_exec(self, time, op='', cmd=''):
+        if op:
+            info = '%s %s' % (inspect.stack()[1][3], op)
+        else:
+            info = 'Total %s' % inspect.stack()[1][3].capitalize()
+        info += '%s%s' % (self.SEPARATOR, time)
+        if cmd:
+            info += '%s%s' % (self.SEPARATOR, cmd)
+        Util.info(info)
+        Util.append_file(self.exec_log, info)
 
     def _parse_result(self, result_file, verbose=False):
         file_name = os.path.basename(result_file)
         op = file_name.replace('.log', '')
-        match = re.match(self.RESULT_FILE_PATTERN, file_name)
+        match = re.search(self.RESULT_FILE_PATTERN, file_name)
         virtual_name = match.group(1)
+
         real_type = self.VIRTUAL_NAME_INFO[virtual_name][self.VIRTUAL_NAME_INFO_INDEX_REAL_TYPE]
 
+        pass_fail = []
+        fail_pass = []
+        fail_fail = []
+        pass_pass = []
         if real_type == 'aquarium':
             lines = open(result_file).readlines()
             for line in lines:
@@ -498,21 +566,17 @@ python %(prog)s --sync --build --run --dryrun --email
                     backend = virtual_name.replace('aquarium_', '')
                     base_fps = self.AQUARIUM_BASE[Util.HOST_OS][backend]
                     if run_fps < base_fps:
-                        change_type = 'REGRESSION'
-                        num_regressions = 1
-                    elif run_fps == base_fps:
-                        change_type = 'NOCHANGE'
-                        num_regressions = 0
+                        pass_fail.append('%s -> %s' % (base_fps, run_fps))
                     else:
-                        change_type = 'IMPROVEMENT'
-                        num_regressions = 0
-                    results = ['%s: %s -> %s' % (change_type, base_fps, run_fps)]
+                        pass_pass.append('%s -> %s' % (base_fps, run_fps))
                     break
 
-        elif real_type in ['gtest', 'telemetry_gpu_integration_test', 'webgpu_blink_web_tests']:
-            num_regressions, results = Util.get_test_result(result_file)
+            pass_pass_len = len(pass_pass)
 
-        return num_regressions, results
+        elif real_type in ['gtest', 'telemetry_gpu_integration_test', 'webgpu_blink_web_tests']:
+            pass_fail, fail_pass, fail_fail, pass_pass_len = Util.get_test_result(result_file)
+
+        return pass_fail, fail_pass, fail_fail, pass_pass_len
 
     def _handle_ops(self):
         args = self.args
