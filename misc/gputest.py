@@ -223,19 +223,22 @@ python %(prog)s --sync --build --run --dryrun --email
 
     def build(self):
         all_timer = Timer()
-        project_targets = []
+        projects = []
+        project_targets = {}
+
+        if self.target_os == Util.LINUX and not self.args.build_skip_mesa and self.args.mesa_rev != 'system':
+            projects.append('mesa')
+
         for target_index in self.target_indexes:
             project = self.os_targets[target_index][self.TARGET_INDEX_PROJECT]
             real_name = self.os_targets[target_index][self.TARGET_INDEX_REAL_NAME]
-            if project not in project_targets:
+            if project not in projects:
+                projects.append(project)
                 project_targets[project] = [real_name]
             elif real_name not in project_targets[project]:
                 project_targets[project].append(real_name)
 
-        if self.target_os == Util.LINUX and not self.args.build_skip_mesa and self.args.mesa_rev != 'system':
-            project_targets['mesa'] = ''
-
-        for project in project_targets:
+        for project in projects:
             timer = Timer()
             if project == 'mesa':
                 cmd = 'python %s --root-dir %s/mesa --build' % (Util.MESA_SCRIPT, self.root_dir)
