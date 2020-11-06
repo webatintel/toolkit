@@ -47,7 +47,8 @@ class GPUTest(Program):
     REAL_TYPE_INFO_INDEX_EXTRA_ARGS = 1
     REAL_TYPE_INFO = {
         'aquarium': ['--test-time', ''],
-        'gtest': ['--gtest_filter', ''], # --cfi-diag=0
+        'gtest_angle': ['--gtest_filter', ''], # --cfi-diag=0
+        'gtest_chrome': ['--gtest_filter', ''], # --cfi-diag=0
         'telemetry_gpu_integration_test': ['--test-filter', '--retry-limit 1 --retry-only-retry-on-failure-tests'],
         'webgpu_blink_web_tests': ['--isolated-script-test-filter', '--seed 4 --jobs=1 --driver-logging --no-show-results --clobber-old-results --no-retry-failures --order=natural --isolated-script-test-filter=wpt_internal/webgpu/* --ignore-default-expectations --additional-expectations=../../third_party/blink/web_tests/WebGPUExpectations --additional-driver-flag=--enable-unsafe-webgpu --additional-driver-flag=--disable-gpu-sandbox'],
     }
@@ -60,15 +61,16 @@ class GPUTest(Program):
         'aquarium_dawn_d3d12': ['aquarium', '1'],
         'aquarium_dawn_vulkan': ['aquarium', '1'],
 
-        'angle_end2end_tests': ['gtest', 'EGLAndroidFrameBufferTargetTest'],
-        'angle_perftests': ['gtest', 'BindingsBenchmark'],
-        'dawn_end2end_skip_validation_tests': ['gtest', 'BindGroupTests', '--adapter-vendor-id=0x8086'],
-        'dawn_end2end_tests': ['gtest', 'BindGroupTests'],
-        'dawn_end2end_validation_layers_tests': ['gtest', 'BindGroupTests'],
-        'dawn_end2end_wire_tests': ['gtest', 'BindGroupTests'],
-        'dawn_perf_tests': ['gtest', 'BufferUploadPerf.Run/D3D12_Intel', '--override-steps=1'],
-        'gl_tests_passthrough': ['gtest', 'SharedImageFactoryTest'],
-        'vulkan_tests': ['gtest', 'BasicVulkanTest'],
+        'angle_end2end_tests': ['gtest_angle', 'EGLAndroidFrameBufferTargetTest'],
+        'angle_perftests': ['gtest_angle', 'BindingsBenchmark'],
+
+        'dawn_end2end_skip_validation_tests': ['gtest_chrome', 'BindGroupTests', '--adapter-vendor-id=0x8086'],
+        'dawn_end2end_tests': ['gtest_chrome', 'BindGroupTests'],
+        'dawn_end2end_validation_layers_tests': ['gtest_chrome', 'BindGroupTests'],
+        'dawn_end2end_wire_tests': ['gtest_chrome', 'BindGroupTests'],
+        'dawn_perf_tests': ['gtest_chrome', 'BufferUploadPerf.Run/D3D12_Intel', '--override-steps=1'],
+        'gl_tests_passthrough': ['gtest_chrome', 'SharedImageFactoryTest'],
+        'vulkan_tests': ['gtest_chrome', 'BasicVulkanTest'],
 
         'info_collection_tests': ['telemetry_gpu_integration_test', 'InfoCollection_basic'],
         'trace_test': ['telemetry_gpu_integration_test', 'OverlayModeTraceTest_DirectComposition_Underlay_Fullsize'],
@@ -180,6 +182,8 @@ python %(prog)s --sync --build --run --dryrun --email
             self.result_dir = '%s/result/%s' % (self.root_dir, self.timestamp)
             Util.ensure_dir(self.result_dir)
         self.exec_log = '%s/exec.log' % self.result_dir
+        if not args.report:
+            Util.ensure_nofile(self.exec_log)
 
         if args.email or args.batch:
             self.email = True
@@ -285,7 +289,7 @@ python %(prog)s --sync --build --run --dryrun --email
             for i, run_arg in reversed(list(enumerate(run_args))):
                 if run_arg.startswith('--extra-browser-args'):
                     run_arg = run_arg.replace('--extra-browser-args=', '')
-                    run_args[i] = '--extra-browser-args=\\\"%s --disable-backgrounding-occluded-windows\\\"' % run_arg
+                    run_args[i] = '--extra-browser-args="%s --disable-backgrounding-occluded-windows"' % run_arg
                 elif run_arg == '--browser=release_x64':
                     run_args[i] = '--browser=release'
                 elif run_arg.startswith('--gtest-benchmark-name'):
@@ -296,7 +300,7 @@ python %(prog)s --sync --build --run --dryrun --email
                     run_args[i] = '--target=release'
                 # we use 5912 and 3e98 in test
                 elif run_arg == '3e92':
-                    run_args[i] = '3e98'
+                    run_args += ['--expected-device-id', '3e98']
             config_args = ' '.join(run_args)
 
             real_type_extra_args = self.REAL_TYPE_INFO[real_type][self.REAL_TYPE_INFO_INDEX_EXTRA_ARGS]
@@ -317,9 +321,11 @@ python %(prog)s --sync --build --run --dryrun --email
                 total_shards_arg = '--total-shards'
                 shard_index_arg = '--shard-index'
                 output_arg = '--write-full-results-to'
+            elif real_type in ['gtest_chrome']:
+                output_arg = '--test-launcher-summary-output'
 
             total_shards = int(self.os_targets[target_index][self.TARGET_INDEX_TOTAL_SHARDS])
-            if real_type == 'gtest':
+            if real_type in ['gtest_angle', 'gtest_chrome']:
                 total_shards = 1
 
             for shard_index in range(total_shards):
@@ -337,23 +343,16 @@ python %(prog)s --sync --build --run --dryrun --email
 
                 if real_type in ['aquarium']:
                     shard_args += ' > %s' % result_file
-                elif real_type in ['telemetry_gpu_integration_test', 'webgpu_blink_web_tests']:
-                    shard_args += ' %s=' % output_arg
-                    if real_type == 'gtest':
-                        shard_args += 'json:'
-
-                    shard_args += result_file
+                elif real_type in ['telemetry_gpu_integration_test', 'webgpu_blink_web_tests', 'gtest_chrome']:
+                    shard_args += ' %s=%s' % (output_arg, result_file)
                     Util.ensure_file(result_file)
 
-                if Util.HOST_OS == Util.WINDOWS:
-                    cmd = '%s --run-args="%s%s"' % (config_cmd, config_args, shard_args)
-                else:
-                    cmd = '%s --run-args=\'%s%s\'' % (config_cmd, config_args, shard_args)
+                cmd = '%s --run-args="%s%s"' % (config_cmd, config_args, shard_args)
                 timer = Timer()
                 self._execute(cmd, exit_on_error=False)
                 self._log_exec(timer.stop(), op, cmd)
 
-                if real_type in ['gtest']:
+                if real_type in ['gtest_angle']:
                     output_file = '%s/chromium/src/out/release/output.json' % self.root_dir
                     if os.path.exists(output_file):
                         shutil.move(output_file, result_file)
@@ -420,8 +419,8 @@ python %(prog)s --sync --build --run --dryrun --email
                 pass_fail, fail_pass, fail_fail, pass_pass_len = self._parse_result(result_file)
                 total_regressions += len(pass_fail)
                 duration = fields[1]
-                pass_fail_info = '%s<p>%s' % (len(pass_fail), '\n'.join(pass_fail[:10]))
-                fail_pass_info = '%s<p>%s' % (len(fail_pass), '\n'.join(fail_pass[:10]))
+                pass_fail_info = '%s<p>%s' % (len(pass_fail), '<p>'.join(pass_fail[:10]))
+                fail_pass_info = '%s<p>%s' % (len(fail_pass), '<p>'.join(fail_pass[:10]))
                 html += '''
     <tr>
       <td>%s</td>
@@ -502,8 +501,8 @@ python %(prog)s --sync --build --run --dryrun --email
                         target = [0] * (self.TARGET_INDEX_MAX + 1)
                         target[self.TARGET_INDEX_TOTAL_SHARDS] = 1
                         target[self.TARGET_INDEX_OS] = target_os
-                        target[self.TARGET_INDEX_PROJECT] = 'chromium'
                         target[self.TARGET_INDEX_VIRTUAL_NAME] = virtual_name
+                        target[self.TARGET_INDEX_PROJECT] = 'chromium'
                         target[self.TARGET_INDEX_REAL_NAME] = real_name
                         target[self.TARGET_INDEX_REAL_TYPE] = self.VIRTUAL_NAME_INFO[virtual_name][self.VIRTUAL_NAME_INFO_INDEX_REAL_TYPE]
                         if 'args' in target_detail:
@@ -555,11 +554,10 @@ python %(prog)s --sync --build --run --dryrun --email
 
         real_type = self.VIRTUAL_NAME_INFO[virtual_name][self.VIRTUAL_NAME_INFO_INDEX_REAL_TYPE]
 
-        pass_fail = []
-        fail_pass = []
-        fail_fail = []
-        pass_pass = []
         if real_type == 'aquarium':
+            pass_fail = []
+            fail_pass = []
+            fail_fail = []
             lines = open(result_file).readlines()
             for line in lines:
                 match = re.match('Avg FPS: (.*)', line)
@@ -575,8 +573,12 @@ python %(prog)s --sync --build --run --dryrun --email
 
             pass_pass_len = len(pass_pass)
 
-        elif real_type in ['gtest', 'telemetry_gpu_integration_test', 'webgpu_blink_web_tests']:
-            pass_fail, fail_pass, fail_fail, pass_pass_len = Util.get_test_result(result_file)
+        else:
+            if real_type in ['gtest_chrome']:
+                type = real_type
+            elif real_type in ['gtest_angle', 'telemetry_gpu_integration_test', 'webgpu_blink_web_tests']:
+                type = 'gtest_angle'
+            pass_fail, fail_pass, fail_fail, pass_pass_len = Util.get_test_result(result_file, type)
 
         return pass_fail, fail_pass, fail_fail, pass_pass_len
 

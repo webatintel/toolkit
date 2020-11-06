@@ -242,19 +242,9 @@ python %(prog)s --backup --root-dir d:\workspace\chrome
             if self.target_os == Util.WINDOWS:
                 gn_args += ' ffmpeg_branding=\\\"Chrome\\\"'
             else:
-                gn_args += ' ffmpeg_branding=\\\"Chrome\\\"'
-
-            if self.target_arch == 'x86_64':
-                target_arch_tmp = 'x64'
-            else:
-                target_arch_tmp = self.target_arch
+                gn_args += ' ffmpeg_branding="Chrome"'
 
             gn_args += ' enable_nacl=false proprietary_codecs=true'
-
-            if self.target_os in [Util.LINUX, Util.ANDROID, Util.CHROMEOS]:
-                gn_args += ' target_os=\\\"%s\\\" target_cpu=\\\"%s\\\"' % (self.target_os, target_arch_tmp)
-            if self.target_os == Util.DARWIN:
-                gn_args += ' cc_wrapper="ccache"'
 
         quotation = Util.get_quotation()
         cmd = 'gn --args=%s%s%s gen %s' % (quotation, gn_args, quotation, self.out_dir)
@@ -553,7 +543,7 @@ python %(prog)s --backup --root-dir d:\workspace\chrome
         if self.args.run_args:
             cmd += ' %s' % self.args.run_args
 
-        if Util.HOST_OS == Util.LINUX:
+        if Util.HOST_OS == Util.LINUX and target not in ['telemetry_gpu_integration_test', 'webgpu_blink_web_tests']:
             cmd = './' + cmd
         self._execute(cmd, exit_on_error=self.exit_on_error)
 
