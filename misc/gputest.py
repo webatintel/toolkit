@@ -68,12 +68,12 @@ class GPUTest(Program):
         'dawn_end2end_tests': ['gtest_chrome', 'BindGroupTests'],
         'dawn_end2end_validation_layers_tests': ['gtest_chrome', 'BindGroupTests'],
         'dawn_end2end_wire_tests': ['gtest_chrome', 'BindGroupTests'],
-        'dawn_perf_tests': ['gtest_chrome', 'BufferUploadPerf.Run/D3D12_Intel', '--override-steps=1'],
+        'dawn_perf_tests': ['gtest_chrome', 'BufferUploadPerf.Run/Vulkan_Intel', '--override-steps=1'],
         'gl_tests_passthrough': ['gtest_chrome', 'SharedImageFactoryTest'],
         'vulkan_tests': ['gtest_chrome', 'BasicVulkanTest'],
 
         'info_collection_tests': ['telemetry_gpu_integration_test', 'InfoCollection_basic'],
-        'trace_test': ['telemetry_gpu_integration_test', 'OverlayModeTraceTest_DirectComposition_Underlay_Fullsize'],
+        'trace_test': ['telemetry_gpu_integration_test', 'TraceTest_2DCanvasWebGL'],
         'webgl2_conformance_d3d11_passthrough_tests': ['telemetry_gpu_integration_test', 'conformance/attribs'],
         'webgl2_conformance_gl_passthrough_tests': ['telemetry_gpu_integration_test', 'conformance/attribs'],
         'webgl2_conformance_validating_tests': ['telemetry_gpu_integration_test', 'conformance/attribs'],   # d3d11
@@ -137,7 +137,9 @@ class GPUTest(Program):
         parser.add_argument('--mesa-type', dest='mesa_type', help='mesa type', default='iris')
 
         parser.epilog = '''
+examples:
 python %(prog)s --sync --build --run --dryrun --email
+python %(prog)s --batch --dryrun
 '''
         python_ver = Util.get_python_ver()
         if python_ver[0] == 3:
@@ -184,6 +186,7 @@ python %(prog)s --sync --build --run --dryrun --email
         self.exec_log = '%s/exec.log' % self.result_dir
         if not args.report:
             Util.ensure_nofile(self.exec_log)
+        Util.append_file(self.exec_log, 'OS%s%s' % (self.SEPARATOR, Util.HOST_OS_RELEASE))
 
         if args.email or args.batch:
             self.email = True
@@ -220,7 +223,7 @@ python %(prog)s --sync --build --run --dryrun --email
             if project == 'aquarium' and self.args.sync_roll_dawn:
                 Util.chdir('%s/aquarium/third_party/dawn' % self.root_dir)
                 self._execute('git checkout master && git pull', dryrun=dryrun)
-                Util.info('Roll Dawn in Aquarium to %s on %s' % (Util.get_repo_head_hash(), Util.get_repo_head_date()))
+                Util.info('Roll Dawn in Aquarium to %s on %s' % (Util.get_repo_hash(), Util.get_repo_date()))
 
             self._log_exec(timer.stop(), project, cmd)
         self._log_exec(all_timer.stop())
@@ -249,10 +252,10 @@ python %(prog)s --sync --build --run --dryrun --email
             else:
                 cmd = 'python %s --root-dir %s/%s --makefile --build --build-target %s' % (Util.GNP_SCRIPT, self.root_dir, project, ','.join(project_targets[project]))
             if self._execute(cmd, exit_on_error=False, dryrun=self.args.dryrun)[0]:
-                error = '[GPUTest] Project %s build failed' % project
+                error_info = '[GPUTest] Project %s build failed' % project
                 if self.email:
-                    Util.send_email(self.EMAIL_SENDER, self.EMAIL_ADMIN, error, '')
-                Util.error(error)
+                    Util.send_email(self.EMAIL_SENDER, self.EMAIL_ADMIN, error_info, '')
+                Util.error(error_info)
 
             self._log_exec(timer.stop(), project, cmd)
         self._log_exec(all_timer.stop())
@@ -267,19 +270,22 @@ python %(prog)s --sync --build --run --dryrun --email
         else:
             gpu_name, gpu_driver = Util.get_gpu_info()
 
-        Util.append_file(self.exec_log, 'OS Version%s%s' % (self.SEPARATOR, Util.HOST_OS_RELEASE))
-        Util.append_file(self.exec_log, 'GPU Name%s%s' % (self.SEPARATOR, gpu_name))
-        Util.append_file(self.exec_log, 'GPU Driver%s%s' % (self.SEPARATOR, gpu_driver))
+        Util.append_file(self.exec_log, 'GPU name%s%s' % (self.SEPARATOR, gpu_name))
+        Util.append_file(self.exec_log, 'GPU driver%s%s' % (self.SEPARATOR, gpu_driver))
 
         args = self.args
-        chromium_printed = False
+        logged_projects = []
         for index, target_index in enumerate(self.target_indexes):
             project = self.os_targets[target_index][self.TARGET_INDEX_PROJECT]
-            if project == 'chromium' and not chromium_printed:
-                repo = ChromiumRepo('%s/chromium/src' % self.root_dir)
-                info = 'Chromium Revision%s%s' % (self.SEPARATOR, repo.get_working_dir_rev())
+            if project not in logged_projects:
+                if project == 'chromium':
+                    rev = ChromiumRepo('%s/chromium/src' % self.root_dir).get_working_dir_rev()
+                else:
+                    Util.chdir('%s/%s' % (self.root_dir, project))
+                    rev = Util.get_repo_rev()
+                logged_projects.append(project)
+                info = '%s Revision%s%s' % (project.capitalize(), self.SEPARATOR, rev)
                 Util.append_file(self.exec_log, info)
-                chromium_printed = True
             virtual_name = self.os_targets[target_index][self.TARGET_INDEX_VIRTUAL_NAME]
             real_name = self.os_targets[target_index][self.TARGET_INDEX_REAL_NAME]
             real_type = self.os_targets[target_index][self.TARGET_INDEX_REAL_TYPE]
@@ -289,7 +295,7 @@ python %(prog)s --sync --build --run --dryrun --email
             for i, run_arg in reversed(list(enumerate(run_args))):
                 if run_arg.startswith('--extra-browser-args'):
                     run_arg = run_arg.replace('--extra-browser-args=', '')
-                    run_args[i] = '--extra-browser-args="%s --disable-backgrounding-occluded-windows"' % run_arg
+                    run_args[i] = '--extra-browser-args=\\\"%s --disable-backgrounding-occluded-windows\\\"' % run_arg
                 elif run_arg == '--browser=release_x64':
                     run_args[i] = '--browser=release'
                 elif run_arg.startswith('--gtest-benchmark-name'):
@@ -338,7 +344,7 @@ python %(prog)s --sync --build --run --dryrun --email
                 total_target_indexes_str_len = len(total_target_indexes_str)
                 total_shards_str = str(total_shards)
                 total_shards_str_len = len(total_shards_str)
-                op = '%s_%s-%s_%s-%s' % (str(index + 1).zfill(total_target_indexes_str_len), total_target_indexes_str, str(shard_index + 1).zfill(total_shards_str_len), total_shards_str, virtual_name)
+                op = 'index%s-shard%s-%s' % (str(index).zfill(total_target_indexes_str_len), str(shard_index).zfill(total_shards_str_len), virtual_name)
                 result_file = '%s/%s.log' % (self.result_dir, op)
 
                 if real_type in ['aquarium']:
@@ -392,7 +398,7 @@ python %(prog)s --sync --build --run --dryrun --email
         for line in open(self.exec_log):
             fields = line.rstrip('\n').split(self.SEPARATOR)
             name = fields[0]
-            if not name.startswith('run'):
+            if not re.match('sync|build|run', name, re.I):
                 html += '''
       <li>%s: %s</li>''' % (name, fields[1])
 
@@ -413,15 +419,23 @@ python %(prog)s --sync --build --run --dryrun --email
         for line in open(self.exec_log):
             fields = line.split(self.SEPARATOR)
             name = fields[0]
-            if name.startswith('run'):
-                op = name.replace('run ', '')
+            if re.match('sync|build', name, re.I):
+                time = fields[1]
+                pass_fail_info = fail_pass_info = fail_fail_info = pass_pass_info = ''
+            elif re.match('run', name, re.I):
+                op = name[4:]
                 result_file = '%s/%s.log' % (self.result_dir, op)
                 pass_fail, fail_pass, fail_fail, pass_pass_len = self._parse_result(result_file)
                 total_regressions += len(pass_fail)
-                duration = fields[1]
+                time = fields[1]
                 pass_fail_info = '%s<p>%s' % (len(pass_fail), '<p>'.join(pass_fail[:10]))
                 fail_pass_info = '%s<p>%s' % (len(fail_pass), '<p>'.join(fail_pass[:10]))
-                html += '''
+                fail_fail_info = len(fail_fail)
+                pass_pass_info = pass_pass_len
+            else:
+                continue
+
+            html += '''
     <tr>
       <td>%s</td>
       <td>%s</td>
@@ -429,7 +443,7 @@ python %(prog)s --sync --build --run --dryrun --email
       <td>%s</td>
       <td>%s</td>
       <td>%s</td>
-    </tr>''' % (op, fields[1], pass_fail_info, fail_pass_info, len(fail_fail), pass_pass_len)
+    </tr>''' % (name, time, pass_fail_info, fail_pass_info, fail_fail_info, pass_pass_info)
 
         html += '''
   </table>
@@ -440,7 +454,7 @@ python %(prog)s --sync --build --run --dryrun --email
         subject = '[GPUTest] Host %s Datetime %s Regressions %s' % (Util.HOST_NAME, self.timestamp, total_regressions)
 
         if self.email:
-            Util.send_email(self.EMAIL_SENDER, self.EMAIL_TO, subject, results)
+            Util.send_email(self.EMAIL_SENDER, self.EMAIL_TO, subject, html, type='html')
 
     def _get_targets(self):
         targets = []
@@ -537,7 +551,7 @@ python %(prog)s --sync --build --run --dryrun --email
 
     def _log_exec(self, time, op='', cmd=''):
         if op:
-            info = '%s %s' % (inspect.stack()[1][3], op)
+            info = '%s %s' % (inspect.stack()[1][3].capitalize(), op)
         else:
             info = 'Total %s' % inspect.stack()[1][3].capitalize()
         info += '%s%s' % (self.SEPARATOR, time)
@@ -555,6 +569,7 @@ python %(prog)s --sync --build --run --dryrun --email
         real_type = self.VIRTUAL_NAME_INFO[virtual_name][self.VIRTUAL_NAME_INFO_INDEX_REAL_TYPE]
 
         if real_type == 'aquarium':
+            pass_pass = []
             pass_fail = []
             fail_pass = []
             fail_fail = []

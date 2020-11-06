@@ -87,6 +87,7 @@ class Gnp(Program):
         parser.add_argument('--run-mesa-rev', dest='run_mesa_rev', help='mesa revision', default='system')
 
         parser.epilog = '''
+examples:
 python %(prog)s --sync --runhooks --makefile --build --backup --build --run --download
 python %(prog)s --backup --root-dir d:\workspace\chrome
 '''
@@ -530,7 +531,7 @@ python %(prog)s --backup --root-dir d:\workspace\chrome
         if target == 'telemetry_gpu_integration_test':
             cmd = 'vpython ../../content/test/gpu/run_gpu_integration_test.py'
         elif target == 'webgpu_blink_web_tests':
-            cmd = 'vpython ../../third_party/blink/tools/run_web_tests.py'
+            cmd = 'vpython ../../third_party/blink/tools/run_web_tests.py --target release'
         else:
             cmd = '%s%s' % (target, Util.EXEC_SUFFIX)
         if Util.HOST_OS == Util.WINDOWS:
