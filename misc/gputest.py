@@ -287,6 +287,9 @@ python %(prog)s --batch --dryrun
                 info = '%s Revision%s%s' % (project.capitalize(), self.SEPARATOR, rev)
                 Util.append_file(self.exec_log, info)
             virtual_name = self.os_targets[target_index][self.TARGET_INDEX_VIRTUAL_NAME]
+            #if virtual_name in ['dawn_end2end_validation_layers_tests']:
+            #    continue
+
             real_name = self.os_targets[target_index][self.TARGET_INDEX_REAL_NAME]
             real_type = self.os_targets[target_index][self.TARGET_INDEX_REAL_TYPE]
             config_cmd = 'python %s --run --root-dir %s/%s --run-target %s --run-rev out' % (Util.GNP_SCRIPT, self.root_dir, project, real_name)
@@ -401,7 +404,8 @@ python %(prog)s --batch --dryrun
             if not re.match('sync|build|run', name, re.I):
                 html += '''
       <li>%s: %s</li>''' % (name, fields[1])
-
+        html += '''
+      <li>Report: %s</li>''' % self.timestamp
         html += '''
     </ul>
   <h2>Details</h2>
