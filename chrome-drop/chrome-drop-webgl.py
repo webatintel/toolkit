@@ -56,11 +56,11 @@ class Webgl(Program):
         parser.add_argument('--run-target', dest='test_target', help='run target, split by comma, like "0,2"', default='all')
         parser.add_argument('--run-no-angle', dest='test_no_angle', help='run without angle', action='store_true')
         parser.add_argument('--batch', dest='batch', help='batch', action='store_true')
-        parser.add_argument('--run', dest='run', help='run', action='store_true')
         parser.add_argument('--dryrun', dest='dryrun', help='dryrun', action='store_true')
         parser.add_argument('--email', dest='email', help='send run result via email', action='store_true')
         parser.add_argument('--mesa-type', dest='mesa_type', help='mesa type', default='iris')
         parser.add_argument('--mesa-dir', dest='mesa_dir', help='mesa dir')
+        parser.add_argument('--run-manual', dest='run_manual', help='run manual', action='store_true')
 
         parser.epilog = '''
 python %(prog)s --batch
@@ -110,7 +110,7 @@ python %(prog)s --batch
         if self.target_os == Util.LINUX:
             self._execute('python %s/mesa/mesa.py --sync --root-dir %s' % (ScriptRepo.ROOT_DIR, self.mesa_dir))
 
-        cmd = 'python %s --sync --runhooks --root-dir %s' % (Util.GNP_SCRIPT_PATH, self.chrome_dir)
+        cmd = 'python %s --sync --runhooks --root-dir %s' % (Util.GNP_SCRIPT, self.chrome_dir)
         if self.args.build_chrome_rev != 'latest':
             cmd += ' --rev %s' % self.args.build_chrome_rev
         self._execute(cmd)
@@ -123,12 +123,12 @@ python %(prog)s --batch
         # build chrome
         if self.test_chrome == 'build':
             if not self.args.build_skip_chrome:
-                cmd = 'python %s --no-component-build --makefile --symbol-level 0 --build --build-target webgl --root-dir %s' % (Util.GNP_SCRIPT_PATH, self.chrome_dir)
+                cmd = 'python %s --no-component-build --makefile --symbol-level 0 --build --build-target webgl --root-dir %s' % (Util.GNP_SCRIPT, self.chrome_dir)
                 if self.args.build_chrome_dcheck:
                     cmd += ' --dcheck'
                 self._execute(cmd)
             if not self.args.build_skip_backup:
-                cmd = 'python %s --backup --backup-target webgl --root-dir %s' % (Util.GNP_SCRIPT_PATH, self.chrome_dir)
+                cmd = 'python %s --backup --backup-target webgl --root-dir %s' % (Util.GNP_SCRIPT, self.chrome_dir)
                 if self.target_os == Util.CHROMEOS:
                     cmd += ' --target-os chromeos'
                 self._execute(cmd)
@@ -177,7 +177,7 @@ python %(prog)s --batch
             else:
                 Util.error('test_chrome is not supported')
 
-        if self.args.run:
+        if self.args.run_manual:
             param = '--enable-experimental-web-platform-features --disable-gpu-process-for-dx12-vulkan-info-collection --disable-domain-blocking-for-3d-apis --disable-gpu-process-crash-limit --disable-blink-features=WebXR --js-flags=--expose-gc --disable-gpu-watchdog --autoplay-policy=no-user-gesture-required --disable-features=UseSurfaceLayerForVideo --enable-net-benchmarking --metrics-recording-only --no-default-browser-check --no-first-run --ignore-background-tasks --enable-gpu-benchmarking --deny-permission-prompts --autoplay-policy=no-user-gesture-required --disable-background-networking --disable-component-extensions-with-background-pages --disable-default-apps --disable-search-geolocation-disclosure --enable-crash-reporter-for-testing --disable-component-update'
             param += ' --use-gl=angle'
             if Util.HOST_OS == Util.LINUX and self.test_no_angle:
@@ -187,6 +187,8 @@ python %(prog)s --batch
 
         if self.test_filter != 'all':
             common_cmd += ' --test-filter=*%s*' % self.test_filter
+        if self.args.dryrun:
+            common_cmd += ' --test-filter=*conformance/attribs*'
         skip_filter = self.SKIP_CASES[Util.HOST_OS]
         if skip_filter:
             for skip_tmp in skip_filter:
@@ -217,7 +219,7 @@ python %(prog)s --batch
             for i in self.test_target.split(','):
                 test_combs.append(all_combs[int(i)])
 
-        final_num_regressions = 0
+        final_regressions = 0
         if self.args.build_chrome_dcheck:
             dcheck = 'true'
         else:
@@ -243,9 +245,11 @@ python %(prog)s --batch
             cmd += ' --write-full-results-to %s' % result_file
             test_timer = Timer()
             result = self._execute(cmd, exit_on_error=False, show_duration=True)
-            num_regressions, result = Util.get_gpu_integration_result(result_file)
-            final_num_regressions += num_regressions
-            final_summary += result.split('\n')[0] + '\n'
+            pass_fail, fail_pass, fail_fail, pass_pass_len = Util.get_test_result(result_file, 'gtest_angle')
+            final_regressions += len(pass_fail)
+            result = 'PASS_FAIL %s, FAIL_PASS %s, FAIL_FAIL %s PASS_PASS %s\n' % (len(pass_fail), len(fail_pass), len(fail_fail), pass_pass_len)
+            final_summary += result
+            result += '[PASS_FAIL] %s\n[FAIL_PASS] %s\n' % ('\n'.join(pass_fail[:10]), '\n'.join(fail_pass[:10]))
             final_details += result
             Util.info(result)
 
@@ -259,7 +263,7 @@ python %(prog)s --batch
         subject = '[WebGL CTS]'
         if Util.HOST_OS == Util.LINUX:
             subject += ' Mesa %s' % self.run_mesa_rev
-        subject += 'Chrome %s Regression %s' % (self.chrome_rev, num_regressions)
+        subject += 'Chrome %s Regression %s' % (self.chrome_rev, final_regressions)
 
         if self.args.batch and self.args.email:
             Util.send_email('webperf@intel.com', 'yang.gu@intel.com', subject, '%s\n%s' % (final_summary, final_details))
