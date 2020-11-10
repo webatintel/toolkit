@@ -250,7 +250,7 @@ python %(prog)s --batch --dryrun
             if project == 'mesa':
                 cmd = 'python %s --root-dir %s/mesa --build' % (Util.MESA_SCRIPT, self.root_dir)
             else:
-                cmd = 'python %s --root-dir %s/%s --makefile --build --build-target %s' % (Util.GNP_SCRIPT, self.root_dir, project, ','.join(project_targets[project]))
+                cmd = 'python %s --no-component-build --root-dir %s/%s --makefile --build --build-target %s' % (Util.GNP_SCRIPT, self.root_dir, project, ','.join(project_targets[project]))
             if self._execute(cmd, exit_on_error=False, dryrun=self.args.dryrun)[0]:
                 error_info = '[GPUTest] Project %s build failed' % project
                 if self.email:
