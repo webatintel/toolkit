@@ -121,6 +121,7 @@ class GPUTest(Program):
         parser.add_argument('--debug', dest='debug', help='debug', action='store_true')
         parser.add_argument('--target', dest='target', help='target', default='all')
         parser.add_argument('--email', dest='email', help='email', action='store_true')
+        parser.add_argument('--repeat', dest='repeat', help='repeat', type=int, default=1)
 
         parser.add_argument('--list', dest='list', help='list', action='store_true')
         parser.add_argument('--sync', dest='sync', help='sync', action='store_true')
@@ -194,7 +195,8 @@ python %(prog)s --batch --dryrun
         else:
             self.email = False
 
-        self._handle_ops()
+        for i in range(self.args.repeat):
+            self._handle_ops()
 
     def list(self):
         for index, target in enumerate(self.os_targets):
