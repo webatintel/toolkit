@@ -287,8 +287,8 @@ python %(prog)s --batch --dryrun
                 info = '%s Revision%s%s' % (project.capitalize(), self.SEPARATOR, rev)
                 Util.append_file(self.exec_log, info)
             virtual_name = self.os_targets[target_index][self.TARGET_INDEX_VIRTUAL_NAME]
-            #if virtual_name in ['dawn_end2end_validation_layers_tests']:
-            #    continue
+            if Util.HOST_OS == Util.WINDOWS and virtual_name in ['dawn_end2end_validation_layers_tests']:
+                continue
 
             real_name = self.os_targets[target_index][self.TARGET_INDEX_REAL_NAME]
             real_type = self.os_targets[target_index][self.TARGET_INDEX_REAL_TYPE]
