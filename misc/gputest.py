@@ -63,6 +63,7 @@ class GPUTest(Program):
 
         'angle_end2end_tests': ['gtest_angle', 'EGLAndroidFrameBufferTargetTest'],
         'angle_perftests': ['gtest_angle', 'BindingsBenchmark'],
+        'angle_white_box_tests': ['gtest_angle', 'VulkanDescriptorSetTest.AtomicCounterReadLimitedDescriptorPool'],
 
         'dawn_end2end_skip_validation_tests': ['gtest_chrome', 'BindGroupTests', '--adapter-vendor-id=0x8086'],
         'dawn_end2end_tests': ['gtest_chrome', 'BindGroupTests'],
