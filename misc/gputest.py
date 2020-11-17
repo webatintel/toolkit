@@ -113,6 +113,8 @@ class GPUTest(Program):
     EMAIL_ADMIN = 'yang.gu@intel.com'
     EMAIL_TO = 'yang.gu@intel.com'
 
+    MAX_FAIL_IN_REPORT = 20
+
     SEPARATOR = '|'
 
     def __init__(self):
@@ -133,7 +135,7 @@ class GPUTest(Program):
         parser.add_argument('--run', dest='run', help='run', action='store_true')
         parser.add_argument('--dryrun', dest='dryrun', help='dryrun', action='store_true')
         parser.add_argument('--dryrun-with-shard', dest='dryrun_with_shard', help='dryrun with shard', action='store_true')
-        parser.add_argument('--report', dest='report', help='report')
+        parser.add_argument('--report', dest='report', help='report', default='new')
         parser.add_argument('--batch', dest='batch', help='batch', action='store_true')
         parser.add_argument('--mesa-rev', dest='mesa_rev', help='mesa revision', default='system')
         parser.add_argument('--mesa-type', dest='mesa_type', help='mesa type', default='iris')
@@ -180,11 +182,11 @@ python %(prog)s --batch --dryrun
         target_indexes = sorted(target_indexes)
         self.target_indexes = target_indexes
 
-        if args.report:
-            self.result_dir = args.report
-        else:
+        if args.report == 'new':
             self.result_dir = '%s/result/%s' % (self.root_dir, self.timestamp)
             Util.ensure_dir(self.result_dir)
+        else:
+            self.result_dir = args.report
         self.exec_log = '%s/exec.log' % self.result_dir
         if not args.report:
             Util.ensure_nofile(self.exec_log)
@@ -375,7 +377,6 @@ python %(prog)s --batch --dryrun
                     break
 
         self._log_exec(all_timer.stop())
-        self.report()
 
     def batch(self):
         self.sync()
@@ -435,8 +436,8 @@ python %(prog)s --batch --dryrun
                 pass_fail, fail_pass, fail_fail, pass_pass_len = self._parse_result(result_file)
                 total_regressions += len(pass_fail)
                 time = fields[1]
-                pass_fail_info = '%s<p>%s' % (len(pass_fail), '<p>'.join(pass_fail[:10]))
-                fail_pass_info = '%s<p>%s' % (len(fail_pass), '<p>'.join(fail_pass[:10]))
+                pass_fail_info = '%s<p>%s' % (len(pass_fail), '<p>'.join(pass_fail[:self.MAX_FAIL_IN_REPORT]))
+                fail_pass_info = '%s<p>%s' % (len(fail_pass), '<p>'.join(fail_pass[:self.MAX_FAIL_IN_REPORT]))
                 fail_fail_info = len(fail_fail)
                 pass_pass_info = pass_pass_len
             else:
