@@ -308,7 +308,9 @@ python %(prog)s --batch --dryrun
                     run_args[i] = '--browser=release'
                 elif run_arg.startswith('--gtest-benchmark-name'):
                     run_args.remove(run_arg)
-                elif run_arg in ['-v', '--show-stdout', 'angle_end2end_tests', 'angle_perftests', '--print-test-stdout']:
+                elif run_arg in ['-v', '--show-stdout', '--print-test-stdout']:
+                    run_args.remove(run_arg)
+                elif real_type == 'gtest_angle':
                     run_args.remove(run_arg)
                 elif run_arg == '--target=Release_x64':
                     run_args[i] = '--target=release'
