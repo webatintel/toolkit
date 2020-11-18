@@ -300,6 +300,10 @@ python %(prog)s --batch --dryrun
             config_cmd = 'python %s --run --root-dir %s/%s --run-target %s --run-rev out' % (Util.GNP_SCRIPT, self.root_dir, project, real_name)
 
             run_args = self.os_targets[target_index][self.TARGET_INDEX_RUN_ARGS]
+            virtual_names_to_remove = []
+            for tmp_virtual_name in self.VIRTUAL_NAME_INFO:
+                if self.VIRTUAL_NAME_INFO[tmp_virtual_name][self.VIRTUAL_NAME_INFO_INDEX_REAL_TYPE] == 'gtest_angle':
+                    virtual_names_to_remove.append(tmp_virtual_name)
             for i, run_arg in reversed(list(enumerate(run_args))):
                 if run_arg.startswith('--extra-browser-args'):
                     run_arg = run_arg.replace('--extra-browser-args=', '')
@@ -310,14 +314,17 @@ python %(prog)s --batch --dryrun
                     run_args.remove(run_arg)
                 elif run_arg in ['-v', '--show-stdout', '--print-test-stdout']:
                     run_args.remove(run_arg)
-                elif real_type == 'gtest_angle':
+                elif run_arg in virtual_names_to_remove:
                     run_args.remove(run_arg)
                 elif run_arg == '--target=Release_x64':
                     run_args[i] = '--target=release'
                 # we use 5912 and 3e98 in test
                 elif run_arg == '3e92':
                     run_args += ['--expected-device-id', '3e98']
-            config_args = ' '.join(run_args)
+
+            config_args = ''
+            if run_args:
+                config_args = ' '.join(run_args)
 
             real_type_extra_args = self.REAL_TYPE_INFO[real_type][self.REAL_TYPE_INFO_INDEX_EXTRA_ARGS]
             if real_type_extra_args:
@@ -346,15 +353,17 @@ python %(prog)s --batch --dryrun
 
             for shard_index in range(total_shards):
                 shard_args = ''
-                if total_shards > 1:
-                    shard_args += ' %s=%s %s=%s' % (total_shards_arg, total_shards, shard_index_arg, shard_index)
-
                 total_target_indexes = len(self.target_indexes)
                 total_target_indexes_str = str(total_target_indexes)
                 total_target_indexes_str_len = len(total_target_indexes_str)
-                total_shards_str = str(total_shards)
-                total_shards_str_len = len(total_shards_str)
-                op = 'index%s-shard%s-%s' % (str(index).zfill(total_target_indexes_str_len), str(shard_index).zfill(total_shards_str_len), virtual_name)
+                op = '%s' % str(index).zfill(total_target_indexes_str_len)
+
+                if total_shards > 1:
+                    shard_args += ' %s=%s %s=%s' % (total_shards_arg, total_shards, shard_index_arg, shard_index)
+                    total_shards_str = str(total_shards)
+                    total_shards_str_len = len(total_shards_str)
+                    op += '-shard%s' % str(shard_index).zfill(total_shards_str_len)
+                op += '-%s' % virtual_name
                 result_file = '%s/%s.log' % (self.result_dir, op)
 
                 if real_type in ['aquarium']:
