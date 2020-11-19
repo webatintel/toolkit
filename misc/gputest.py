@@ -43,6 +43,14 @@ class GPUTest(Program):
         }
     }
 
+    SKIP_CASES_INDEX_OS = 0
+    SKIP_CASES_INDEX_VIRTUAL_NAME = 1
+    SKIP_CASES_INDEX_CASES = 2
+    SKIP_CASES = [
+        [Util.WINDOWS, 'dawn_end2end_validation_layers_tests'],
+        [Util.LINUX, 'dawn_end2end_tests', 'SwapChainTests.SwitchPresentMode/Vulkan_Intel_R_UHD_Graphics_630_CFL_GT2'],
+    ]
+
     REAL_TYPE_INFO_INDEX_FILTER = 0
     REAL_TYPE_INFO_INDEX_EXTRA_ARGS = 1
     REAL_TYPE_INFO = {
@@ -66,7 +74,7 @@ class GPUTest(Program):
         'angle_white_box_tests': ['gtest_angle', 'VulkanDescriptorSetTest.AtomicCounterReadLimitedDescriptorPool'],
 
         'dawn_end2end_skip_validation_tests': ['gtest_chrome', 'BindGroupTests', '--adapter-vendor-id=0x8086'],
-        'dawn_end2end_tests': ['gtest_chrome', 'BindGroupTests'],
+        'dawn_end2end_tests': ['gtest_chrome', 'BindGroupTests', '', 'SwapChainTests.SwitchPresentMode/Vulkan_Intel_R_UHD_Graphics_630_CFL_GT2'],
         'dawn_end2end_validation_layers_tests': ['gtest_chrome', 'BindGroupTests'],
         'dawn_end2end_wire_tests': ['gtest_chrome', 'BindGroupTests'],
         'dawn_perf_tests': ['gtest_chrome', 'BufferUploadPerf.Run/Vulkan_Intel', '--override-steps=1'],
@@ -293,8 +301,10 @@ python %(prog)s --batch --dryrun
                 info = '%s Revision%s%s' % (project.capitalize(), self.SEPARATOR, rev)
                 Util.append_file(self.exec_log, info)
             virtual_name = self.os_targets[target_index][self.TARGET_INDEX_VIRTUAL_NAME]
-            if Util.HOST_OS == Util.WINDOWS and virtual_name in ['dawn_end2end_validation_layers_tests']:
-                continue
+
+            for skip_case in self.SKIP_CASES:
+                if Util.HOST_OS == skip_case[self.SKIP_CASES_INDEX_OS] and virtual_name == skip_case[self.SKIP_CASES_INDEX_VIRTUAL_NAME] and len(skip_case) == self.SKIP_CASES_INDEX_VIRTUAL_NAME + 1:
+                    continue
 
             real_name = self.os_targets[target_index][self.TARGET_INDEX_REAL_NAME]
             real_type = self.os_targets[target_index][self.TARGET_INDEX_REAL_TYPE]
@@ -340,6 +350,10 @@ python %(prog)s --batch --dryrun
                 if real_type not in ['aquarium', 'webgpu_blink_web_tests']:
                     dryrun_cond = '*%s*' % dryrun_cond
                 config_args += ' %s=%s' % (self.REAL_TYPE_INFO[real_type][self.REAL_TYPE_INFO_INDEX_FILTER], dryrun_cond)
+            else:
+                for skip_case in self.SKIP_CASES:
+                    if Util.HOST_OS == skip_case[self.SKIP_CASES_INDEX_OS] and virtual_name == skip_case[self.SKIP_CASES_INDEX_VIRTUAL_NAME] and len(skip_case) == self.SKIP_CASES_INDEX_CASES + 1:
+                        config_args += ' %s=-%s' % (self.REAL_TYPE_INFO[real_type][self.REAL_TYPE_INFO_INDEX_FILTER], skip_case[self.SKIP_CASES_INDEX_CASES])
 
             if real_type in ['telemetry_gpu_integration_test', 'webgpu_blink_web_tests']:
                 total_shards_arg = '--total-shards'
@@ -354,10 +368,7 @@ python %(prog)s --batch --dryrun
 
             for shard_index in range(total_shards):
                 shard_args = ''
-                total_target_indexes = len(self.target_indexes)
-                total_target_indexes_str = str(total_target_indexes)
-                total_target_indexes_str_len = len(total_target_indexes_str)
-                op = '%s' % str(index).zfill(total_target_indexes_str_len)
+                op = '%s' % target_index
 
                 if total_shards > 1:
                     shard_args += ' %s=%s %s=%s' % (total_shards_arg, total_shards, shard_index_arg, shard_index)
