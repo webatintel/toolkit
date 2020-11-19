@@ -137,7 +137,7 @@ class GPUTest(Program):
         parser.add_argument('--dryrun-with-shard', dest='dryrun_with_shard', help='dryrun with shard', action='store_true')
         parser.add_argument('--report', dest='report', help='report', default='new')
         parser.add_argument('--batch', dest='batch', help='batch', action='store_true')
-        parser.add_argument('--mesa-rev', dest='mesa_rev', help='mesa revision', default='system')
+        parser.add_argument('--mesa-rev', dest='mesa_rev', help='mesa revision, can be system, build or any specific revision', default='system')
         parser.add_argument('--mesa-type', dest='mesa_type', help='mesa type', default='iris')
 
         parser.epilog = '''
@@ -207,13 +207,14 @@ python %(prog)s --batch --dryrun
     def sync(self):
         all_timer = Timer()
         projects = []
-        if self.target_os == Util.LINUX and not self.args.sync_skip_mesa and self.args.mesa_rev != 'system':
+        if self.target_os == Util.LINUX and not self.args.sync_skip_mesa and self.args.mesa_rev == 'build':
             projects.append('mesa')
 
         for target_index in self.target_indexes:
-            project = self.os_targets[target_index][self.TARGET_INDEX_PROJECT]
-            if project not in projects:
-                projects.append(project)
+            if target_index in self.os_targets:
+                project = self.os_targets[target_index][self.TARGET_INDEX_PROJECT]
+                if project not in projects:
+                    projects.append(project)
 
         for project in projects:
             timer = Timer()
@@ -238,17 +239,18 @@ python %(prog)s --batch --dryrun
         projects = []
         project_targets = {}
 
-        if self.target_os == Util.LINUX and not self.args.build_skip_mesa and self.args.mesa_rev != 'system':
+        if self.target_os == Util.LINUX and not self.args.build_skip_mesa and self.args.mesa_rev == 'build':
             projects.append('mesa')
 
         for target_index in self.target_indexes:
-            project = self.os_targets[target_index][self.TARGET_INDEX_PROJECT]
-            real_name = self.os_targets[target_index][self.TARGET_INDEX_REAL_NAME]
-            if project not in projects:
-                projects.append(project)
-                project_targets[project] = [real_name]
-            elif real_name not in project_targets[project]:
-                project_targets[project].append(real_name)
+            if target_index in self.os_targets:
+                project = self.os_targets[target_index][self.TARGET_INDEX_PROJECT]
+                real_name = self.os_targets[target_index][self.TARGET_INDEX_REAL_NAME]
+                if project not in projects:
+                    projects.append(project)
+                    project_targets[project] = [real_name]
+                elif real_name not in project_targets[project]:
+                    project_targets[project].append(real_name)
 
         for project in projects:
             timer = Timer()
@@ -269,11 +271,10 @@ python %(prog)s --batch --dryrun
         all_timer = Timer()
         Util.clear_proxy()
 
-        if Util.HOST_OS == Util.LINUX and self.args.mesa_rev != 'system':
+        if Util.HOST_OS == Util.LINUX and self.args.mesa_rev == 'build':
             gpu_driver = 'Mesa %s' % Util.set_mesa('%s/mesa/backup' % self.root_dir, self.args.mesa_rev, self.args.mesa_type)
-            gpu_name, _ = Util.get_gpu_info()
-        else:
-            gpu_name, gpu_driver = Util.get_gpu_info()
+
+        gpu_name, gpu_driver = Util.get_gpu_info()
 
         Util.append_file(self.exec_log, 'GPU name%s%s' % (self.SEPARATOR, gpu_name))
         Util.append_file(self.exec_log, 'GPU driver%s%s' % (self.SEPARATOR, gpu_driver))
