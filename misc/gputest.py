@@ -48,7 +48,7 @@ class GPUTest(Program):
     SKIP_CASES_INDEX_CASES = 2
     SKIP_CASES = [
         [Util.WINDOWS, 'dawn_end2end_validation_layers_tests'],
-        [Util.LINUX, 'dawn_end2end_tests', 'SwapChainTests.SwitchPresentMode/Vulkan_Intel_R_UHD_Graphics_630_CFL_GT2'],
+        #[Util.LINUX, 'dawn_end2end_tests', 'SwapChainTests.SwitchPresentMode/Vulkan_Intel_R_UHD_Graphics_630_CFL_GT2'],
     ]
 
     REAL_TYPE_INFO_INDEX_FILTER = 0
@@ -219,7 +219,7 @@ python %(prog)s --batch --dryrun
             projects.append('mesa')
 
         for target_index in self.target_indexes:
-            if target_index in self.os_targets:
+            if target_index < len(self.os_targets) and target_index >= 0:
                 project = self.os_targets[target_index][self.TARGET_INDEX_PROJECT]
                 if project not in projects:
                     projects.append(project)
@@ -251,7 +251,7 @@ python %(prog)s --batch --dryrun
             projects.append('mesa')
 
         for target_index in self.target_indexes:
-            if target_index in self.os_targets:
+            if target_index < len(self.os_targets) and target_index >= 0:
                 project = self.os_targets[target_index][self.TARGET_INDEX_PROJECT]
                 real_name = self.os_targets[target_index][self.TARGET_INDEX_REAL_NAME]
                 if project not in projects:
