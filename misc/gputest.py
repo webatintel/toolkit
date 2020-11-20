@@ -140,7 +140,9 @@ class GPUTest(Program):
         parser.add_argument('--sync-roll-dawn', dest='sync_roll_dawn', help='sync roll dawn', action='store_true')
         parser.add_argument('--build', dest='build', help='build', action='store_true')
         parser.add_argument('--build-skip-mesa', dest='build_skip_mesa', help='build skip mesa', action='store_true')
+        parser.add_argument('--build-backup', dest='build_backup', help='backup Chrome during build', action='store_true')
         parser.add_argument('--run', dest='run', help='run', action='store_true')
+        parser.add_argument('--run-backup', dest='run_backup', help='run with Chrome backup', action='store_true')
         parser.add_argument('--dryrun', dest='dryrun', help='dryrun', action='store_true')
         parser.add_argument('--dryrun-with-shard', dest='dryrun_with_shard', help='dryrun with shard', action='store_true')
         parser.add_argument('--report', dest='report', help='report', default='new')
@@ -266,6 +268,8 @@ python %(prog)s --batch --dryrun
                 cmd = 'python %s --root-dir %s/mesa --build' % (Util.MESA_SCRIPT, self.root_dir)
             else:
                 cmd = 'python %s --no-component-build --root-dir %s/%s --makefile --build --build-target %s' % (Util.GNP_SCRIPT, self.root_dir, project, ','.join(project_targets[project]))
+                if project == 'chromium' and self.args.build_backup:
+                    cmd += ' --backup --backup-target ' % (Util.GNP_SCRIPT, self.root_dir, project, ','.join(project_targets[project]))
             if self._execute(cmd, exit_on_error=False, dryrun=self.args.dryrun)[0]:
                 error_info = '[GPUTest] Project %s build failed' % project
                 if self.email:
