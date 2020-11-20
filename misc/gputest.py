@@ -456,13 +456,16 @@ python %(prog)s --batch --dryrun
             elif re.match('run', name, re.I):
                 op = name[4:]
                 result_file = '%s/%s.log' % (self.result_dir, op)
-                pass_fail, fail_pass, fail_fail, pass_pass_len = self._parse_result(result_file)
+                pass_fail, fail_pass, fail_fail, pass_pass = self._parse_result(result_file)
                 total_regressions += len(pass_fail)
                 time = fields[1]
                 pass_fail_info = '%s<p>%s' % (len(pass_fail), '<p>'.join(pass_fail[:self.MAX_FAIL_IN_REPORT]))
                 fail_pass_info = '%s<p>%s' % (len(fail_pass), '<p>'.join(fail_pass[:self.MAX_FAIL_IN_REPORT]))
                 fail_fail_info = len(fail_fail)
-                pass_pass_info = pass_pass_len
+                if re.match('run \d+-aquarium', name, re.I) and pass_pass:
+                    pass_pass_info = '%s<p>%s' % (len(pass_pass), '<p>'.join(pass_pass[:self.MAX_FAIL_IN_REPORT]))
+                else:
+                    pass_pass_info = len(pass_pass)
             else:
                 continue
 
@@ -617,16 +620,14 @@ python %(prog)s --batch --dryrun
                         pass_pass.append('%s -> %s' % (base_fps, run_fps))
                     break
 
-            pass_pass_len = len(pass_pass)
-
         else:
             if real_type in ['gtest_chrome']:
                 type = real_type
             elif real_type in ['gtest_angle', 'telemetry_gpu_integration_test', 'webgpu_blink_web_tests']:
                 type = 'gtest_angle'
-            pass_fail, fail_pass, fail_fail, pass_pass_len = Util.get_test_result(result_file, type)
+            pass_fail, fail_pass, fail_fail, pass_pass = Util.get_test_result(result_file, type)
 
-        return pass_fail, fail_pass, fail_fail, pass_pass_len
+        return pass_fail, fail_pass, fail_fail, pass_pass
 
     def _handle_ops(self):
         args = self.args
