@@ -307,11 +307,17 @@ python %(prog)s --backup --root-dir d:\workspace\chrome
                 targets[targets.index(key)] = value
 
         tmp_files = []
-        for target in targets:
-            target_files = self._execute('gn desc %s %s runtime_deps' % (self.out_dir, target), return_out=True, exit_on_error=self.exit_on_error)[1].rstrip('\n').split('\n')
-            tmp_files = Util.union_list(tmp_files, target_files)
+        if self.project == 'aquarium':
+            for tmp_file in os.listdir(self.out_dir):
+                if os.path.isdir('%s/%s' % (self.out_dir, tmp_file)):
+                    tmp_file += '/'
+                tmp_files.append(tmp_file)
+        else:
+            for target in targets:
+                target_files = self._execute('gn desc %s %s runtime_deps' % (self.out_dir, target), return_out=True, exit_on_error=self.exit_on_error)[1].rstrip('\n').split('\n')
+                tmp_files = Util.union_list(tmp_files, target_files)
 
-        exclude_files = ['gen/']
+        exclude_files = ['gen/', 'obj/']
         src_files = []
         for tmp_file in tmp_files:
             tmp_file = tmp_file.rstrip('\r')
@@ -325,13 +331,15 @@ python %(prog)s --backup --root-dir d:\workspace\chrome
                 continue
 
             for exclude_file in exclude_files:
-                if tmp_file.startswith(exclude_file):
+                if re.match(exclude_file, tmp_file):
                     break
             else:
-                src_files.append(tmp_file)
+                src_files.append('%s/%s' % (self.out_dir, tmp_file))
+
+        if self.project == 'aquarium':
+            src_files += ['assets/', 'shaders/']
 
         for src_file in src_files:
-            src_file = '%s/%s' % (self.out_dir, src_file)
             dst_dir = '%s/%s' % (backup_path, src_file)
             Util.ensure_dir(os.path.dirname(dst_dir))
             if os.path.isdir(src_file):
