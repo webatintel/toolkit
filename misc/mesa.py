@@ -204,7 +204,7 @@ python %(prog)s --revtohash 1
                 # missing options: -enable-texture-float --enable-glx-tls
                 Util.ensure_nodir('build')
                 Util.ensure_dir('build')
-                build_cmd = 'PKG_CONFIG_PATH=%s/lib/x86_64-linux-gnu/pkgconfig meson build/ -Dprefix=%s -Dvulkan-drivers=intel -Ddri-drivers=i915,i965 -Ddri-drivers-path=%s/lib/dri -Dgles1=true -Dgles2=true -Dshared-glapi=true -Dplatforms=x11,drm -Dgbm=true -Ddri3=true -Dgallium-drivers=iris' % (building_dir, building_dir, building_dir)
+                build_cmd = 'PKG_CONFIG_PATH=%s/lib/x86_64-linux-gnu/pkgconfig meson build/ -Dprefix=%s -Dvulkan-drivers=intel -Ddri-drivers=i915,i965 -Ddri-drivers-path=%s/lib/dri -Dgles1=true -Dgles2=true -Dshared-glapi=true -Dplatforms=x11 -Dgbm=true -Ddri3=true -Dgallium-drivers=iris' % (building_dir, building_dir, building_dir)
                 if not self.args.build_novulkan:
                     build_cmd += ' -Dvulkan-drivers=intel'
                 if self.build_type == 'release':
