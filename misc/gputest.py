@@ -39,7 +39,7 @@ class GPUTest(Program):
             'dawn_vulkan': 38,
         },
         Util.LINUX: {
-            'dawn_vulkan': 50,
+            'dawn_vulkan': 46,
         }
     }
 
@@ -147,7 +147,7 @@ class GPUTest(Program):
         parser.add_argument('--dryrun-with-shard', dest='dryrun_with_shard', help='dryrun with shard', action='store_true')
         parser.add_argument('--report', dest='report', help='report', default='new')
         parser.add_argument('--batch', dest='batch', help='batch', action='store_true')
-        parser.add_argument('--mesa-rev', dest='mesa_rev', help='mesa revision, can be system, build or any specific revision', default='system')
+        parser.add_argument('--mesa-rev', dest='mesa_rev', help='mesa revision, can be system, latest or any specific revision', default='system')
         parser.add_argument('--mesa-type', dest='mesa_type', help='mesa type', default='iris')
 
         parser.epilog = '''
@@ -217,7 +217,7 @@ python %(prog)s --batch --dryrun
     def sync(self):
         all_timer = Timer()
         projects = []
-        if self.target_os == Util.LINUX and not self.args.sync_skip_mesa and self.args.mesa_rev == 'build':
+        if self.target_os == Util.LINUX and not self.args.sync_skip_mesa and self.args.mesa_rev == 'latest':
             projects.append('mesa')
 
         for target_index in self.target_indexes:
@@ -249,7 +249,7 @@ python %(prog)s --batch --dryrun
         projects = []
         project_targets = {}
 
-        if self.target_os == Util.LINUX and not self.args.build_skip_mesa and self.args.mesa_rev == 'build':
+        if self.target_os == Util.LINUX and not self.args.build_skip_mesa and self.args.mesa_rev == 'latest':
             projects.append('mesa')
 
         for target_index in self.target_indexes:
@@ -283,7 +283,7 @@ python %(prog)s --batch --dryrun
         all_timer = Timer()
         Util.clear_proxy()
 
-        if Util.HOST_OS == Util.LINUX and self.args.mesa_rev == 'build':
+        if Util.HOST_OS == Util.LINUX and self.args.mesa_rev == 'latest':
             gpu_driver = 'Mesa %s' % Util.set_mesa('%s/mesa/backup' % self.root_dir, self.args.mesa_rev, self.args.mesa_type)
 
         gpu_name, gpu_driver = Util.get_gpu_info()
