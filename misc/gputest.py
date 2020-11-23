@@ -135,20 +135,15 @@ class GPUTest(Program):
 
         parser.add_argument('--list', dest='list', help='list', action='store_true')
         parser.add_argument('--sync', dest='sync', help='sync', action='store_true')
-        parser.add_argument('--sync-skip-mesa', dest='sync_skip_mesa', help='sync skip mesa', action='store_true')
         #parser.add_argument('--sync-skip-roll-dawn', dest='sync_skip_roll_dawn', help='sync skip roll dawn', action='store_true')
         parser.add_argument('--sync-roll-dawn', dest='sync_roll_dawn', help='sync roll dawn', action='store_true')
         parser.add_argument('--build', dest='build', help='build', action='store_true')
-        parser.add_argument('--build-skip-mesa', dest='build_skip_mesa', help='build skip mesa', action='store_true')
-        parser.add_argument('--build-backup', dest='build_backup', help='backup Chrome during build', action='store_true')
         parser.add_argument('--run', dest='run', help='run', action='store_true')
-        parser.add_argument('--run-backup', dest='run_backup', help='run with Chrome backup', action='store_true')
+        parser.add_argument('--run-mesa-rev', dest='run_mesa_rev', help='run mesa revision, can be system, latest or any specific revision', default='system')
         parser.add_argument('--dryrun', dest='dryrun', help='dryrun', action='store_true')
         parser.add_argument('--dryrun-with-shard', dest='dryrun_with_shard', help='dryrun with shard', action='store_true')
-        parser.add_argument('--report', dest='report', help='report', default='new')
         parser.add_argument('--batch', dest='batch', help='batch', action='store_true')
-        parser.add_argument('--mesa-rev', dest='mesa_rev', help='mesa revision, can be system, latest or any specific revision', default='system')
-        parser.add_argument('--mesa-type', dest='mesa_type', help='mesa type', default='iris')
+
 
         parser.epilog = '''
 examples:
@@ -192,14 +187,10 @@ python %(prog)s --batch --dryrun
         target_indexes = sorted(target_indexes)
         self.target_indexes = target_indexes
 
-        if args.report == 'new':
-            self.result_dir = '%s/result/%s' % (self.root_dir, self.timestamp)
-            Util.ensure_dir(self.result_dir)
-        else:
-            self.result_dir = args.report
+        self.result_dir = '%s/result/%s' % (self.root_dir, self.timestamp)
+        Util.ensure_dir(self.result_dir)
         self.exec_log = '%s/exec.log' % self.result_dir
-        if not args.report:
-            Util.ensure_nofile(self.exec_log)
+        Util.ensure_nofile(self.exec_log)
         Util.append_file(self.exec_log, 'OS%s%s' % (self.SEPARATOR, Util.HOST_OS_RELEASE))
 
         if args.email or args.batch:
@@ -210,6 +201,8 @@ python %(prog)s --batch --dryrun
         for i in range(self.args.repeat):
             self._handle_ops()
 
+        self._report()
+
     def list(self):
         for index, target in enumerate(self.os_targets):
             print('%s: %s' % (index, target[self.TARGET_INDEX_VIRTUAL_NAME]))
@@ -217,9 +210,6 @@ python %(prog)s --batch --dryrun
     def sync(self):
         all_timer = Timer()
         projects = []
-        if self.target_os == Util.LINUX and not self.args.sync_skip_mesa and self.args.mesa_rev == 'latest':
-            projects.append('mesa')
-
         for target_index in self.target_indexes:
             if target_index < len(self.os_targets) and target_index >= 0:
                 project = self.os_targets[target_index][self.TARGET_INDEX_PROJECT]
@@ -228,10 +218,7 @@ python %(prog)s --batch --dryrun
 
         for project in projects:
             timer = Timer()
-            if project == 'mesa':
-                cmd = 'python %s --root-dir %s/mesa --sync' % (Util.MESA_SCRIPT, self.root_dir)
-            else:
-                cmd = 'python %s --root-dir %s/%s --sync --runhooks' % (Util.GNP_SCRIPT, self.root_dir, project)
+            cmd = 'python %s --root-dir %s/%s --sync --runhooks' % (Util.GNP_SCRIPT, self.root_dir, project)
             dryrun = self.args.dryrun
             if self._execute(cmd, exit_on_error=False, dryrun=dryrun)[0]:
                 Util.error('Sync failed')
@@ -249,9 +236,6 @@ python %(prog)s --batch --dryrun
         projects = []
         project_targets = {}
 
-        if self.target_os == Util.LINUX and not self.args.build_skip_mesa and self.args.mesa_rev == 'latest':
-            projects.append('mesa')
-
         for target_index in self.target_indexes:
             if target_index < len(self.os_targets) and target_index >= 0:
                 project = self.os_targets[target_index][self.TARGET_INDEX_PROJECT]
@@ -264,12 +248,7 @@ python %(prog)s --batch --dryrun
 
         for project in projects:
             timer = Timer()
-            if project == 'mesa':
-                cmd = 'python %s --root-dir %s/mesa --build' % (Util.MESA_SCRIPT, self.root_dir)
-            else:
-                cmd = 'python %s --no-component-build --root-dir %s/%s --makefile --build --build-target %s' % (Util.GNP_SCRIPT, self.root_dir, project, ','.join(project_targets[project]))
-                if project == 'chromium' and self.args.build_backup:
-                    cmd += ' --backup --backup-target ' % (Util.GNP_SCRIPT, self.root_dir, project, ','.join(project_targets[project]))
+            cmd = 'python %s --no-component-build --root-dir %s/%s --makefile --build --build-target %s' % (Util.GNP_SCRIPT, self.root_dir, project, ','.join(project_targets[project]))
             if self._execute(cmd, exit_on_error=False, dryrun=self.args.dryrun)[0]:
                 error_info = '[GPUTest] Project %s build failed' % project
                 if self.email:
@@ -281,16 +260,6 @@ python %(prog)s --batch --dryrun
 
     def run(self):
         all_timer = Timer()
-        Util.clear_proxy()
-
-        if Util.HOST_OS == Util.LINUX and self.args.mesa_rev == 'latest':
-            gpu_driver = 'Mesa %s' % Util.set_mesa('%s/mesa/backup' % self.root_dir, self.args.mesa_rev, self.args.mesa_type)
-
-        gpu_name, gpu_driver = Util.get_gpu_info()
-
-        Util.append_file(self.exec_log, 'GPU name%s%s' % (self.SEPARATOR, gpu_name))
-        Util.append_file(self.exec_log, 'GPU driver%s%s' % (self.SEPARATOR, gpu_driver))
-
         args = self.args
         logged_projects = []
         for index, target_index in enumerate(self.target_indexes):
@@ -312,7 +281,7 @@ python %(prog)s --batch --dryrun
 
             real_name = self.os_targets[target_index][self.TARGET_INDEX_REAL_NAME]
             real_type = self.os_targets[target_index][self.TARGET_INDEX_REAL_TYPE]
-            config_cmd = 'python %s --run --root-dir %s/%s --run-target %s --run-rev out' % (Util.GNP_SCRIPT, self.root_dir, project, real_name)
+            config_cmd = 'python %s --run --root-dir %s/%s --run-target %s --run-rev out --run-mesa-rev %s' % (Util.GNP_SCRIPT, self.root_dir, project, real_name, self.args.run_mesa_rev)
 
             run_args = self.os_targets[target_index][self.TARGET_INDEX_RUN_ARGS]
             virtual_names_to_remove = []
@@ -403,6 +372,10 @@ python %(prog)s --batch --dryrun
                 if args.dryrun and not args.dryrun_with_shard:
                     break
 
+        gpu_name, gpu_driver = Util.get_gpu_info()
+        Util.append_file(self.exec_log, 'GPU name%s%s' % (self.SEPARATOR, gpu_name))
+        Util.append_file(self.exec_log, 'GPU driver%s%s' % (self.SEPARATOR, gpu_driver))
+
         self._log_exec(all_timer.stop())
 
     def batch(self):
@@ -410,7 +383,7 @@ python %(prog)s --batch --dryrun
         self.build()
         self.run()
 
-    def report(self):
+    def _report(self):
         html = '''
 <head>
   <meta http-equiv="content-type" content="text/html; charset=windows-1252">
@@ -645,8 +618,6 @@ python %(prog)s --batch --dryrun
             self.run()
         if args.batch:
             self.batch()
-        if args.report:
-            self.report()
 
 if __name__ == '__main__':
     GPUTest()

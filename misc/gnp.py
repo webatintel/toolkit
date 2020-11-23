@@ -374,7 +374,7 @@ python %(prog)s --backup --root-dir d:\workspace\chrome
     def run(self):
         Util.clear_proxy()
 
-        if Util.HOST_OS == Util.LINUX:
+        if Util.HOST_OS == Util.LINUX and self.args.run_mesa_rev == 'latest':
             Util.set_mesa(Util.PROJECT_MESA_BACKUP_DIR, self.args.run_mesa_rev)
 
         if self.args.run_rev == 'out':
