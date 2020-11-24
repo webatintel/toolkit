@@ -150,9 +150,10 @@ python %(prog)s --revtohash 1
 
     def _build_one(self, rev, hash):
         Util.chdir('%s/%s' % (self.root_dir, self.mesa_dir))
-        backup_dir = '%s/backup/%s' % (self.root_dir, Util.cal_backup_dir())
+        single_backup_dir = '%s/backup/%s' % (self.root_dir, Util.cal_backup_dir())
+        building_dir = single_backup_dir.replace('backup', 'backup/building')
 
-        if os.path.exists('%s' % backup_dir) and os.path.exists(backup_dir + '/lib/dri/i965_dri.so') and not self.build_force:
+        if (os.path.exists(building_dir) or os.path.exists('%s' % single_backup_dir)) and os.path.exists(single_backup_dir + '/lib/dri/i965_dri.so') and not self.build_force:
             Util.info('Rev %s has been built, so just skip it' % rev)
             return
 
@@ -166,14 +167,14 @@ python %(prog)s --revtohash 1
         if 'drm' in self.modules:
             Util.chdir('%s/%s' % (self.root_dir, self.drm_dir))
             if self.args.build_system == 'autotools':
-                build_cmd = './autogen.sh CFLAGS="-O2" CXXFLAGS="-O2" --prefix=%s --enable-libkms --enable-intel --disable-vmwgfx --disable-radeon --disable-amdgpu --disable-nouveau' % backup_dir
+                build_cmd = './autogen.sh CFLAGS="-O2" CXXFLAGS="-O2" --prefix=%s --enable-libkms --enable-intel --disable-vmwgfx --disable-radeon --disable-amdgpu --disable-nouveau' % building_dir
                 if self.build_type == 'debug':
                     build_cmd += ' --enable-debug'
                 build_cmd += ' && make -j%s && make install' % Util.CPU_COUNT
             elif self.args.build_system == 'meson':
                 Util.ensure_nodir('build')
                 Util.ensure_dir('build')
-                build_cmd = 'meson build/ -Dprefix=%s -Dlibkms=true -Dintel=true -Dvmwgfx=false -Dradeon=false -Damdgpu=false -Dnouveau=false' % backup_dir
+                build_cmd = 'meson build/ -Dprefix=%s -Dlibkms=true -Dintel=true -Dvmwgfx=false -Dradeon=false -Damdgpu=false -Dnouveau=false' % building_dir
                 if self.build_type == 'release':
                     build_cmd += ' -Dbuildtype=release'
                 elif self.build_type == 'debug':
@@ -193,7 +194,7 @@ python %(prog)s --revtohash 1
             result = Util.get_repo_hash()
             self._execute('echo "#define MESA_GIT_SHA1 \\\"git-%s\\\"" >src/mesa/main/git_sha1.h' % result[1].split()[0])
             if self.args.build_system == 'autotools':
-                build_cmd = 'PKG_CONFIG_PATH=%s/lib/x86_64-linux-gnu/pkgconfig ./autogen.sh --enable-autotools CFLAGS="-O2" CXXFLAGS="-O2" --prefix=%s --with-dri-drivers="i915 i965" --with-dri-driverdir=%s/lib/dri --enable-gles1 --enable-gles2 --enable-shared-glapi --with-gallium-drivers= --with-egl-platforms=x11,drm --enable-texture-float --enable-gbm --enable-glx-tls --enable-dri3' % (backup_dir, backup_dir, backup_dir)
+                build_cmd = 'PKG_CONFIG_PATH=%s/lib/x86_64-linux-gnu/pkgconfig ./autogen.sh --enable-autotools CFLAGS="-O2" CXXFLAGS="-O2" --prefix=%s --with-dri-drivers="i915 i965" --with-dri-driverdir=%s/lib/dri --enable-gles1 --enable-gles2 --enable-shared-glapi --with-gallium-drivers= --with-egl-platforms=x11,drm --enable-texture-float --enable-gbm --enable-glx-tls --enable-dri3' % (building_dir, building_dir, building_dir)
                 if not self.args.build_novulkan:
                     build_cmd += ' --with-vulkan-driver="intel"'
                 if build_type == 'debug':
@@ -203,7 +204,7 @@ python %(prog)s --revtohash 1
                 # missing options: -enable-texture-float --enable-glx-tls
                 Util.ensure_nodir('build')
                 Util.ensure_dir('build')
-                build_cmd = 'PKG_CONFIG_PATH=%s/lib/x86_64-linux-gnu/pkgconfig meson build/ -Dprefix=%s -Dvulkan-drivers=intel -Ddri-drivers=i915,i965 -Ddri-drivers-path=%s/lib/dri -Dgles1=true -Dgles2=true -Dshared-glapi=true -Dplatforms=x11 -Dgbm=true -Ddri3=true -Dgallium-drivers=iris' % (backup_dir, backup_dir, backup_dir)
+                build_cmd = 'PKG_CONFIG_PATH=%s/lib/x86_64-linux-gnu/pkgconfig meson build/ -Dprefix=%s -Dvulkan-drivers=intel -Ddri-drivers=i915,i965 -Ddri-drivers-path=%s/lib/dri -Dgles1=true -Dgles2=true -Dshared-glapi=true -Dplatforms=x11 -Dgbm=true -Ddri3=true -Dgallium-drivers=iris' % (building_dir, building_dir, building_dir)
                 if not self.args.build_novulkan:
                     build_cmd += ' -Dvulkan-drivers=intel'
                 if self.build_type == 'release':
@@ -216,13 +217,14 @@ python %(prog)s --revtohash 1
             if result[0]:
                 return False
 
-        for line in fileinput.input('%s/share/vulkan/icd.d/intel_icd.x86_64.json' % backup_dir, inplace=1):
+        for line in fileinput.input('%s/share/vulkan/icd.d/intel_icd.x86_64.json' % building_dir, inplace=1):
             match = re.search('"library_path": "(.*)"', line)
             if match:
                 line = line.replace(match.group(1), '../../../lib/x86_64-linux-gnu/libvulkan_intel.so')
             sys.stdout.write(line)
         fileinput.close()
 
+        self._execute('mv %s %s' % (building_dir, single_backup_dir))
         return True
 
     def _clean(self, modules):
