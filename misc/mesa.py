@@ -32,6 +32,10 @@ python %(prog)s --revtohash 1
         parser.add_argument('--init', dest='init', help='init', action='store_true')
         parser.add_argument('--sync', dest='sync', help='sync', action='store_true')
         parser.add_argument('--build', dest='build', help='build', action='store_true')
+        parser.add_argument('--build-type', dest='build_type', help='build type', default='release')
+        parser.add_argument('--build-target', dest='build_target', help='build target', default='all')
+        parser.add_argument('--build-force', dest='build_force', help='no reset of source code', action='store_true')
+        parser.add_argument('--build-novulkan', dest='build_novulkan', help='build novulkan', action='store_true')
         parser.add_argument('--run', dest='run', help='run')
         parser.add_argument('--type', dest='type', help='type', default='i965')
         parser.add_argument('--branch', dest='branch', help='branch', default='master')
@@ -40,11 +44,6 @@ python %(prog)s --revtohash 1
         parser.add_argument('--clean', dest='clean', help='clean when build_force', action='store_true')
         parser.add_argument('--revtohash', dest='revtohash', help='get hash of commit rev starting from 1', type=int)
         parser.add_argument('--hashtorev', dest='hashtorev', help='get commit rev starting from 1 of hash')
-        parser.add_argument('--build-type', dest='build_type', help='build type', default='release')
-        parser.add_argument('--build-module', dest='build_module', help='build module', default='all')
-        parser.add_argument('--build-force', dest='build_force', help='no reset of source code', action='store_true')
-        parser.add_argument('--build-system', dest='build_system', help='build system', default='meson')
-        parser.add_argument('--build-novulkan', dest='build_novulkan', help='build novulkan', action='store_true')
 
         python_ver = Util.get_python_ver()
         if python_ver[0] == 3:
@@ -61,10 +60,10 @@ python %(prog)s --revtohash 1
         self.build_force = build_force
         self.drm_dir = 'drm-master'
         self.mesa_dir = 'mesa-%s' % self.branch
-        if args.build_module == 'all':
-            self.modules = ['drm', 'mesa']
+        if args.build_target == 'all':
+            self.targets = ['drm', 'mesa']
         else:
-            self.modules = [args.build_module]
+            self.targets = [args.build_target]
         self.hashes = []
         self.rev = args.rev
 
@@ -149,69 +148,55 @@ python %(prog)s --revtohash 1
         Util.error('Could not find rev for hash %s' % hash)
 
     def _build_one(self, rev, hash):
-        Util.chdir('%s/%s' % (self.root_dir, self.mesa_dir))
-        single_backup_dir = '%s/backup/%s' % (self.root_dir, Util.cal_backup_dir())
-        building_dir = single_backup_dir.replace('backup', 'backup/building')
+        backup_dir = '%s/backup/%s' % (self.root_dir, Util.cal_backup_dir())
+        building_dir = backup_dir.replace('backup', 'backup/building')
 
-        if (os.path.exists(building_dir) or os.path.exists('%s' % single_backup_dir)) and os.path.exists(single_backup_dir + '/lib/dri/i965_dri.so') and not self.build_force:
+        if (os.path.exists(building_dir) or os.path.exists('%s' % backup_dir)) and os.path.exists(backup_dir + '/lib/dri/i965_dri.so') and not self.build_force:
             Util.info('Rev %s has been built, so just skip it' % rev)
             return
 
         Util.info('Begin to build revision %s, hash %s' % (rev, hash))
 
         if self.args.clean or not self.build_force:
-            self._clean(self.modules)
+            self._clean(self.targets)
         elif self.branch != 'master':
             self._clean(['drm'])
 
-        if 'drm' in self.modules:
+        if 'drm' in self.targets:
             Util.chdir('%s/%s' % (self.root_dir, self.drm_dir))
-            if self.args.build_system == 'autotools':
-                build_cmd = './autogen.sh CFLAGS="-O2" CXXFLAGS="-O2" --prefix=%s --enable-libkms --enable-intel --disable-vmwgfx --disable-radeon --disable-amdgpu --disable-nouveau' % building_dir
-                if self.build_type == 'debug':
-                    build_cmd += ' --enable-debug'
-                build_cmd += ' && make -j%s && make install' % Util.CPU_COUNT
-            elif self.args.build_system == 'meson':
-                Util.ensure_nodir('build')
-                Util.ensure_dir('build')
-                build_cmd = 'meson build/ -Dprefix=%s -Dlibkms=true -Dintel=true -Dvmwgfx=false -Dradeon=false -Damdgpu=false -Dnouveau=false' % building_dir
-                if self.build_type == 'release':
-                    build_cmd += ' -Dbuildtype=release'
-                elif self.build_type == 'debug':
-                    build_cmd += ' -Dbuildtype=debug'
-                build_cmd += ' && ninja -j%s -C build/ install' % Util.CPU_COUNT
+            Util.ensure_nodir('build')
+            Util.ensure_dir('build')
+            build_cmd = 'meson build/ -Dprefix=%s -Dlibkms=true -Dintel=true -Dvmwgfx=false -Dradeon=false -Damdgpu=false -Dnouveau=false' % building_dir
+            if self.build_type == 'release':
+                build_cmd += ' -Dbuildtype=release'
+            elif self.build_type == 'debug':
+                build_cmd += ' -Dbuildtype=debug'
+            build_cmd += ' && ninja -j%s -C build/ install' % Util.CPU_COUNT
 
             result = self._execute(build_cmd)
             if result[0]:
                 return False
 
-        if 'mesa' in self.modules:
+        if 'mesa' in self.targets:
             Util.chdir('%s/%s' % (self.root_dir, self.mesa_dir))
+            Util.ensure_nodir('build')
+            Util.ensure_dir('build')
+
             if not self.build_force:
                 self._execute('git reset --hard %s' % hash)
 
             # update git hash
             result = Util.get_repo_hash()
             self._execute('echo "#define MESA_GIT_SHA1 \\\"git-%s\\\"" >src/mesa/main/git_sha1.h' % result[1].split()[0])
-            if self.args.build_system == 'autotools':
-                build_cmd = 'PKG_CONFIG_PATH=%s/lib/x86_64-linux-gnu/pkgconfig ./autogen.sh --enable-autotools CFLAGS="-O2" CXXFLAGS="-O2" --prefix=%s --with-dri-drivers="i915 i965" --with-dri-driverdir=%s/lib/dri --enable-gles1 --enable-gles2 --enable-shared-glapi --with-gallium-drivers= --with-egl-platforms=x11,drm --enable-texture-float --enable-gbm --enable-glx-tls --enable-dri3' % (building_dir, building_dir, building_dir)
-                if not self.args.build_novulkan:
-                    build_cmd += ' --with-vulkan-driver="intel"'
-                if build_type == 'debug':
-                    build_cmd += ' --enable-debug'
-                build_cmd += ' && make -j%s && make install' % Util.CPU_COUNT
-            elif self.args.build_system == 'meson':
-                # missing options: -enable-texture-float --enable-glx-tls
-                Util.ensure_nodir('build')
-                Util.ensure_dir('build')
-                build_cmd = 'PKG_CONFIG_PATH=%s/lib/x86_64-linux-gnu/pkgconfig meson build/ -Dprefix=%s -Dvulkan-drivers=intel -Ddri-drivers=i915,i965 -Ddri-drivers-path=%s/lib/dri -Dgles1=true -Dgles2=true -Dshared-glapi=true -Dplatforms=x11 -Dgbm=true -Ddri3=true -Dgallium-drivers=iris' % (building_dir, building_dir, building_dir)
-                if not self.args.build_novulkan:
-                    build_cmd += ' -Dvulkan-drivers=intel'
-                if self.build_type == 'release':
-                    build_cmd += ' -Dbuildtype=release'
-                elif self.build_type == 'debug':
-                    build_cmd += ' -Dbuildtype=debug'
-                build_cmd += ' && ninja -j%s -C build/ install' % Util.CPU_COUNT
+
+            build_cmd = 'PKG_CONFIG_PATH=%s/lib/x86_64-linux-gnu/pkgconfig meson build/ -Dprefix=%s -Dvulkan-drivers=intel -Ddri-drivers=i915,i965 -Ddri-drivers-path=%s/lib/dri -Dgles1=true -Dgles2=true -Dshared-glapi=true -Dplatforms=x11 -Dgbm=true -Ddri3=true -Dgallium-drivers=iris' % (building_dir, building_dir, building_dir)
+            if not self.args.build_novulkan:
+                build_cmd += ' -Dvulkan-drivers=intel'
+            if self.build_type == 'release':
+                build_cmd += ' -Dbuildtype=release'
+            elif self.build_type == 'debug':
+                build_cmd += ' -Dbuildtype=debug'
+            build_cmd += ' && ninja -j%s -C build/ install' % Util.CPU_COUNT
 
             result = self._execute(build_cmd)
             if result[0]:
@@ -224,15 +209,15 @@ python %(prog)s --revtohash 1
             sys.stdout.write(line)
         fileinput.close()
 
-        self._execute('mv %s %s' % (building_dir, single_backup_dir))
+        self._execute('mv %s %s' % (building_dir, backup_dir))
         return True
 
-    def _clean(self, modules):
-        if 'drm' in modules:
+    def _clean(self, targets):
+        if 'drm' in targets:
             Util.chdir('%s/%s' % (self.root_dir, self.drm_dir))
             self._execute('make distclean', exit_on_error=False)
 
-        if 'mesa' in modules:
+        if 'mesa' in targets:
             Util.chdir('%s/%s' % (self.root_dir, self.mesa_dir))
             self._execute('make distclean', exit_on_error=False)
 
