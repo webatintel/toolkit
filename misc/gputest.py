@@ -261,6 +261,14 @@ python %(prog)s --batch --dryrun
     def run(self):
         all_timer = Timer()
         args = self.args
+
+        if Util.HOST_OS == Util.LINUX and self.args.run_mesa_rev == 'latest':
+            Util.set_mesa(Util.PROJECT_MESA_BACKUP_DIR, self.args.run_mesa_rev)
+
+        gpu_name, gpu_driver = Util.get_gpu_info()
+        Util.append_file(self.exec_log, 'GPU name%s%s' % (self.SEPARATOR, gpu_name))
+        Util.append_file(self.exec_log, 'GPU driver%s%s' % (self.SEPARATOR, gpu_driver))
+
         logged_projects = []
         for index, target_index in enumerate(self.target_indexes):
             project = self.os_targets[target_index][self.TARGET_INDEX_PROJECT]
@@ -371,10 +379,6 @@ python %(prog)s --batch --dryrun
                 self._parse_result(result_file, verbose=True)
                 if args.dryrun and not args.dryrun_with_shard:
                     break
-
-        gpu_name, gpu_driver = Util.get_gpu_info()
-        Util.append_file(self.exec_log, 'GPU name%s%s' % (self.SEPARATOR, gpu_name))
-        Util.append_file(self.exec_log, 'GPU driver%s%s' % (self.SEPARATOR, gpu_driver))
 
         self._log_exec(all_timer.stop())
 
