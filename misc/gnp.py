@@ -41,16 +41,18 @@ class Gnp(Program):
         'dawn_e2e': 'dawn_end2end_tests',
     }
     BACKUP_TARGET_DICT = {
-        'angle_e2e': '//src/tests:angle_end2end_tests',
-        'angle_perf': '//src/tests:angle_perftests',
-        'angle_unit': '//src/tests:angle_unittests',
-
+        'angle_e2e': 'angle_end2end_tests',
+        'angle_perf': 'angle_perftests',
+        'angle_unit': 'angle_unittests',
+        'dawn_e2e': 'dawn_end2end_tests',
         'chrome': '//chrome:chrome',
         'chromedriver': '//chrome/test/chromedriver:chromedriver',
+        'gl_tests': '//gpu:gl_tests',
+        'vulkan_tests': '//gpu/vulkan:vulkan_tests',
+        'telemetry_gpu_integration_test': '//chrome/test:telemetry_gpu_integration_test',
         'webgl': '//chrome/test:telemetry_gpu_integration_test',
+        'webgpu_blink_web_tests': '//:webgpu_blink_web_tests',
         'webgpu': '//:webgpu_blink_web_tests',
-
-        'dawn_e2e': '//src/tests:dawn_end2end_tests',
     }
     def __init__(self, parser):
         parser.add_argument('--project', dest='project', help='project')
@@ -305,6 +307,14 @@ python %(prog)s --backup --root-dir d:\workspace\chrome
         for key, value in self.BACKUP_TARGET_DICT.items():
             if key in targets:
                 targets[targets.index(key)] = value
+
+        for index, target in enumerate(targets):
+            for tmp_project in ['angle', 'dawn']:
+                if target.startswith(tmp_project):
+                    if self.project == 'chromium':
+                        targets[index] = '//third_party/%s/src/tests:%s' % (tmp_project, target)
+                    else:
+                        targets[index] = '//src/tests:%s' % target
 
         tmp_files = []
         if self.project == 'aquarium':

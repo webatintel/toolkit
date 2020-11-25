@@ -32,6 +32,12 @@ sys.path.append(script_dir + '/..')
 from util.base import *  # pylint: disable=unused-wildcard-import
 
 class GPUTest(Program):
+    PROJECT_INFO_INDEX_ROOT_DIR = 0
+    PROJECT_INFO = {
+        'aquarium': [Util.PROJECT_AQUARIUM_DIR],
+        'chromium': [Util.PROJECT_CHROME_GPUTEST_DIR],
+    }
+    PROJECTS = sorted(PROJECT_INFO.keys())
     AQUARIUM_BASE = {
         Util.WINDOWS: {
             'd3d12': 33,
@@ -138,17 +144,16 @@ class GPUTest(Program):
         #parser.add_argument('--sync-skip-roll-dawn', dest='sync_skip_roll_dawn', help='sync skip roll dawn', action='store_true')
         parser.add_argument('--sync-roll-dawn', dest='sync_roll_dawn', help='sync roll dawn', action='store_true')
         parser.add_argument('--build', dest='build', help='build', action='store_true')
+        parser.add_argument('--backup', dest='backup', help='backup', action='store_true')
         parser.add_argument('--run', dest='run', help='run', action='store_true')
         parser.add_argument('--run-mesa-rev', dest='run_mesa_rev', help='run mesa revision, can be system, latest or any specific revision', default='system')
         parser.add_argument('--dryrun', dest='dryrun', help='dryrun', action='store_true')
         parser.add_argument('--dryrun-with-shard', dest='dryrun_with_shard', help='dryrun with shard', action='store_true')
-        parser.add_argument('--batch', dest='batch', help='batch', action='store_true')
-
 
         parser.epilog = '''
 examples:
-python %(prog)s --sync --build --run --dryrun --email
-python %(prog)s --batch --dryrun
+python %(prog)s --sync --list --build --email
+python %(prog)s --run
 '''
         python_ver = Util.get_python_ver()
         if python_ver[0] == 3:
@@ -158,11 +163,18 @@ python %(prog)s --batch --dryrun
 
         args = self.args
 
-        self.chromium_dir = '%s/chromium' % self.root_dir
-        self.chromium_src_dir = '%s/src' % self.chromium_dir
         target_os = self.target_os
         if target_os == 'default':
             target_os = Util.HOST_OS
+
+        self.result_dir = '%s/result/%s' % (self.root_dir, self.timestamp)
+        Util.ensure_dir(self.result_dir)
+        self.exec_log = '%s/exec.log' % self.result_dir
+        Util.ensure_nofile(self.exec_log)
+        Util.append_file(self.exec_log, 'OS%s%s' % (self.SEPARATOR, Util.HOST_OS_RELEASE))
+
+        if args.sync:
+            self.sync()
 
         self._get_targets()
         os_targets = []
@@ -187,55 +199,46 @@ python %(prog)s --batch --dryrun
         target_indexes = sorted(target_indexes)
         self.target_indexes = target_indexes
 
-        self.result_dir = '%s/result/%s' % (self.root_dir, self.timestamp)
-        Util.ensure_dir(self.result_dir)
-        self.exec_log = '%s/exec.log' % self.result_dir
-        Util.ensure_nofile(self.exec_log)
-        Util.append_file(self.exec_log, 'OS%s%s' % (self.SEPARATOR, Util.HOST_OS_RELEASE))
-
-        if args.email or args.batch:
-            self.email = True
-        else:
-            self.email = False
-
-        for i in range(self.args.repeat):
-            self._handle_ops()
+        if args.list:
+            self.list()
+        if args.build:
+            self.build()
+        if args.run:
+            self.run()
 
         self._report()
 
-    def list(self):
-        for index, target in enumerate(self.os_targets):
-            print('%s: %s' % (index, target[self.TARGET_INDEX_VIRTUAL_NAME]))
-
     def sync(self):
         all_timer = Timer()
-        projects = []
-        for target_index in self.target_indexes:
-            if target_index < len(self.os_targets) and target_index >= 0:
-                project = self.os_targets[target_index][self.TARGET_INDEX_PROJECT]
-                if project not in projects:
-                    projects.append(project)
 
-        for project in projects:
+        for project in sorted(self.PROJECTS):
+            root_dir = self.PROJECT_INFO[project][self.PROJECT_INFO_INDEX_ROOT_DIR]
             timer = Timer()
-            cmd = 'python %s --root-dir %s/%s --sync --runhooks' % (Util.GNP_SCRIPT, self.root_dir, project)
+            cmd = 'python %s --root-dir %s --sync --runhooks' % (Util.GNP_SCRIPT, root_dir)
             dryrun = self.args.dryrun
             if self._execute(cmd, exit_on_error=False, dryrun=dryrun)[0]:
-                Util.error('Sync failed')
+                error_info = '[GPUTest] Project %s sync failed' % project
+                if self.args.email:
+                    Util.send_email(self.EMAIL_SENDER, self.EMAIL_ADMIN, error_info, '')
+                Util.error(error_info)
 
             if project == 'aquarium' and self.args.sync_roll_dawn:
-                Util.chdir('%s/aquarium/third_party/dawn' % self.root_dir)
+                Util.chdir('%s/third_party/dawn' % root_dir)
                 self._execute('git checkout master && git pull', dryrun=dryrun)
                 Util.info('Roll Dawn in Aquarium to %s on %s' % (Util.get_repo_hash(), Util.get_repo_date()))
 
             self._log_exec(timer.stop(), project, cmd)
         self._log_exec(all_timer.stop())
 
+    def list(self):
+        for index, target in enumerate(self.os_targets):
+            print('%s: %s' % (index, target[self.TARGET_INDEX_VIRTUAL_NAME]))
+
     def build(self):
         all_timer = Timer()
+
         projects = []
         project_targets = {}
-
         for target_index in self.target_indexes:
             if target_index < len(self.os_targets) and target_index >= 0:
                 project = self.os_targets[target_index][self.TARGET_INDEX_PROJECT]
@@ -248,10 +251,13 @@ python %(prog)s --batch --dryrun
 
         for project in projects:
             timer = Timer()
-            cmd = 'python %s --no-component-build --root-dir %s/%s --makefile --build --build-target %s' % (Util.GNP_SCRIPT, self.root_dir, project, ','.join(project_targets[project]))
+            root_dir = self.PROJECT_INFO[project][self.PROJECT_INFO_INDEX_ROOT_DIR]
+            cmd = 'python %s --root-dir %s --makefile --build --build-target %s' % (Util.GNP_SCRIPT, root_dir, ','.join(project_targets[project]))
+            if self.args.backup:
+                cmd += ' --backup --backup-target %s' % ','.join(project_targets[project])
             if self._execute(cmd, exit_on_error=False, dryrun=self.args.dryrun)[0]:
                 error_info = '[GPUTest] Project %s build failed' % project
-                if self.email:
+                if self.args.email:
                     Util.send_email(self.EMAIL_SENDER, self.EMAIL_ADMIN, error_info, '')
                 Util.error(error_info)
 
@@ -263,6 +269,13 @@ python %(prog)s --batch --dryrun
         args = self.args
 
         if Util.HOST_OS == Util.LINUX and self.args.run_mesa_rev == 'latest':
+            cmd = 'python %s --root-dir %s --sync --build' % (Util.MESA_SCRIPT, Util.PROJECT_MESA_DIR)
+            dryrun = self.args.dryrun
+            if self._execute(cmd, exit_on_error=False, dryrun=dryrun)[0]:
+                error_info = '[GPUTest] Project Mesa build failed'
+                if self.args.email:
+                    Util.send_email(self.EMAIL_SENDER, self.EMAIL_ADMIN, error_info, '')
+                Util.error(error_info)
             Util.set_mesa(Util.PROJECT_MESA_BACKUP_DIR, self.args.run_mesa_rev)
 
         gpu_name, gpu_driver = Util.get_gpu_info()
@@ -281,6 +294,13 @@ python %(prog)s --batch --dryrun
                 logged_projects.append(project)
                 info = '%s Revision%s%s' % (project.capitalize(), self.SEPARATOR, rev)
                 Util.append_file(self.exec_log, info)
+
+                if project == 'chromium':
+                    server_project = '%s-gputest' % project
+                else:
+                    server_project = project
+                get_build_from_server(Util.GPUTEST_SERVER, server_project, 'latest')
+
             virtual_name = self.os_targets[target_index][self.TARGET_INDEX_VIRTUAL_NAME]
 
             for skip_case in self.SKIP_CASES:
@@ -468,7 +488,7 @@ python %(prog)s --batch --dryrun
         Util.append_file(report_file, html)
         subject = '[GPUTest] Host %s Datetime %s Regressions %s' % (Util.HOST_NAME, self.timestamp, total_regressions)
 
-        if self.email:
+        if self.args.email:
             Util.send_email(self.EMAIL_SENDER, self.EMAIL_TO, subject, html, type='html')
 
     def _get_targets(self):
@@ -478,7 +498,7 @@ python %(prog)s --batch --dryrun
             recorded_virtual_name = []
 
         for config_file in self.CHROME_CONFIG_FILES:
-            configs = Util.load_json('%s/testing/buildbot/%s' % (self.chromium_src_dir, config_file))
+            configs = Util.load_json('%s/src/testing/buildbot/%s' % (self.PROJECT_INFO['chromium'][self.PROJECT_INFO_INDEX_ROOT_DIR], config_file))
             for config in configs:
                 if not re.search('Intel', config):
                     continue
@@ -609,19 +629,6 @@ python %(prog)s --batch --dryrun
             pass_fail, fail_pass, fail_fail, pass_pass = Util.get_test_result(result_file, type)
 
         return pass_fail, fail_pass, fail_fail, pass_pass
-
-    def _handle_ops(self):
-        args = self.args
-        if args.list:
-            self.list()
-        if args.sync:
-            self.sync()
-        if args.build:
-            self.build()
-        if args.run:
-            self.run()
-        if args.batch:
-            self.batch()
 
 if __name__ == '__main__':
     GPUTest()
