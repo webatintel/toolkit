@@ -118,7 +118,7 @@ class GPUTest(Program):
     index += 1
     TARGET_INDEX_RUN_ARGS = index
     index += 1
-    TARGET_INDEX_TOTAL_SHARDS = index
+    TARGET_INDEX_SHARD_COUNT = index
     TARGET_INDEX_MAX = index
 
     RESULT_FILE_PATTERN = r'^.*-(.*).log$'
@@ -144,7 +144,7 @@ class GPUTest(Program):
         #parser.add_argument('--sync-skip-roll-dawn', dest='sync_skip_roll_dawn', help='sync skip roll dawn', action='store_true')
         parser.add_argument('--sync-roll-dawn', dest='sync_roll_dawn', help='sync roll dawn', action='store_true')
         parser.add_argument('--build', dest='build', help='build', action='store_true')
-        parser.add_argument('--backup', dest='backup', help='backup', action='store_true')
+        parser.add_argument('--build-skip-backup', dest='build_skip_backup', help='build skip backup', action='store_true')
         parser.add_argument('--run', dest='run', help='run', action='store_true')
         parser.add_argument('--run-mesa-rev', dest='run_mesa_rev', help='run mesa revision, can be system, latest or any specific revision', default='system')
         parser.add_argument('--dryrun', dest='dryrun', help='dryrun', action='store_true')
@@ -167,7 +167,7 @@ python %(prog)s --run
         if target_os == 'default':
             target_os = Util.HOST_OS
 
-        self.result_dir = '%s/result/%s' % (self.root_dir, self.timestamp)
+        self.result_dir = '%s/gputest/%s' % (ScriptRepo.IGNORE_DIR, self.timestamp)
         Util.ensure_dir(self.result_dir)
         self.exec_log = '%s/exec.log' % self.result_dir
         Util.ensure_nofile(self.exec_log)
@@ -212,8 +212,8 @@ python %(prog)s --run
         all_timer = Timer()
 
         for project in sorted(self.PROJECTS):
-            root_dir = self.PROJECT_INFO[project][self.PROJECT_INFO_INDEX_ROOT_DIR]
             timer = Timer()
+            root_dir = self.PROJECT_INFO[project][self.PROJECT_INFO_INDEX_ROOT_DIR]
             cmd = 'python %s --root-dir %s --sync --runhooks' % (Util.GNP_SCRIPT, root_dir)
             dryrun = self.args.dryrun
             if self._execute(cmd, exit_on_error=False, dryrun=dryrun)[0]:
@@ -252,8 +252,8 @@ python %(prog)s --run
         for project in projects:
             timer = Timer()
             root_dir = self.PROJECT_INFO[project][self.PROJECT_INFO_INDEX_ROOT_DIR]
-            cmd = 'python %s --root-dir %s --makefile --build --build-target %s' % (Util.GNP_SCRIPT, root_dir, ','.join(project_targets[project]))
-            if self.args.backup:
+            cmd = 'python %s --root-dir %s --no-component-build --makefile --build --build-target %s' % (Util.GNP_SCRIPT, root_dir, ','.join(project_targets[project]))
+            if not self.args.build_skip_backup:
                 cmd += ' --backup --backup-target %s' % ','.join(project_targets[project])
             if self._execute(cmd, exit_on_error=False, dryrun=self.args.dryrun)[0]:
                 error_info = '[GPUTest] Project %s build failed' % project
@@ -357,25 +357,25 @@ python %(prog)s --run
                         config_args += ' %s=-%s' % (self.REAL_TYPE_INFO[real_type][self.REAL_TYPE_INFO_INDEX_FILTER], skip_case[self.SKIP_CASES_INDEX_CASES])
 
             if real_type in ['telemetry_gpu_integration_test', 'webgpu_blink_web_tests']:
-                total_shards_arg = '--total-shards'
+                shard_count_arg = '--total-shards'
                 shard_index_arg = '--shard-index'
                 output_arg = '--write-full-results-to'
             elif real_type in ['gtest_chrome']:
                 output_arg = '--test-launcher-summary-output'
 
-            total_shards = int(self.os_targets[target_index][self.TARGET_INDEX_TOTAL_SHARDS])
+            shard_count = int(self.os_targets[target_index][self.TARGET_INDEX_SHARD_COUNT])
             if real_type in ['gtest_angle', 'gtest_chrome']:
-                total_shards = 1
+                shard_count = 1
 
-            for shard_index in range(total_shards):
+            for shard_index in range(shard_count):
                 shard_args = ''
                 op = '%s' % target_index
 
-                if total_shards > 1:
-                    shard_args += ' %s=%s %s=%s' % (total_shards_arg, total_shards, shard_index_arg, shard_index)
-                    total_shards_str = str(total_shards)
-                    total_shards_str_len = len(total_shards_str)
-                    op += '-shard%s' % str(shard_index).zfill(total_shards_str_len)
+                if shard_count > 1:
+                    shard_args += ' %s=%s %s=%s' % (shard_count_arg, shard_count, shard_index_arg, shard_index)
+                    shard_count_str = str(shard_count)
+                    shard_count_str_len = len(shard_count_str)
+                    op += '-shard%s' % str(shard_index).zfill(shard_count_str_len)
                 op += '-%s' % virtual_name
                 result_file = '%s/%s.log' % (self.result_dir, op)
 
@@ -447,7 +447,7 @@ python %(prog)s --run
       <td><strong>PASS_PASS</strong></td>
     </tr>'''
 
-        total_regressions = 0
+        regression_count = 0
         for line in open(self.exec_log):
             fields = line.split(self.SEPARATOR)
             name = fields[0]
@@ -458,7 +458,7 @@ python %(prog)s --run
                 op = name[4:]
                 result_file = '%s/%s.log' % (self.result_dir, op)
                 pass_fail, fail_pass, fail_fail, pass_pass = self._parse_result(result_file)
-                total_regressions += len(pass_fail)
+                regression_count += len(pass_fail)
                 time = fields[1]
                 pass_fail_info = '%s<p>%s' % (len(pass_fail), '<p>'.join(pass_fail[:self.MAX_FAIL_IN_REPORT]))
                 fail_pass_info = '%s<p>%s' % (len(fail_pass), '<p>'.join(fail_pass[:self.MAX_FAIL_IN_REPORT]))
@@ -486,7 +486,7 @@ python %(prog)s --run
         report_file = '%s/report.html' % self.result_dir
         Util.ensure_nofile(report_file)
         Util.append_file(report_file, html)
-        subject = '[GPUTest] Host %s Datetime %s Regressions %s' % (Util.HOST_NAME, self.timestamp, total_regressions)
+        subject = '[GPUTest] Host %s Datetime %s Regressions %s' % (Util.HOST_NAME, self.timestamp, regression_count)
 
         if self.args.email:
             Util.send_email(self.EMAIL_SENDER, self.EMAIL_TO, subject, html, type='html')
@@ -548,7 +548,7 @@ python %(prog)s --run
 
                         # init
                         target = [0] * (self.TARGET_INDEX_MAX + 1)
-                        target[self.TARGET_INDEX_TOTAL_SHARDS] = 1
+                        target[self.TARGET_INDEX_SHARD_COUNT] = 1
                         target[self.TARGET_INDEX_OS] = target_os
                         target[self.TARGET_INDEX_VIRTUAL_NAME] = virtual_name
                         target[self.TARGET_INDEX_PROJECT] = 'chromium'
@@ -559,7 +559,7 @@ python %(prog)s --run
 
                         target[self.TARGET_INDEX_RUN_ARGS] = target_run_args
                         if 'swarming' in target_detail and 'shards' in target_detail['swarming']:
-                            target[self.TARGET_INDEX_TOTAL_SHARDS] = target_detail['swarming']['shards']
+                            target[self.TARGET_INDEX_SHARD_COUNT] = target_detail['swarming']['shards']
 
                         targets.append(target)
 

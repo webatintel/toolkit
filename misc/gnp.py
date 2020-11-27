@@ -80,6 +80,7 @@ class Gnp(Program):
         parser.add_argument('--backup', dest='backup', help='backup', action='store_true')
         parser.add_argument('--backup-symbol', dest='backup_symbol', help='backup symbol', action='store_true')
         parser.add_argument('--backup-target', dest='backup_target', help='backup target')
+        parser.add_argument('--backup-upload', dest='backup_upload', help='backup upload', action='store_true')
         parser.add_argument('--run', dest='run', help='run', action='store_true')
         parser.add_argument('--run-target', dest='run_target', help='run target')
         parser.add_argument('--run-args', dest='run_args', help='run args')
@@ -349,17 +350,22 @@ python %(prog)s --backup --root-dir d:\workspace\chrome
         if self.project == 'aquarium':
             src_files += ['assets/', 'shaders/']
 
-        for src_file in src_files:
+        src_file_count = len(src_files)
+        for index, src_file in enumerate(src_files):
             dst_dir = '%s/%s' % (backup_path, src_file)
             Util.ensure_dir(os.path.dirname(dst_dir))
             if os.path.isdir(src_file):
                 dst_dir = os.path.dirname(os.path.dirname(dst_dir))
             cmd = 'cp -rf %s %s' % (src_file, dst_dir)
-            self._execute(cmd, exit_on_error=self.exit_on_error)
-            #Util.execute(cmd=cmd, show_cmd=True, exit_on_error=self.exit_on_error)
+            Util.info('[%s/%s] %s' % (index + 1, src_file_count, cmd))
+            self._execute(cmd, exit_on_error=self.exit_on_error, show_cmd=False)
 
             # permission denied
             #shutil.copyfile(file, dst_dir)
+
+        if self.args.backup_upload:
+            shutil.make_archive(backup_path, 'zip', backup_path)
+            Util.execute('scp %s.zip wp@%s:/gputest/%s/' % (backup_path, Util.GPUTEST_SERVER, Util.HOST_OS))
 
     def backup_webgl(self):
         # generate telemetry_gpu_integration_test
@@ -371,9 +377,7 @@ python %(prog)s --backup --root-dir d:\workspace\chrome
 
         if not os.path.exists('%s/%s-orig.zip' % (self.backup_dir, rev_str)):
             cmd = 'vpython tools/mb/mb.py zip %s telemetry_gpu_integration_test %s/%s-orig.zip' % (self.out_dir, self.backup_dir, rev_str)
-            result = self._execute(cmd, exit_on_error=self.exit_on_error)
-            if result[0]:
-                Util.error('Failed to generate telemetry_gpu_integration_test')
+            self._execute(cmd, exit_on_error=self.exit_on_error)
 
         Util.chdir(self.backup_dir)
         if not os.path.exists(rev_str):
