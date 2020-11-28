@@ -53,9 +53,8 @@ examples:
     def _check(self, target_host_name):
         cmd = 'ls'
         if Util.HOST_NAME != target_host_name:
-            cmd = self._remotify_cmd(target_host_name, cmd)
-
-        ret = Util.simple_execute(cmd, timeout=3)
+            cmd = Util.remotify_cmd(target_host_name, cmd)
+        ret = Util.execute(cmd, timeout=3)
         if ret:
             Util.info('Could not connect to %s' % target_host_name)
             return False
@@ -69,14 +68,7 @@ examples:
             return True
 
         cmd = 'cat ~/.ssh/id_rsa.pub | ssh wp@%s \"cat - >>~/.ssh/authorized_keys\"' % target_host_name
-        Util.simple_execute(cmd)
-
-    def _remotify_cmd(self, server, cmd, extra_arg=''):
-        new_cmd = 'ssh wp@%s' % server
-        if extra_arg:
-            new_cmd += ' %s' % extra_arg
-        new_cmd += ' "%s"' % cmd
-        return new_cmd
+        Util.execute(cmd)
 
     def _handle_ops(self):
         args = self.args
