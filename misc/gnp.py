@@ -374,12 +374,13 @@ python %(prog)s --backup --root-dir d:\workspace\chrome
         else:
             rev = 'latest'
         rev_dir, _ = Util.get_backup_dir(self.backup_dir, rev)
-        print(rev_dir)
         rev_backup_dir = '%s/%s' % (self.backup_dir, rev_dir)
         rev_backup_file = '%s.zip' % rev_backup_dir
         if not os.path.exists(rev_backup_file):
             shutil.make_archive(rev_backup_dir, 'zip', rev_backup_dir)
-        Util.execute('scp %s wp@%s:/workspace/backup/%s/%s/' % (rev_backup_file, Util.BACKUP_SERVER, Util.HOST_OS, self.virtual_project))
+
+        if not Util.check_server_backup(Util.BACKUP_SERVER, self.virtual_project, os.path.basename(rev_backup_file)):
+            Util.execute('scp %s wp@%s:/workspace/backup/%s/%s/' % (rev_backup_file, Util.BACKUP_SERVER, Util.HOST_OS, self.virtual_project))
 
     def backup_webgl(self):
         # generate telemetry_gpu_integration_test

@@ -320,10 +320,10 @@ python %(prog)s --run
                 Util.append_file(self.exec_log, info)
 
                 if project == 'chromium':
-                    server_project = '%s-gputest' % project
+                    virtual_project = '%s-gputest' % project
                 else:
-                    server_project = project
-                get_build_from_server(Util.GPUTEST_SERVER, server_project, 'latest')
+                    virtual_project = project
+                get_server_latest_backup_rev(Util.GPUTEST_SERVER, virtual_project)
 
             virtual_name = self.os_targets[target_index][self.TARGET_INDEX_VIRTUAL_NAME]
 
