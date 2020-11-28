@@ -356,7 +356,7 @@ python %(prog)s --backup --root-dir d:\workspace\chrome
             src_files += ['assets/', 'shaders/']
 
         if self.virtual_project == 'chromium-gputest':
-            src_files =+ ['../../testing/buildbot/chromium.gpu.fyi.json', '../../testing/buildbot/chromium.dawn.json']
+            src_files += ['../../testing/buildbot/chromium.gpu.fyi.json', '../../testing/buildbot/chromium.dawn.json']
 
         src_file_count = len(src_files)
         for index, src_file in enumerate(src_files):
@@ -382,7 +382,9 @@ python %(prog)s --backup --root-dir d:\workspace\chrome
         if not os.path.exists(rev_backup_file):
             shutil.make_archive(rev_backup_dir, 'zip', rev_backup_dir)
 
-        if not Util.check_server_backup(Util.BACKUP_SERVER, self.virtual_project, os.path.basename(rev_backup_file)):
+        if Util.check_server_backup(Util.BACKUP_SERVER, self.virtual_project, os.path.basename(rev_backup_file)):
+            Util.info('Server already has rev %s' % rev_backup_file)
+        else:
             Util.execute('scp %s wp@%s:/workspace/backup/%s/%s/' % (rev_backup_file, Util.BACKUP_SERVER, Util.HOST_OS, self.virtual_project))
 
     def backup_webgl(self):
