@@ -145,6 +145,8 @@ class GPUTest(Program):
         parser.add_argument('--sync-roll-dawn', dest='sync_roll_dawn', help='sync roll dawn', action='store_true')
         parser.add_argument('--build', dest='build', help='build', action='store_true')
         parser.add_argument('--build-skip-backup', dest='build_skip_backup', help='build skip backup', action='store_true')
+        parser.add_argument('--backup', dest='backup', help='backup', action='store_true')
+        parser.add_argument('--upload', dest='upload', help='upload', action='store_true')
         parser.add_argument('--run', dest='run', help='run', action='store_true')
         parser.add_argument('--run-mesa-rev', dest='run_mesa_rev', help='run mesa revision, can be system, latest or any specific revision', default='system')
         parser.add_argument('--dryrun', dest='dryrun', help='dryrun', action='store_true')
@@ -152,7 +154,7 @@ class GPUTest(Program):
 
         parser.epilog = '''
 examples:
-python %(prog)s --sync --list --build --email
+python %(prog)s --sync --list --build --backup --upload --email
 python %(prog)s --run
 '''
         python_ver = Util.get_python_ver()
@@ -203,6 +205,10 @@ python %(prog)s --run
             self.list()
         if args.build:
             self.build()
+        if args.backup:
+            self.backup()
+        if args.upload:
+            self.upload()
         if args.run:
             self.run()
 
@@ -235,6 +241,15 @@ python %(prog)s --run
             print('%s: %s' % (index, target[self.TARGET_INDEX_VIRTUAL_NAME]))
 
     def build(self):
+        self._op('build')
+
+    def backup(self):
+        self._op('backup')
+
+    def upload(self):
+        self._op('upload')
+
+    def _op(self, op):
         all_timer = Timer()
 
         projects = []
@@ -252,11 +267,20 @@ python %(prog)s --run
         for project in projects:
             timer = Timer()
             root_dir = self.PROJECT_INFO[project][self.PROJECT_INFO_INDEX_ROOT_DIR]
-            cmd = 'python %s --root-dir %s --no-component-build --makefile --build --build-target %s' % (Util.GNP_SCRIPT, root_dir, ','.join(project_targets[project]))
-            if not self.args.build_skip_backup:
-                cmd += ' --backup --backup-target %s' % ','.join(project_targets[project])
+
+            if op == 'build':
+                cmd = 'python %s --root-dir %s --no-component-build --makefile --build --build-target %s' % (Util.GNP_SCRIPT, root_dir, ','.join(project_targets[project]))
+            elif op == 'backup':
+                cmd = 'python %s --root-dir %s --backup --backup-target %s' % (Util.GNP_SCRIPT, root_dir, ','.join(project_targets[project]))
+            elif op == 'upload':
+                if project == 'chromium':
+                    virtual_project = 'chromium-gputest'
+                else:
+                    virtual_project = project
+                cmd = 'python %s --root-dir %s --project %s --upload' % (Util.GNP_SCRIPT, root_dir, virtual_project)
+
             if self._execute(cmd, exit_on_error=False, dryrun=self.args.dryrun)[0]:
-                error_info = '[GPUTest] Project %s build failed' % project
+                error_info = '[GPUTest] Project %s %s failed' % (project, op)
                 if self.args.email:
                     Util.send_email(self.EMAIL_SENDER, self.EMAIL_ADMIN, error_info, '')
                 Util.error(error_info)

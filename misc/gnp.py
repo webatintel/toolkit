@@ -80,7 +80,7 @@ class Gnp(Program):
         parser.add_argument('--backup', dest='backup', help='backup', action='store_true')
         parser.add_argument('--backup-symbol', dest='backup_symbol', help='backup symbol', action='store_true')
         parser.add_argument('--backup-target', dest='backup_target', help='backup target')
-        parser.add_argument('--backup-upload', dest='backup_upload', help='backup upload', action='store_true')
+        parser.add_argument('--upload', dest='upload', help='upload', action='store_true')
         parser.add_argument('--run', dest='run', help='run', action='store_true')
         parser.add_argument('--run-target', dest='run_target', help='run target')
         parser.add_argument('--run-args', dest='run_args', help='run args')
@@ -104,16 +104,21 @@ python %(prog)s --backup --root-dir d:\workspace\chrome
         Util.prepend_path(Util.PROJECT_DEPOT_TOOLS)
 
         if args.project:
-            project = args.project
+            virtual_project = args.project
         else:
-            project = os.path.basename(self.root_dir)
-            if 'chrome' in project or 'chromium' in project:
-                project = 'chromium'
-        if project == 'chromium':
+            virtual_project = os.path.basename(self.root_dir)
+        if 'chromium' in virtual_project:
+            real_project = 'chromium'
+        else:
+            real_project = virtual_project
+        self.virtual_project = virtual_project
+        self.real_project = real_project
+
+        if real_project == 'chromium':
             self.root_dir = self.root_dir + '/src'
             Util.chdir(self.root_dir)
             self.repo = ChromiumRepo(self.root_dir)
-        self.project = project
+        self.backup_dir = '%s/backup' % self.root_dir
 
         if args.is_debug:
             build_type = 'debug'
@@ -126,11 +131,11 @@ python %(prog)s --backup --root-dir d:\workspace\chrome
             out_dir = 'out'
         self.out_dir = '%s/%s' % (out_dir, build_type)
 
-        if self.project == 'angle':
+        if self.real_project == 'angle':
             default_target = 'angle_e2e'
-        elif self.project == 'chromium':
+        elif self.real_project == 'chromium':
             default_target = 'chrome'
-        elif self.project == 'dawn':
+        elif self.real_project == 'dawn':
             default_target = 'dawn_e2e'
         else:
             default_target = ''
@@ -189,7 +194,7 @@ python %(prog)s --backup --root-dir d:\workspace\chrome
             self._handle_ops()
 
     def sync(self):
-        if self.project == 'chromium':
+        if self.real_project == 'chromium':
             if self.rev:
                 Util.info('Begin to sync rev %s' % self.rev)
 
@@ -219,7 +224,7 @@ python %(prog)s --backup --root-dir d:\workspace\chrome
         else:
             gn_args = 'is_debug=false'
 
-        if self.project != 'aquarium':
+        if self.real_project != 'aquarium':
             if args.dcheck:
                 gn_args += ' dcheck_always_on=true'
             else:
@@ -238,7 +243,7 @@ python %(prog)s --backup --root-dir d:\workspace\chrome
             gn_args += ' symbol_level=%s' % self.args.symbol_level
             gn_args += ' is_clang=true'
 
-        if self.project == 'chromium':
+        if self.real_project == 'chromium':
             if self.args.symbol_level == 0:
                 gn_args += ' blink_symbol_level=0'
 
@@ -267,7 +272,7 @@ python %(prog)s --backup --root-dir d:\workspace\chrome
             if key in targets:
                 targets[targets.index(key)] = value
 
-        if self.project == 'chromium':
+        if self.real_project == 'chromium':
             if self.rev:
                 rev = self.rev
             else:
@@ -277,24 +282,24 @@ python %(prog)s --backup --root-dir d:\workspace\chrome
             self._execute('python lastchange.py -o LASTCHANGE', exit_on_error=self.exit_on_error)
             Util.chdir(self.root_dir)
 
-        cmd = 'ninja -k%s -j%s -C %s %s' % (str(self.args.build_max_fail), str(Util.CPU_COUNT), self.out_dir, ' '.join(targets))
+        cmd = 'ninja -k%s -j%s -C %s %s' % (str(self.args.build_max_fail), str(Util.CPU_COUNT * 2), self.out_dir, ' '.join(targets))
         if self.args.build_verbose:
             cmd += ' -v'
         self._execute(cmd, show_duration=True)
 
     def backup(self):
-        if self.project == 'chromium':
+        if self.real_project == 'chromium':
             if self.rev:
                 rev = self.rev
             else:
                 rev = self.repo.get_working_dir_rev()
-            backup_dir = Util.cal_backup_dir(rev)
+            rev_backup_dir = Util.cal_backup_dir(rev)
         else:
-            backup_dir = Util.cal_backup_dir()
-        backup_path = '%s/backup/%s' % (self.root_dir, backup_dir)
+            rev_backup_dir = Util.cal_backup_dir()
+        backup_path = '%s/backup/%s' % (self.root_dir, rev_backup_dir)
         Util.ensure_dir('%s/backup' % self.root_dir)
 
-        Util.info('Begin to backup %s' % backup_dir)
+        Util.info('Begin to backup %s' % rev_backup_dir)
         if os.path.exists(backup_path):
             Util.info('Backup folder "%s" alreadys exists' % backup_path)
             os.rename(backup_path, '%s-%s' % (backup_path, Util.get_datetime()))
@@ -312,20 +317,20 @@ python %(prog)s --backup --root-dir d:\workspace\chrome
         for index, target in enumerate(targets):
             for tmp_project in ['angle', 'dawn']:
                 if target.startswith(tmp_project):
-                    if self.project == 'chromium':
+                    if self.real_project == 'chromium':
                         targets[index] = '//third_party/%s/src/tests:%s' % (tmp_project, target)
                     else:
                         targets[index] = '//src/tests:%s' % target
 
         tmp_files = []
-        if self.project == 'aquarium':
+        if self.real_project == 'aquarium':
             for tmp_file in os.listdir(self.out_dir):
                 if os.path.isdir('%s/%s' % (self.out_dir, tmp_file)):
                     tmp_file += '/'
                 tmp_files.append(tmp_file)
         else:
             for target in targets:
-                target_files = self._execute('gn desc %s %s runtime_deps' % (self.out_dir, target), return_out=True, exit_on_error=self.exit_on_error)[1].rstrip('\n').split('\n')
+                target_files = self._execute('gn desc %s %s runtime_deps' % (self.out_dir, target), exit_on_error=self.exit_on_error, return_out=True)[1].rstrip('\n').split('\n')
                 tmp_files = Util.union_list(tmp_files, target_files)
 
         exclude_files = ['gen/', 'obj/']
@@ -347,7 +352,7 @@ python %(prog)s --backup --root-dir d:\workspace\chrome
             else:
                 src_files.append('%s/%s' % (self.out_dir, tmp_file))
 
-        if self.project == 'aquarium':
+        if self.real_project == 'aquarium':
             src_files += ['assets/', 'shaders/']
 
         src_file_count = len(src_files)
@@ -363,9 +368,18 @@ python %(prog)s --backup --root-dir d:\workspace\chrome
             # permission denied
             #shutil.copyfile(file, dst_dir)
 
-        if self.args.backup_upload:
-            shutil.make_archive(backup_path, 'zip', backup_path)
-            Util.execute('scp %s.zip wp@%s:/gputest/%s/' % (backup_path, Util.GPUTEST_SERVER, Util.HOST_OS))
+    def upload(self):
+        if self.rev:
+            rev = self.rev
+        else:
+            rev = 'latest'
+        rev_dir, _ = Util.get_backup_dir(self.backup_dir, rev)
+        print(rev_dir)
+        rev_backup_dir = '%s/%s' % (self.backup_dir, rev_dir)
+        rev_backup_file = '%s.zip' % rev_backup_dir
+        if not os.path.exists(rev_backup_file):
+            shutil.make_archive(rev_backup_dir, 'zip', rev_backup_dir)
+        Util.execute('scp %s wp@%s:/workspace/backup/%s/%s/' % (rev_backup_file, Util.BACKUP_SERVER, Util.HOST_OS, self.virtual_project))
 
     def backup_webgl(self):
         # generate telemetry_gpu_integration_test
@@ -412,7 +426,7 @@ python %(prog)s --backup --root-dir d:\workspace\chrome
             self._run(target)
 
     def download(self):
-        if not self.project == 'chromium':
+        if not self.real_project == 'chromium':
             return
 
         rev = self.rev
@@ -493,12 +507,10 @@ python %(prog)s --backup --root-dir d:\workspace\chrome
         if not Util.has_depot_tools_in_path() and os.path.exists(Util.PROJECT_DEPOT_TOOLS):
             Util.prepend_path(Util.PROJECT_DEPOT_TOOLS)
 
-        result = self._execute(cmd=cmd, exit_on_error=self.exit_on_error)
+        self._execute(cmd=cmd, exit_on_error=self.exit_on_error)
 
         if not Util.has_depot_tools_in_path() and os.path.exists(Util.PROJECT_DEPOT_TOOLS):
             Util.remove_path(Util.PROJECT_DEPOT_TOOLS)
-
-        return result
 
     def _chromium_sync_integer_rev(self):
         if self.integer_rev:
@@ -545,7 +557,7 @@ python %(prog)s --backup --root-dir d:\workspace\chrome
         cmd = 'git reset --hard %s~%s' % (roll_hash, roll_count_diff)
         self._execute(cmd, exit_on_error=self.exit_on_error)
         cmd = 'git rev-parse --abbrev-ref HEAD'
-        branch = self._execute(cmd, return_out=True, show_cmd=False, exit_on_error=self.exit_on_error)[1].strip()
+        branch = self._execute(cmd, show_cmd=False, exit_on_error=self.exit_on_error, return_out=True)[1].strip()
         if not branch == 'master':
             Util.error('Repo %s is not on master' % roll_repo)
 
@@ -582,6 +594,8 @@ python %(prog)s --backup --root-dir d:\workspace\chrome
             self.build()
         if args.backup:
             self.backup()
+        if args.upload:
+            self.upload()
         if args.run:
             self.run()
         if args.batch:
