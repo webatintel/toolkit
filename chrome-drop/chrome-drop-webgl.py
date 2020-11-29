@@ -33,9 +33,9 @@ class Webgl(Program):
     SKIP_CASES = {
         #Util.LINUX: ['WebglConformance_conformance2_textures_misc_tex_3d_size_limit'],
         Util.LINUX: [],
-        Util.WINDOWS: [],
-        Util.DARWIN: [],
     }
+    MAX_FAIL_IN_REPORT = 20
+    SEPARATOR = '|'
 
     def __init__(self):
         parser = argparse.ArgumentParser(description='Chrome Drop WebGL')
@@ -43,22 +43,21 @@ class Webgl(Program):
         parser.add_argument('--sync', dest='sync', help='sync', action='store_true')
         parser.add_argument('--build', dest='build', help='build', action='store_true')
         parser.add_argument('--build-chrome-rev', dest='build_chrome_rev', help='Chrome rev to build', default='latest')
-        parser.add_argument('--build-chrome-dcheck', dest='build_chrome_dcheck', help='Build Chrome with dcheck', action='store_true')
         parser.add_argument('--build-skip-mesa', dest='build_skip_build_mesa', help='skip building mesa during build', action='store_true')
         parser.add_argument('--build-skip-chrome', dest='build_skip_chrome', help='skip building chrome during build', action='store_true')
         parser.add_argument('--build-skip-backup', dest='build_skip_backup', help='skip backing up chrome during build', action='store_true')
         parser.add_argument('--run', dest='run', help='run', action='store_true')
         parser.add_argument('--run-chrome-rev', dest='run_chrome_rev', help='Chromium revision', default='latest')
         parser.add_argument('--run-mesa-rev', dest='run_mesa_rev', help='mesa revision', default='latest')
-        parser.add_argument('--run-filter', dest='test_filter', help='WebGL CTS suite to run against', default='all')  # For smoke run, we may use conformance/attribs
-        parser.add_argument('--run-verbose', dest='test_verbose', help='verbose mode of run', action='store_true')
-        parser.add_argument('--run-chrome', dest='test_chrome', help='run chrome', default='default')
-        parser.add_argument('--run-target', dest='test_target', help='run target, split by comma, like "0,2"', default='all')
-        parser.add_argument('--run-no-angle', dest='test_no_angle', help='run without angle', action='store_true')
+        parser.add_argument('--run-filter', dest='run_filter', help='WebGL CTS suite to run against', default='all')  # For smoke run, we may use conformance/attribs
+        parser.add_argument('--run-verbose', dest='run_verbose', help='verbose mode of run', action='store_true')
+        parser.add_argument('--run-chrome', dest='run_chrome', help='run chrome', default='build')
+        parser.add_argument('--run-target', dest='run_target', help='run target, split by comma, like "0,2"', default='all')
+        parser.add_argument('--run-no-angle', dest='run_no_angle', help='run without angle', action='store_true')
+        parser.add_argument('--report', dest='report', help='report')
+
         parser.add_argument('--batch', dest='batch', help='batch', action='store_true')
         parser.add_argument('--dryrun', dest='dryrun', help='dryrun', action='store_true')
-        parser.add_argument('--email', dest='email', help='send run result via email', action='store_true')
-        parser.add_argument('--mesa-type', dest='mesa_type', help='mesa type', default='iris')
         parser.add_argument('--mesa-dir', dest='mesa_dir', help='mesa dir')
         parser.add_argument('--run-manual', dest='run_manual', help='run manual', action='store_true')
 
@@ -83,22 +82,16 @@ python %(prog)s --batch
             self.mesa_dir = '%s/mesa' % root_dir
         self.mesa_build_dir = '%s/build' % self.mesa_dir
         self.mesa_backup_dir = '%s/backup' % self.mesa_dir
-        test_chrome = args.test_chrome
-        if Util.HOST_OS == Util.DARWIN:
-            if test_chrome == 'default':
-                test_chrome = 'canary'
-        else:
-            if test_chrome == 'default':
-                test_chrome = 'build'
-        self.test_chrome = test_chrome
-        self.result_dir = '%s/result' % root_dir
+        self.run_chrome = args.run_chrome
+        self.result_dir = '%s/result/%s' % (root_dir, self.timestamp)
+        self.exec_log = '%s/exec.log' % self.result_dir
 
         self.run_mesa_rev = args.run_mesa_rev
-        self.test_filter = args.test_filter
-        self.test_verbose = args.test_verbose
+        self.run_filter = args.run_filter
+        self.run_verbose = args.run_verbose
         self.run_chrome_rev = args.run_chrome_rev
-        self.test_target = args.test_target
-        self.test_no_angle = args.test_no_angle
+        self.run_target = args.run_target
+        self.run_no_angle = args.run_no_angle
 
         self.target_os = args.target_os
         if not self.target_os:
@@ -121,11 +114,9 @@ python %(prog)s --batch
             self._execute('python %s/mesa/mesa.py --build --root-dir %s' % (ScriptRepo.ROOT_DIR, self.mesa_dir))
 
         # build chrome
-        if self.test_chrome == 'build':
+        if self.run_chrome == 'build':
             if not self.args.build_skip_chrome:
                 cmd = 'python %s --no-component-build --makefile --symbol-level 0 --build --build-target webgl --root-dir %s' % (Util.GNP_SCRIPT, self.chrome_dir)
-                if self.args.build_chrome_dcheck:
-                    cmd += ' --dcheck'
                 self._execute(cmd)
             if not self.args.build_skip_backup:
                 cmd = 'python %s --backup --backup-target webgl --root-dir %s' % (Util.GNP_SCRIPT, self.chrome_dir)
@@ -139,10 +130,14 @@ python %(prog)s --batch
         Util.clear_proxy()
 
         if Util.HOST_OS == Util.LINUX:
-            self.run_mesa_rev = Util.set_mesa(self.mesa_backup_dir, self.run_mesa_rev, self.args.mesa_type)
+            self.run_mesa_rev = Util.set_mesa(self.mesa_backup_dir, self.run_mesa_rev)
+
+        gpu_name, gpu_driver = Util.get_gpu_info()
+        Util.append_file(self.exec_log, 'GPU name%s%s' % (self.SEPARATOR, gpu_name))
+        Util.append_file(self.exec_log, 'GPU driver%s%s' % (self.SEPARATOR, gpu_driver))
 
         common_cmd = 'vpython content/test/gpu/run_gpu_integration_test.py webgl_conformance --disable-log-uploads'
-        if self.test_chrome == 'build':
+        if self.run_chrome == 'build':
             self.chrome_rev = self.run_chrome_rev
             (chrome_rev_dir, self.chrome_rev) = Util.get_backup_dir(self.chrome_backup_dir, self.chrome_rev)
             chrome_rev_dir = '%s/%s' % (self.chrome_backup_dir, chrome_rev_dir)
@@ -159,41 +154,42 @@ python %(prog)s --batch
 
             common_cmd += ' --browser=exact --browser-executable=%s' % chrome
         else:
-            common_cmd += ' --browser=%s' % self.test_chrome
+            common_cmd += ' --browser=%s' % self.run_chrome
             Util.chdir(self.chrome_src_dir)
-            self.chrome_rev = self.test_chrome
+            self.chrome_rev = self.run_chrome
             if Util.HOST_OS == Util.DARWIN:
-                if self.test_chrome == 'canary':
+                if self.run_chrome == 'canary':
                     chrome = '"/Applications/Google Chrome Canary.app/Contents/MacOS/Google Chrome Canary"'
                 else:
-                    Util.error('test_chrome is not supported')
+                    Util.error('run_chrome is not supported')
             elif Util.HOST_OS == Util.LINUX:
-                if self.test_chrome == 'canary':
+                if self.run_chrome == 'canary':
                     chrome = '/usr/bin/google-chrome-unstable'
-                elif self.test_chrome == 'stable':
+                elif self.run_chrome == 'stable':
                     chrome = '/usr/bin/google-chrome-stable'
                 else:
-                    Util.error('test_chrome is not supported')
+                    Util.error('run_chrome is not supported')
             else:
-                Util.error('test_chrome is not supported')
+                Util.error('run_chrome is not supported')
 
         if self.args.run_manual:
             param = '--enable-experimental-web-platform-features --disable-gpu-process-for-dx12-vulkan-info-collection --disable-domain-blocking-for-3d-apis --disable-gpu-process-crash-limit --disable-blink-features=WebXR --js-flags=--expose-gc --disable-gpu-watchdog --autoplay-policy=no-user-gesture-required --disable-features=UseSurfaceLayerForVideo --enable-net-benchmarking --metrics-recording-only --no-default-browser-check --no-first-run --ignore-background-tasks --enable-gpu-benchmarking --deny-permission-prompts --autoplay-policy=no-user-gesture-required --disable-background-networking --disable-component-extensions-with-background-pages --disable-default-apps --disable-search-geolocation-disclosure --enable-crash-reporter-for-testing --disable-component-update'
             param += ' --use-gl=angle'
-            if Util.HOST_OS == Util.LINUX and self.test_no_angle:
+            if Util.HOST_OS == Util.LINUX and self.run_no_angle:
                 param += ' --use-gl=desktop'
             self._execute('%s %s http://wp-27.sh.intel.com/workspace/project/WebGL/sdk/tests/webgl-conformance-tests.html?version=2.0.1' % (chrome, param))
             return
 
-        if self.test_filter != 'all':
-            common_cmd += ' --test-filter=*%s*' % self.test_filter
+        if self.run_filter != 'all':
+            common_cmd += ' --test-filter=*%s*' % self.run_filter
         if self.args.dryrun:
             common_cmd += ' --test-filter=*conformance/attribs*'
-        skip_filter = self.SKIP_CASES[Util.HOST_OS]
-        if skip_filter:
+
+        if Util.HOST_OS in self.SKIP_CASES:
+            skip_filter = self.SKIP_CASES[Util.HOST_OS]
             for skip_tmp in skip_filter:
                 common_cmd += ' --skip=%s' % skip_tmp
-        if self.test_verbose:
+        if self.run_verbose:
             common_cmd += ' --verbose'
 
         Util.ensure_dir(self.result_dir)
@@ -213,65 +209,65 @@ python %(prog)s --batch
             ]
 
         test_combs = []
-        if self.test_target == 'all':
+        if self.run_target == 'all':
             test_combs = all_combs
         else:
-            for i in self.test_target.split(','):
+            for i in self.run_target.split(','):
                 test_combs.append(all_combs[int(i)])
 
-        final_regressions = 0
-        if self.args.build_chrome_dcheck:
-            dcheck = 'true'
-        else:
-            dcheck = 'false'
-        final_summary = 'Final summary (chrome_rev: %s, dcheck: %s):\n' % (self.chrome_rev, dcheck)
-        final_details = 'Final details:\n'
         for comb in test_combs:
             extra_browser_args = '--disable-backgrounding-occluded-windows'
-            if Util.HOST_OS == Util.LINUX and self.test_no_angle:
+            if Util.HOST_OS == Util.LINUX and self.run_no_angle:
                 extra_browser_args += ',--use-gl=desktop'
             cmd = common_cmd + ' --webgl-conformance-version=%s' % comb[COMB_INDEX_WEBGL]
             result_file = ''
             if Util.HOST_OS == Util.LINUX:
-                result_file = '%s/%s-%s-%s-%s-%s.log' % (self.result_dir, datetime, self.chrome_rev, self.args.mesa_type, self.run_mesa_rev, comb[COMB_INDEX_WEBGL])
+                result_file = '%s/%s.log' % (self.result_dir, comb[COMB_INDEX_WEBGL])
             elif Util.HOST_OS == Util.WINDOWS:
                 extra_browser_args += ' --use-angle=%s' % comb[COMB_INDEX_BACKEND]
-                result_file = '%s/%s-%s-%s-%s.log' % (self.result_dir, datetime, self.chrome_rev, comb[COMB_INDEX_WEBGL], comb[COMB_INDEX_BACKEND])
-            elif Util.HOST_OS == Util.DARWIN:
-                result_file = '%s/%s-%s-%s.log' % (self.result_dir, datetime, self.chrome_rev, comb[COMB_INDEX_WEBGL])
+                result_file = '%s/%s-%s.log' % (self.result_dir, comb[COMB_INDEX_WEBGL], comb[COMB_INDEX_BACKEND])
 
             if extra_browser_args:
                 cmd += ' --extra-browser-args="%s"' % extra_browser_args
             cmd += ' --write-full-results-to %s' % result_file
-            test_timer = Timer()
-            result = self._execute(cmd, exit_on_error=False, show_duration=True)
-            pass_fail, fail_pass, fail_fail, pass_pass_len = Util.get_test_result(result_file, 'gtest_angle')
-            final_regressions += len(pass_fail)
-            result = 'PASS_FAIL %s, FAIL_PASS %s, FAIL_FAIL %s PASS_PASS %s\n' % (len(pass_fail), len(fail_pass), len(fail_fail), pass_pass_len)
-            final_summary += result
-            result += '[PASS_FAIL] %s\n[FAIL_PASS] %s\n' % ('\n'.join(pass_fail[:10]), '\n'.join(fail_pass[:10]))
-            final_details += result
-            Util.info(result)
+            self._execute(cmd, exit_on_error=False, show_duration=True)
 
-        Util.info(final_details)
-        Util.info(final_summary)
+        self.report()
 
-        log_file = self.log_file
-        Util.append_file(log_file, final_details)
-        Util.append_file(log_file, final_summary)
+    def report(self):
+        if self.args.report:
+            self.result_dir = self.args.report
 
-        subject = '[WebGL CTS]'
-        if Util.HOST_OS == Util.LINUX:
-            subject += ' Mesa %s' % self.run_mesa_rev
-        subject += 'Chrome %s Regression %s' % (self.chrome_rev, final_regressions)
+        regression_count = 0
+        summary = 'Final summary:\n'
+        details = 'Final details:\n'
 
-        if self.args.batch and self.args.email:
-            Util.send_email('webperf@intel.com', 'yang.gu@intel.com', subject, '%s\n%s' % (final_summary, final_details))
+        for result_file in os.listdir(self.result_dir):
+            if result_file == 'exec.log':
+                continue
+            pass_fail, fail_pass, fail_fail, pass_pass = Util.get_test_result('%s/%s' % (self.result_dir, result_file), 'gtest_angle')
+            regression_count += len(pass_fail)
+            result = '%s: PASS_FAIL %s, FAIL_PASS %s, FAIL_FAIL %s PASS_PASS %s\n' % (os.path.splitext(result_file)[0], len(pass_fail), len(fail_pass), len(fail_fail), len(pass_pass))
+            summary += result
+            if pass_fail:
+                result += '[PASS_FAIL]\n%s\n' % '\n'.join(pass_fail[:self.MAX_FAIL_IN_REPORT])
+            if fail_pass:
+                result += '[FAIL_PASS]\n%s\n' % '\n'.join(fail_pass[:self.MAX_FAIL_IN_REPORT])
+            details += result
+
+        Util.info(details)
+        Util.info(summary)
+
+        report_file = '%s/report.txt' % self.result_dir
+        Util.append_file(report_file, summary)
+        Util.append_file(report_file, details)
+
 
     def batch(self):
         self.sync()
         self.build()
         self.run()
+        self.report()
 
     def _handle_ops(self):
         args = self.args
@@ -281,6 +277,8 @@ python %(prog)s --batch
             self.build()
         if args.run:
             self.run()
+        if args.report:
+            self.report()
         if args.batch:
             self.batch()
 
