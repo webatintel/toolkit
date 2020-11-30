@@ -43,7 +43,6 @@ class Angle(Program):
         parser.add_argument('--run-verbose', dest='test_verbose', help='verbose mode of run', action='store_true')
         parser.add_argument('--dryrun', dest='dryrun', help='dryrun', action='store_true')
         parser.add_argument('--report', dest='report', help='report file')
-        parser.add_argument('--email', dest='email', help='send report as email', action='store_true')
 
         parser.epilog = '''
 python %(prog)s --batch
@@ -56,19 +55,19 @@ python %(prog)s --batch
             super(Angle, self).__init__(parser)
         args = self.args
 
-        self.angle_dir = '%s/angle' % Util.get_symbolic_link_dir()
+        self.angle_dir = '%s/angle' % self.root_dir
         self._handle_ops()
 
     def sync(self):
-        cmd = 'python %s --sync --runhooks --root-dir %s' % (Util.GNP_SCRIPT_PATH, self.angle_dir)
+        cmd = 'python %s --sync --runhooks --root-dir %s' % (Util.GNP_SCRIPT, self.angle_dir)
         self._execute(cmd)
 
     def build(self):
-        cmd = 'python %s --makefile --build --build-target angle_e2e --backup --backup-target angle_e2e --root-dir %s' % (Util.GNP_SCRIPT_PATH, self.angle_dir)
+        cmd = 'python %s --makefile --build --build-target angle_e2e --backup --backup-target angle_e2e --root-dir %s' % (Util.GNP_SCRIPT, self.angle_dir)
         self._execute(cmd)
 
     def run(self):
-        cmd = 'python %s --run --run-target angle_e2e --run-rev latest --root-dir %s' % (Util.GNP_SCRIPT_PATH, self.angle_dir)
+        cmd = 'python %s --run --run-target angle_e2e --run-rev latest --root-dir %s' % (Util.GNP_SCRIPT, self.angle_dir)
         self._execute(cmd)
 
     def batch(self):
