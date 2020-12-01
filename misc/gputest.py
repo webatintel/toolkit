@@ -137,6 +137,7 @@ class GPUTest(Program):
         parser.add_argument('--debug', dest='debug', help='debug', action='store_true')
         parser.add_argument('--target', dest='target', help='target', default='all')
         parser.add_argument('--email', dest='email', help='email', action='store_true')
+        parser.add_argument('--local', dest='local', help='local', action='store_true')
         parser.add_argument('--repeat', dest='repeat', help='repeat', type=int, default=1)
 
         parser.add_argument('--list', dest='list', help='list', action='store_true')
@@ -165,42 +166,16 @@ python %(prog)s --run
 
         args = self.args
 
-        target_os = self.target_os
-        if target_os == 'default':
-            target_os = Util.HOST_OS
-
         self.result_dir = '%s/gputest/%s' % (ScriptRepo.IGNORE_DIR, self.timestamp)
         Util.ensure_dir(self.result_dir)
         self.exec_log = '%s/exec.log' % self.result_dir
         Util.ensure_nofile(self.exec_log)
         Util.append_file(self.exec_log, 'OS%s%s' % (self.SEPARATOR, Util.HOST_OS_RELEASE))
+        self.chrome_config_dir = '%s/src/testing/buildbot' % self.PROJECT_INFO['chromium'][self.PROJECT_INFO_INDEX_ROOT_DIR]
+        self.targets = []
 
         if args.sync:
             self.sync()
-
-        self._get_targets()
-        os_targets = []
-        for target in self.targets:
-            if target[self.TARGET_INDEX_OS] == target_os:
-                os_targets.append(target)
-        self.os_targets = os_targets
-
-        target_indexes = []
-        arg_target = args.target
-        if arg_target == 'all':
-            arg_target = '0-%d' % (len(self.os_targets) - 1)
-        arg_targets = arg_target.split(',')
-        for tmp_target in arg_targets:
-            if '-' in tmp_target:
-                tmp_targets = tmp_target.split('-')
-                target_min = int(tmp_targets[0])
-                target_max = int(tmp_targets[1])
-                target_indexes.extend(range(target_min, target_max + 1))
-            else:
-                target_indexes.append(int(tmp_target))
-        target_indexes = sorted(target_indexes)
-        self.target_indexes = target_indexes
-
         if args.list:
             self.list()
         if args.build:
@@ -237,16 +212,20 @@ python %(prog)s --run
         self._log_exec(all_timer.stop())
 
     def list(self):
+        self._update_target()
         for index, target in enumerate(self.os_targets):
             print('%s: %s' % (index, target[self.TARGET_INDEX_VIRTUAL_NAME]))
 
     def build(self):
+        self._update_target()
         self._op('build')
 
     def backup(self):
+        self._update_target()
         self._op('backup')
 
     def upload(self):
+        self._update_target()
         self._op('upload')
 
     def _op(self, op):
@@ -306,35 +285,49 @@ python %(prog)s --run
         Util.append_file(self.exec_log, 'GPU name%s%s' % (self.SEPARATOR, gpu_name))
         Util.append_file(self.exec_log, 'GPU driver%s%s' % (self.SEPARATOR, gpu_driver))
 
+        project_info = {}
+        for project in sorted(self.PROJECTS):
+            if project == 'chromium':
+                virtual_project = 'chromium-gputest'
+            else:
+                virtual_project = project
+            if self.args.local:
+                rev_name, rev = Util.get_local_backup(virtual_project, 'latest')
+            else:
+                rev_name, rev = Util.get_server_backup(virtual_project, 'latest')
+            project_info[project] = [rev_name, rev, '%s/%s/%s/%s' % (Util.BACKUP_DIR, Util.HOST_OS, virtual_project, rev_name)]
+            if project == 'chromium':
+                self.chrome_config_dir = '%s/testing/buildbot' % (project_info[project][2])
+                self._update_target()
+
         logged_projects = []
         for index, target_index in enumerate(self.target_indexes):
             project = self.os_targets[target_index][self.TARGET_INDEX_PROJECT]
-            if project not in logged_projects:
-                if project == 'chromium':
-                    rev = ChromiumRepo('%s/chromium/src' % self.root_dir).get_working_dir_rev()
-                else:
-                    Util.chdir('%s/%s' % (self.root_dir, project))
-                    rev = Util.get_repo_rev()
-                logged_projects.append(project)
-                info = '%s Revision%s%s' % (project.capitalize(), self.SEPARATOR, rev)
-                Util.append_file(self.exec_log, info)
+            if project == 'chromium':
+                virtual_project = '%s-gputest' % project
+            else:
+                virtual_project = project
 
-                if project == 'chromium':
-                    virtual_project = '%s-gputest' % project
-                else:
-                    virtual_project = project
-                get_server_latest_backup_rev(Util.GPUTEST_SERVER, virtual_project)
+            if project not in logged_projects:
+                logged_projects.append(project)
+                info = '%s Revision%s%s' % (project.capitalize(), self.SEPARATOR, project_info[project][1])
+                Util.append_file(self.exec_log, info)
 
             virtual_name = self.os_targets[target_index][self.TARGET_INDEX_VIRTUAL_NAME]
 
+            skip = False
             for skip_case in self.SKIP_CASES:
                 if Util.HOST_OS == skip_case[self.SKIP_CASES_INDEX_OS] and virtual_name == skip_case[self.SKIP_CASES_INDEX_VIRTUAL_NAME] and len(skip_case) == self.SKIP_CASES_INDEX_VIRTUAL_NAME + 1:
-                    continue
+                    skip = True
+                    break
+            if skip:
+                continue
 
             real_name = self.os_targets[target_index][self.TARGET_INDEX_REAL_NAME]
             real_type = self.os_targets[target_index][self.TARGET_INDEX_REAL_TYPE]
-            config_cmd = 'python %s --run --root-dir %s/%s --run-target %s --run-rev out --run-mesa-rev %s' % (Util.GNP_SCRIPT, self.root_dir, project, real_name, self.args.run_mesa_rev)
-
+            config_cmd = 'python %s --run --root-dir %s --run-target %s --run-rev out' % (Util.GNP_SCRIPT, project_info[project][2], real_name)
+            if Util.HOST_OS == Util.LINUX:
+                config_cmd += ' --run-mesa-rev %s' % self.args.run_mesa_rev
             run_args = self.os_targets[target_index][self.TARGET_INDEX_RUN_ARGS]
             virtual_names_to_remove = []
             for tmp_virtual_name in self.VIRTUAL_NAME_INFO:
@@ -415,7 +408,7 @@ python %(prog)s --run
                 self._log_exec(timer.stop(), op, cmd)
 
                 if real_type in ['gtest_angle']:
-                    output_file = '%s/chromium/src/out/release/output.json' % self.root_dir
+                    output_file = '%s/out/release/output.json' % project_info[project][2]
                     if os.path.exists(output_file):
                         shutil.move(output_file, result_file)
                     else:
@@ -515,6 +508,38 @@ python %(prog)s --run
         if self.args.email:
             Util.send_email(self.EMAIL_SENDER, self.EMAIL_TO, subject, html, type='html')
 
+    def _update_target(self):
+        if self.targets:
+            return
+
+        self._get_targets()
+
+        target_os = self.target_os
+        if target_os == 'default':
+            target_os = Util.HOST_OS
+
+        os_targets = []
+        for target in self.targets:
+            if target[self.TARGET_INDEX_OS] == target_os:
+                os_targets.append(target)
+        self.os_targets = os_targets
+
+        target_indexes = []
+        arg_target = self.args.target
+        if arg_target == 'all':
+            arg_target = '0-%d' % (len(self.os_targets) - 1)
+        arg_targets = arg_target.split(',')
+        for tmp_target in arg_targets:
+            if '-' in tmp_target:
+                tmp_targets = tmp_target.split('-')
+                target_min = int(tmp_targets[0])
+                target_max = int(tmp_targets[1])
+                target_indexes.extend(range(target_min, target_max + 1))
+            else:
+                target_indexes.append(int(tmp_target))
+        target_indexes = sorted(target_indexes)
+        self.target_indexes = target_indexes
+
     def _get_targets(self):
         targets = []
         recorded_os_virtual_name = []
@@ -522,7 +547,7 @@ python %(prog)s --run
             recorded_virtual_name = []
 
         for config_file in self.CHROME_CONFIG_FILES:
-            configs = Util.load_json('%s/src/testing/buildbot/%s' % (self.PROJECT_INFO['chromium'][self.PROJECT_INFO_INDEX_ROOT_DIR], config_file))
+            configs = Util.load_json('%s/%s' % (self.chrome_config_dir, config_file))
             for config in configs:
                 if not re.search('Intel', config):
                     continue
