@@ -53,7 +53,7 @@ class GPUTest(Program):
     SKIP_CASES_INDEX_VIRTUAL_NAME = 1
     SKIP_CASES_INDEX_CASES = 2
     SKIP_CASES = [
-        [Util.WINDOWS, 'dawn_end2end_validation_layers_tests'],
+        #[Util.WINDOWS, 'dawn_end2end_validation_layers_tests'],
         #[Util.LINUX, 'dawn_end2end_tests', 'SwapChainTests.SwitchPresentMode/Vulkan_Intel_R_UHD_Graphics_630_CFL_GT2'],
     ]
 
