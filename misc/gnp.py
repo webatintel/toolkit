@@ -356,7 +356,7 @@ python %(prog)s --backup --root-dir d:\workspace\chrome
             src_files += ['assets/', 'shaders/']
 
         if self.virtual_project == 'chromium-gputest':
-            src_files += ['args.gn', '../../testing/buildbot/chromium.gpu.fyi.json', '../../testing/buildbot/chromium.dawn.json']
+            src_files += ['out/release/args.gn', 'out/release/../../testing/buildbot/chromium.gpu.fyi.json', 'out/release/../../testing/buildbot/chromium.dawn.json']
 
         src_file_count = len(src_files)
         for index, src_file in enumerate(src_files):
