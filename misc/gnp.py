@@ -293,13 +293,13 @@ python %(prog)s --backup --root-dir d:\workspace\chrome
                 rev = self.rev
             else:
                 rev = self.repo.get_working_dir_rev()
-            rev_backup_dir = Util.cal_backup_dir(rev)
+            rev_dir = Util.cal_backup_dir(rev)
         else:
-            rev_backup_dir = Util.cal_backup_dir()
-        backup_path = '%s/backup/%s' % (self.root_dir, rev_backup_dir)
+            rev_dir = Util.cal_backup_dir()
+        backup_path = '%s/backup/%s' % (self.root_dir, rev_dir)
         Util.ensure_dir('%s/backup' % self.root_dir)
 
-        Util.info('Begin to backup %s' % rev_backup_dir)
+        Util.info('Begin to backup %s' % rev_dir)
         if os.path.exists(backup_path):
             Util.info('Backup folder "%s" alreadys exists' % backup_path)
             os.rename(backup_path, '%s-%s' % (backup_path, Util.get_datetime()))
@@ -376,11 +376,17 @@ python %(prog)s --backup --root-dir d:\workspace\chrome
             rev = self.rev
         else:
             rev = 'latest'
-        rev_dir, _ = Util.get_backup_dir(self.backup_dir, rev)
-        rev_backup_dir = '%s/%s' % (self.backup_dir, rev_dir)
-        rev_backup_file = '%s.zip' % rev_backup_dir
-        if not os.path.exists(rev_backup_file):
-            shutil.make_archive(rev_backup_dir, 'zip', rev_backup_dir)
+        rev_name, _ = Util.get_backup_dir(self.backup_dir, rev)
+        rev_dir = '%s/%s' % (self.backup_dir, rev_name)
+        if Util.HOST_OS == Util.LINUX:
+            rev_backup_file = '%s.tar.gz' % rev_dir
+            if not os.path.exists(rev_backup_file):
+                Util.chdir(self.backup_dir)
+                Util.execute('tar zcf %s.tar.gz %s' % (rev_name, rev_name))
+        elif Util.HOST_OS == Util.WINDOWS:
+            rev_backup_file = '%s.zip' % rev_dir
+            if not os.path.exists(rev_backup_file):
+                shutil.make_archive(rev_dir, 'zip', rev_dir)
 
         if Util.check_server_backup(Util.BACKUP_SERVER, self.virtual_project, os.path.basename(rev_backup_file)):
             Util.info('Server already has rev %s' % rev_backup_file)
@@ -414,8 +420,8 @@ python %(prog)s --backup --root-dir d:\workspace\chrome
         if self.args.run_rev == 'out':
             run_dir = self.out_dir
         else:
-            rev_dir, _ = Util.get_backup_dir('backup', self.args.run_rev)
-            run_dir = 'backup/%s/out/release' % rev_dir
+            rev_name, _ = Util.get_backup_dir('backup', self.args.run_rev)
+            run_dir = 'backup/%s/out/release' % rev_name
 
         Util.chdir(run_dir, verbose=True)
         run_target = self.args.run_target
