@@ -590,8 +590,11 @@ python %(prog)s --backup --root-dir d:\workspace\chrome
         if self.args.run_args:
             cmd += ' %s' % self.args.run_args
 
-        if Util.HOST_OS == Util.LINUX and target not in ['telemetry_gpu_integration_test', 'webgpu_blink_web_tests']:
-            cmd = './' + cmd
+        if Util.HOST_OS == Util.LINUX:
+            if target == 'telemetry_gpu_integration_test':
+                cmd += ' --browser=exact --browser-executable=./chrome'
+            if target not in ['telemetry_gpu_integration_test', 'webgpu_blink_web_tests']:
+                cmd = './' + cmd
         self._execute(cmd, exit_on_error=self.exit_on_error)
 
     def _handle_ops(self):
