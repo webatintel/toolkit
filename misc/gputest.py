@@ -173,7 +173,7 @@ python %(prog)s --run --inplace --email
         self.exec_log = '%s/exec.log' % self.result_dir
         Util.ensure_nofile(self.exec_log)
         Util.append_file(self.exec_log, 'OS%s%s' % (self.SEPARATOR, Util.HOST_OS_RELEASE))
-        self.chrome_config_dir = '%s/src/testing/buildbot' % self.PROJECT_INFO['chromium'][self.PROJECT_INFO_INDEX_ROOT_DIR]
+        self.chrome_config_dir = '%s/testing/buildbot' % self.PROJECT_INFO['chromium'][self.PROJECT_INFO_INDEX_ROOT_DIR]
         self.targets = []
 
         if args.sync:
@@ -297,11 +297,10 @@ python %(prog)s --run --inplace --email
                 virtual_project = project
 
             if self.args.inplace:
+                root_dir = self.PROJECT_INFO[project][self.PROJECT_INFO_INDEX_ROOT_DIR]
                 if project == 'chromium':
-                    root_dir = '%s/src' % self.PROJECT_INFO[project][self.PROJECT_INFO_INDEX_ROOT_DIR]
                     rev = ChromiumRepo(root_dir).get_working_dir_rev()
                 else:
-                    root_dir = self.PROJECT_INFO[project][self.PROJECT_INFO_INDEX_ROOT_DIR]
                     Util.chdir(root_dir)
                     rev = Util.get_repo_rev()
                 project_run_info[project] = [root_dir, rev]
