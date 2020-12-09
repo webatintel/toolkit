@@ -109,6 +109,8 @@ python %(prog)s --backup --root-dir d:\workspace\chrome
             virtual_project = os.path.basename(self.root_dir)
         if 'chromium' in virtual_project:
             real_project = 'chromium'
+        elif 'chrome' in virtual_project:
+            real_project = 'chromium'
         else:
             real_project = virtual_project
         self.virtual_project = virtual_project
@@ -199,7 +201,7 @@ python %(prog)s --backup --root-dir d:\workspace\chrome
                 Util.info('Begin to sync rev %s' % self.rev)
 
             if self.args.sync_reset:
-                self._execute('git reset --hard HEAD && git clean -f -d', exit_on_error=self.exit_on_error)
+                self._execute('git reset --hard HEAD && git clean -fd', exit_on_error=self.exit_on_error)
 
             if self.integer_rev:
                 self.repo.get_info(self.integer_rev)
