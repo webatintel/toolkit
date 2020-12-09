@@ -137,7 +137,8 @@ class GPUTest(Program):
         parser.add_argument('--debug', dest='debug', help='debug', action='store_true')
         parser.add_argument('--target', dest='target', help='target', default='all')
         parser.add_argument('--email', dest='email', help='email', action='store_true')
-        parser.add_argument('--local', dest='local', help='local', action='store_true')
+        parser.add_argument('--local', dest='local', help='use build at local', action='store_true')
+        parser.add_argument('--inplace', dest='inplace', help='use build inplace', action='store_true')
         parser.add_argument('--repeat', dest='repeat', help='repeat', type=int, default=1)
 
         parser.add_argument('--list', dest='list', help='list', action='store_true')
@@ -155,8 +156,9 @@ class GPUTest(Program):
 
         parser.epilog = '''
 examples:
-python %(prog)s --sync --list --build --backup --upload --email
-python %(prog)s --run
+python %(prog)s --sync --build --backup --upload --email
+python %(prog)s --run --email
+python %(prog)s --run --inplace --email
 '''
         python_ver = Util.get_python_ver()
         if python_ver[0] == 3:
@@ -285,19 +287,32 @@ python %(prog)s --run
         Util.append_file(self.exec_log, 'GPU name%s%s' % (self.SEPARATOR, gpu_name))
         Util.append_file(self.exec_log, 'GPU driver%s%s' % (self.SEPARATOR, gpu_driver))
 
-        project_info = {}
+        PROJECT_RUN_INFO_INDEX_ROOT_DIR = 0
+        PROJECT_RUN_INFO_INDEX_REV = 1
+        project_run_info = {}
         for project in sorted(self.PROJECTS):
             if project == 'chromium':
                 virtual_project = 'chromium-gputest'
             else:
                 virtual_project = project
-            if self.args.local:
-                rev_name, rev = Util.get_local_backup(virtual_project, 'latest')
+
+            if self.args.inplace:
+                if project == 'chromium':
+                    root_dir = '%s/src' % self.PROJECT_INFO[project][self.PROJECT_INFO_INDEX_ROOT_DIR]
+                    rev = ChromiumRepo(root_dir).get_working_dir_rev()
+                else:
+                    root_dir = self.PROJECT_INFO[project][self.PROJECT_INFO_INDEX_ROOT_DIR]
+                    Util.chdir(root_dir)
+                    rev = Util.get_repo_rev()
+                project_run_info[project] = [root_dir, rev]
             else:
-                rev_name, rev = Util.get_server_backup(virtual_project, 'latest')
-            project_info[project] = [rev_name, rev, '%s/%s/%s/%s' % (Util.BACKUP_DIR, Util.HOST_OS, virtual_project, rev_name)]
+                if self.args.local:
+                    rev_name, rev = Util.get_local_backup(virtual_project, 'latest')
+                else:
+                    rev_name, rev = Util.get_server_backup(virtual_project, 'latest')
+                project_run_info[project] = ['%s/%s/%s/%s' % (Util.BACKUP_DIR, Util.HOST_OS, virtual_project, rev_name), rev]
             if project == 'chromium':
-                self.chrome_config_dir = '%s/testing/buildbot' % (project_info[project][2])
+                self.chrome_config_dir = '%s/testing/buildbot' % (project_run_info[project][self.PROJECT_RUN_INFO_INDEX_ROOT_DIR])
                 self._update_target()
 
         logged_projects = []
@@ -310,7 +325,7 @@ python %(prog)s --run
 
             if project not in logged_projects:
                 logged_projects.append(project)
-                info = '%s Revision%s%s' % (project.capitalize(), self.SEPARATOR, project_info[project][1])
+                info = '%s Revision%s%s' % (project.capitalize(), self.SEPARATOR, project_run_info[project][PROJECT_RUN_INFO_INDEX_REV])
                 Util.append_file(self.exec_log, info)
 
             virtual_name = self.os_targets[target_index][self.TARGET_INDEX_VIRTUAL_NAME]
@@ -325,7 +340,7 @@ python %(prog)s --run
 
             real_name = self.os_targets[target_index][self.TARGET_INDEX_REAL_NAME]
             real_type = self.os_targets[target_index][self.TARGET_INDEX_REAL_TYPE]
-            config_cmd = 'python %s --run --root-dir %s --run-target %s --run-rev out' % (Util.GNP_SCRIPT, project_info[project][2], real_name)
+            config_cmd = 'python %s --run --root-dir %s --run-target %s --run-rev out' % (Util.GNP_SCRIPT, project_run_info[project][self.PROJECT_RUN_INFO_INDEX_ROOT_DIR], real_name)
             if Util.HOST_OS == Util.LINUX:
                 config_cmd += ' --run-mesa-rev %s' % self.args.run_mesa_rev
             run_args = self.os_targets[target_index][self.TARGET_INDEX_RUN_ARGS]
@@ -408,7 +423,7 @@ python %(prog)s --run
                 self._log_exec(timer.stop(), op, cmd)
 
                 if real_type in ['gtest_angle']:
-                    output_file = '%s/out/release/output.json' % project_info[project][2]
+                    output_file = '%s/out/release/output.json' % project_run_info[project][self.PROJECT_RUN_INFO_INDEX_ROOT_DIR]
                     if os.path.exists(output_file):
                         shutil.move(output_file, result_file)
                     else:
