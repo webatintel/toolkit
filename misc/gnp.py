@@ -107,6 +107,9 @@ python %(prog)s --backup --root-dir d:\workspace\chrome
             virtual_project = args.project
         else:
             virtual_project = os.path.basename(self.root_dir)
+            # handle repo chromium
+            if virtual_project == 'src':
+                virtual_project = os.path.basename(os.path.dirname(self.root_dir))
         if 'chromium' in virtual_project:
             real_project = 'chromium'
         elif 'chrome' in virtual_project:
@@ -117,8 +120,6 @@ python %(prog)s --backup --root-dir d:\workspace\chrome
         self.real_project = real_project
 
         if real_project == 'chromium':
-            self.root_dir = self.root_dir + '/src'
-            Util.chdir(self.root_dir)
             self.repo = ChromiumRepo(self.root_dir)
         self.backup_dir = '%s/backup' % self.root_dir
 
