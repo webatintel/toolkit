@@ -35,7 +35,7 @@ class GPUTest(Program):
     PROJECT_INFO_INDEX_ROOT_DIR = 0
     PROJECT_INFO = {
         'aquarium': [Util.PROJECT_AQUARIUM_DIR],
-        'chromium': [Util.PROJECT_CHROME_GPUTEST_DIR],
+        'chromium': [Util.PROJECT_CHROMIUMGPUTEST_DIR],
     }
     PROJECTS = sorted(PROJECT_INFO.keys())
     AQUARIUM_BASE = {
@@ -311,7 +311,7 @@ python %(prog)s --run --inplace --email
                     rev_name, rev = Util.get_server_backup(virtual_project, 'latest')
                 project_run_info[project] = ['%s/%s/%s/%s' % (Util.BACKUP_DIR, Util.HOST_OS, virtual_project, rev_name), rev]
             if project == 'chromium':
-                self.chrome_config_dir = '%s/testing/buildbot' % (project_run_info[project][self.PROJECT_RUN_INFO_INDEX_ROOT_DIR])
+                self.chrome_config_dir = '%s/testing/buildbot' % (project_run_info[project][PROJECT_RUN_INFO_INDEX_ROOT_DIR])
                 self._update_target()
 
         logged_projects = []
@@ -339,7 +339,7 @@ python %(prog)s --run --inplace --email
 
             real_name = self.os_targets[target_index][self.TARGET_INDEX_REAL_NAME]
             real_type = self.os_targets[target_index][self.TARGET_INDEX_REAL_TYPE]
-            config_cmd = 'python %s --run --root-dir %s --run-target %s --run-rev out' % (Util.GNP_SCRIPT, project_run_info[project][self.PROJECT_RUN_INFO_INDEX_ROOT_DIR], real_name)
+            config_cmd = 'python %s --run --root-dir %s --run-target %s --run-rev out' % (Util.GNP_SCRIPT, project_run_info[project][PROJECT_RUN_INFO_INDEX_ROOT_DIR], real_name)
             if Util.HOST_OS == Util.LINUX:
                 config_cmd += ' --run-mesa-rev %s' % self.args.run_mesa_rev
             run_args = self.os_targets[target_index][self.TARGET_INDEX_RUN_ARGS]
@@ -422,7 +422,7 @@ python %(prog)s --run --inplace --email
                 self._log_exec(timer.stop(), op, cmd)
 
                 if real_type in ['gtest_angle']:
-                    output_file = '%s/out/release/output.json' % project_run_info[project][self.PROJECT_RUN_INFO_INDEX_ROOT_DIR]
+                    output_file = '%s/out/release/output.json' % project_run_info[project][PROJECT_RUN_INFO_INDEX_ROOT_DIR]
                     if os.path.exists(output_file):
                         shutil.move(output_file, result_file)
                     else:
@@ -501,15 +501,19 @@ python %(prog)s --run --inplace --email
             else:
                 continue
 
+            if pass_fail or not pass_pass:
+                color = 'red'
+            else:
+                color = 'green'
             html += '''
-    <tr>
+    <tr style="background-color:%s">
       <td>%s</td>
       <td>%s</td>
       <td>%s</td>
       <td>%s</td>
       <td>%s</td>
       <td>%s</td>
-    </tr>''' % (name, time, pass_fail_info, fail_pass_info, fail_fail_info, pass_pass_info)
+    </tr>''' % (color, name, time, pass_fail_info, fail_pass_info, fail_fail_info, pass_pass_info)
 
         html += '''
   </table>
