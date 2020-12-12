@@ -358,7 +358,7 @@ python %(prog)s --backup --root-dir d:\workspace\chrome
         if self.real_project == 'aquarium':
             src_files += ['assets/', 'shaders/']
 
-        if self.virtual_project == 'chromium-gputest':
+        if self.virtual_project == 'chromiumgputest':
             src_files += ['out/release/args.gn', 'out/release/../../testing/buildbot/chromium.gpu.fyi.json', 'out/release/../../testing/buildbot/chromium.dawn.json']
 
         src_file_count = len(src_files)
