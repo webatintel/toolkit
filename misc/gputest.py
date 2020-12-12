@@ -209,8 +209,8 @@ python %(prog)s --run --inplace --email
                 self._execute('git checkout master && git pull', dryrun=dryrun)
                 Util.info('Roll Dawn in Aquarium to %s on %s' % (Util.get_repo_hash(), Util.get_repo_date()))
 
-            self._log_exec(timer.stop(), project, cmd)
-        self._log_exec(all_timer.stop())
+            self._log_exec(timer.stop(), 'Sync %s' % project, cmd)
+        self._log_exec(all_timer.stop(), 'Total Sync')
 
     def list(self):
         self._update_target()
@@ -264,8 +264,8 @@ python %(prog)s --run --inplace --email
                 self._send_email(subject=error_info)
                 Util.error(error_info)
 
-            self._log_exec(timer.stop(), project, cmd)
-        self._log_exec(all_timer.stop())
+            self._log_exec(timer.stop(), '%s %s' % (op.capitalize(), project), cmd)
+        self._log_exec(all_timer.stop(), 'Total %s' % op.capitalize())
 
     def run(self):
         all_timer = Timer()
@@ -416,7 +416,7 @@ python %(prog)s --run --inplace --email
                 cmd = '%s --run-args="%s%s"' % (config_cmd, config_args, shard_args)
                 timer = Timer()
                 self._execute(cmd, exit_on_error=False)
-                self._log_exec(timer.stop(), op, cmd)
+                self._log_exec(timer.stop(), 'Run %s' % project, cmd)
 
                 if real_type in ['gtest_angle']:
                     output_file = '%s/out/release/output.json' % project_run_info[project][PROJECT_RUN_INFO_INDEX_ROOT_DIR]
@@ -428,7 +428,7 @@ python %(prog)s --run --inplace --email
                 if args.dryrun and not args.dryrun_with_shard:
                     break
 
-        self._log_exec(all_timer.stop())
+        self._log_exec(all_timer.stop(), 'Total Run')
 
     def batch(self):
         self.sync()
@@ -457,7 +457,7 @@ python %(prog)s --run --inplace --email
         for line in open(self.exec_log):
             fields = line.rstrip('\n').split(self.SEPARATOR)
             name = fields[0]
-            if not re.match('sync|build|run', name, re.I):
+            if not re.match('sync|build|backup|upload|run', name, re.I):
                 html += '''
       <li>%s: %s</li>''' % (name, fields[1])
         html += '''
@@ -479,9 +479,10 @@ python %(prog)s --run --inplace --email
         for line in open(self.exec_log):
             fields = line.split(self.SEPARATOR)
             name = fields[0]
-            if re.match('sync|build', name, re.I):
+            if re.match('sync|build|backup|upload', name, re.I):
                 time = fields[1]
                 pass_fail_info = fail_pass_info = fail_fail_info = pass_pass_info = ''
+                color = 'white'
             elif re.match('run', name, re.I):
                 op = name[4:]
                 result_file = '%s/%s.log' % (self.result_dir, op)
@@ -495,13 +496,15 @@ python %(prog)s --run --inplace --email
                     pass_pass_info = '%s<p>%s' % (len(pass_pass), '<p>'.join(pass_pass[:self.MAX_FAIL_IN_REPORT]))
                 else:
                     pass_pass_info = len(pass_pass)
+
+                if pass_fail or not pass_pass:
+                    color = 'red'
+                else:
+                    color = 'green'
             else:
                 continue
 
-            if pass_fail or not pass_pass:
-                color = 'red'
-            else:
-                color = 'green'
+
             html += '''
     <tr style="background-color:%s">
       <td>%s</td>
@@ -648,12 +651,8 @@ python %(prog)s --run --inplace --email
             for target in targets:
                 Util.debug(target)
 
-    def _log_exec(self, time, op='', cmd=''):
-        if op:
-            info = '%s %s' % (inspect.stack()[1][3].capitalize(), op)
-        else:
-            info = 'Total %s' % inspect.stack()[1][3].capitalize()
-        info += '%s%s' % (self.SEPARATOR, time)
+    def _log_exec(self, time, op, cmd=''):
+        info = '%s%s%s' % (op, self.SEPARATOR, time)
         if cmd:
             info += '%s%s' % (self.SEPARATOR, cmd)
         Util.info(info)
