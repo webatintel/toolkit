@@ -200,9 +200,8 @@ python %(prog)s --run --inplace --email
             cmd = 'python %s --root-dir %s --sync --runhooks' % (Util.GNP_SCRIPT, root_dir)
             dryrun = self.args.dryrun
             if self._execute(cmd, exit_on_error=False, dryrun=dryrun)[0]:
-                error_info = '[GPUTest] Project %s sync failed' % project
-                if self.args.email:
-                    Util.send_email(self.EMAIL_SENDER, self.EMAIL_ADMIN, error_info, '')
+                error_info = 'Project %s sync failed' % project
+                self._send_email(subject=error_info)
                 Util.error(error_info)
 
             if project == 'aquarium' and self.args.sync_roll_dawn:
@@ -255,15 +254,14 @@ python %(prog)s --run --inplace --email
                 cmd = 'python %s --root-dir %s --backup --backup-target %s' % (Util.GNP_SCRIPT, root_dir, ','.join(project_targets[project]))
             elif op == 'upload':
                 if project == 'chromium':
-                    virtual_project = 'chromium-gputest'
+                    virtual_project = 'chromiumgputest'
                 else:
                     virtual_project = project
                 cmd = 'python %s --root-dir %s --project %s --upload' % (Util.GNP_SCRIPT, root_dir, virtual_project)
 
             if self._execute(cmd, exit_on_error=False, dryrun=self.args.dryrun)[0]:
-                error_info = '[GPUTest] Project %s %s failed' % (project, op)
-                if self.args.email:
-                    Util.send_email(self.EMAIL_SENDER, self.EMAIL_ADMIN, error_info, '')
+                error_info = 'Project %s %s failed' % (project, op)
+                self._send_email(subject=error_info)
                 Util.error(error_info)
 
             self._log_exec(timer.stop(), project, cmd)
@@ -277,9 +275,8 @@ python %(prog)s --run --inplace --email
             cmd = 'python %s --root-dir %s --sync --build' % (Util.MESA_SCRIPT, Util.PROJECT_MESA_DIR)
             dryrun = self.args.dryrun
             if self._execute(cmd, exit_on_error=False, dryrun=dryrun)[0]:
-                error_info = '[GPUTest] Project Mesa build failed'
-                if self.args.email:
-                    Util.send_email(self.EMAIL_SENDER, self.EMAIL_ADMIN, error_info, '')
+                error_info = 'Project Mesa build failed'
+                self._send_email(subject=error_info)
                 Util.error(error_info)
             Util.set_mesa(Util.PROJECT_MESA_BACKUP_DIR, self.args.run_mesa_rev)
 
@@ -292,7 +289,7 @@ python %(prog)s --run --inplace --email
         project_run_info = {}
         for project in sorted(self.PROJECTS):
             if project == 'chromium':
-                virtual_project = 'chromium-gputest'
+                virtual_project = 'chromiumgputest'
             else:
                 virtual_project = project
 
@@ -318,7 +315,7 @@ python %(prog)s --run --inplace --email
         for index, target_index in enumerate(self.target_indexes):
             project = self.os_targets[target_index][self.TARGET_INDEX_PROJECT]
             if project == 'chromium':
-                virtual_project = '%s-gputest' % project
+                virtual_project = 'chromiumgputest'
             else:
                 virtual_project = project
 
@@ -696,6 +693,11 @@ python %(prog)s --run --inplace --email
             pass_fail, fail_pass, fail_fail, pass_pass = Util.get_test_result(result_file, type)
 
         return pass_fail, fail_pass, fail_fail, pass_pass
+
+    def _send_email(self, subject='', content=''):
+        if self.args.email:
+            subject = '[GPUTest] %s %s' % (Util.HOST_NAME, subject)
+            Util.send_email(self.EMAIL_SENDER, self.EMAIL_ADMIN, subject, content)
 
 if __name__ == '__main__':
     GPUTest()
