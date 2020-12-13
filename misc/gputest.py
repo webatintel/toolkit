@@ -506,7 +506,7 @@ python %(prog)s --run --inplace --email
 
 
             html += '''
-    <tr style="background-color:%s">
+    <tr style="color:%s">
       <td>%s</td>
       <td>%s</td>
       <td>%s</td>
