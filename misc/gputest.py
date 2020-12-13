@@ -272,13 +272,20 @@ python %(prog)s --run --inplace --email
         args = self.args
 
         if Util.HOST_OS == Util.LINUX and self.args.run_mesa_rev == 'latest':
-            cmd = 'python %s --root-dir %s --sync --build' % (Util.MESA_SCRIPT, Util.PROJECT_MESA_DIR)
-            dryrun = self.args.dryrun
-            if self._execute(cmd, exit_on_error=False, dryrun=dryrun)[0]:
-                error_info = 'Project Mesa build failed'
-                self._send_email(subject=error_info)
-                Util.error(error_info)
-            Util.set_mesa(Util.PROJECT_MESA_BACKUP_DIR, self.args.run_mesa_rev)
+            if False:
+                cmd = 'python %s --root-dir %s --sync --build' % (Util.MESA_SCRIPT, Util.PROJECT_MESA_DIR)
+                dryrun = self.args.dryrun
+                if self._execute(cmd, exit_on_error=False, dryrun=dryrun)[0]:
+                    error_info = 'Project Mesa build failed'
+                    self._send_email(subject=error_info)
+                    Util.error(error_info)
+                Util.set_mesa(Util.PROJECT_MESA_BACKUP_DIR, self.args.run_mesa_rev)
+
+            if self.args.local:
+                rev_name, rev = Util.get_local_backup('mesa', self.args.run_mesa_rev)
+            else:
+                rev_name, rev = Util.get_server_backup('mesa', self.args.run_mesa_rev)
+            Util.set_mesa('%s/%s/%s/%s' % (Util.BACKUP_DIR, Util.HOST_OS, 'mesa', rev_name), self.args.run_mesa_rev)
 
         gpu_name, gpu_driver = Util.get_gpu_info()
         Util.append_file(self.exec_log, 'GPU name%s%s' % (self.SEPARATOR, gpu_name))
