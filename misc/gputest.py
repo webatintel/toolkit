@@ -416,7 +416,7 @@ python %(prog)s --run --inplace --email
                 cmd = '%s --run-args="%s%s"' % (config_cmd, config_args, shard_args)
                 timer = Timer()
                 self._execute(cmd, exit_on_error=False)
-                self._log_exec(timer.stop(), 'Run %s' % project, cmd)
+                self._log_exec(timer.stop(), 'Run %s' % op, cmd)
 
                 if real_type in ['gtest_angle']:
                     output_file = '%s/out/release/output.json' % project_run_info[project][PROJECT_RUN_INFO_INDEX_ROOT_DIR]
