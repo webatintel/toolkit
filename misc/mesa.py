@@ -36,6 +36,7 @@ python %(prog)s --revtohash 1
         parser.add_argument('--build-target', dest='build_target', help='build target', default='all')
         parser.add_argument('--build-force', dest='build_force', help='no reset of source code', action='store_true')
         parser.add_argument('--build-novulkan', dest='build_novulkan', help='build novulkan', action='store_true')
+        parser.add_argument('--upload', dest='upload', help='upload', action='store_true')
         parser.add_argument('--run', dest='run', help='run')
         parser.add_argument('--type', dest='type', help='type', default='i965')
         parser.add_argument('--branch', dest='branch', help='branch', default='master')
@@ -60,6 +61,7 @@ python %(prog)s --revtohash 1
         self.build_force = build_force
         self.drm_dir = 'drm-master'
         self.mesa_dir = 'mesa-%s' % self.branch
+        self.backup_dir = '%s/backup' % self.root_dir
         if args.build_target == 'all':
             self.targets = ['drm', 'mesa']
         else:
@@ -119,6 +121,19 @@ python %(prog)s --revtohash 1
             self._build_one(i, self._rev_to_hash(i))
             i += 1
 
+    def upload(self):
+        rev_name, _ = Util.get_backup_dir(self.backup_dir, 'latest')
+        rev_dir = '%s/%s' % (self.backup_dir, rev_name)
+        rev_backup_file = '%s.tar.gz' % rev_dir
+        if not os.path.exists(rev_backup_file):
+            Util.chdir(self.backup_dir)
+            Util.execute('tar zcf %s.tar.gz %s' % (rev_name, rev_name))
+
+        if Util.check_server_backup(Util.BACKUP_SERVER, 'mesa', os.path.basename(rev_backup_file)):
+            Util.info('Server already has rev %s' % rev_backup_file)
+        else:
+            Util.execute('scp %s wp@%s:/workspace/backup/%s/mesa/' % (rev_backup_file, Util.BACKUP_SERVER, Util.HOST_OS))
+
     def revtohash(self):
         tmp_rev = self.args.revtohash
         Util.info('The hash for rev %s is %s' % (tmp_rev, self._rev_to_hash(tmp_rev)))
@@ -148,9 +163,9 @@ python %(prog)s --revtohash 1
         Util.error('Could not find rev for hash %s' % hash)
 
     def _build_one(self, rev, hash):
-        backup_dir = '%s/backup/%s' % (self.root_dir, Util.cal_backup_dir())
+        rev_dir = '%s/backup/%s' % (self.root_dir, Util.cal_backup_dir())
 
-        if (os.path.exists(backup_dir) or os.path.exists('%s' % backup_dir)) and os.path.exists(backup_dir + '/lib/dri/i965_dri.so') and not self.build_force:
+        if (os.path.exists(rev_dir) or os.path.exists('%s' % rev_dir)) and os.path.exists(rev_dir + '/lib/dri/i965_dri.so') and not self.build_force:
             Util.info('Rev %s has been built, so just skip it' % rev)
             return
 
@@ -165,7 +180,7 @@ python %(prog)s --revtohash 1
             Util.chdir('%s/%s' % (self.root_dir, self.drm_dir))
             Util.ensure_nodir('build')
             Util.ensure_dir('build')
-            build_cmd = 'meson build/ -Dprefix=%s -Dlibkms=true -Dintel=true -Dvmwgfx=false -Dradeon=false -Damdgpu=false -Dnouveau=false' % backup_dir
+            build_cmd = 'meson build/ -Dprefix=%s -Dlibkms=true -Dintel=true -Dvmwgfx=false -Dradeon=false -Damdgpu=false -Dnouveau=false' % rev_dir
             if self.build_type == 'release':
                 build_cmd += ' -Dbuildtype=release'
             elif self.build_type == 'debug':
@@ -174,7 +189,7 @@ python %(prog)s --revtohash 1
 
             result = self._execute(build_cmd)
             if result[0]:
-                Util.ensure_nodir(backup_dir)
+                Util.ensure_nodir(rev_dir)
                 return False
 
         if 'mesa' in self.targets:
@@ -188,8 +203,8 @@ python %(prog)s --revtohash 1
             # update git hash
             result = Util.get_repo_hash()
             self._execute('echo "#define MESA_GIT_SHA1 \\\"git-%s\\\"" >src/mesa/main/git_sha1.h' % result[1].split()[0])
-            build_cmd = 'PKG_CONFIG_PATH=%s/lib/x86_64-linux-gnu/pkgconfig meson build/ -Dprefix=%s -Dvulkan-drivers=intel -Ddri-drivers=i915,i965 -Ddri-drivers-path=%s/lib/dri -Dgles1=true -Dgles2=true -Dshared-glapi=true -Dplatforms=x11 -Dgbm=true -Ddri3=true -Dgallium-drivers=iris' % (backup_dir, backup_dir, backup_dir)
-            relative_backup_dir = backup_dir
+            build_cmd = 'PKG_CONFIG_PATH=%s/lib/x86_64-linux-gnu/pkgconfig meson build/ -Dprefix=%s -Dvulkan-drivers=intel -Ddri-drivers=i915,i965 -Ddri-drivers-path=%s/lib/dri -Dgles1=true -Dgles2=true -Dshared-glapi=true -Dplatforms=x11 -Dgbm=true -Ddri3=true -Dgallium-drivers=iris' % (rev_dir, rev_dir, rev_dir)
+            relative_backup_dir = rev_dir
             if not self.args.build_novulkan:
                 build_cmd += ' -Dvulkan-drivers=intel'
             if self.build_type == 'release':
@@ -200,10 +215,10 @@ python %(prog)s --revtohash 1
 
             result = self._execute(build_cmd)
             if result[0]:
-                Util.ensure_nodir(backup_dir)
+                Util.ensure_nodir(rev_dir)
                 return False
 
-            for line in fileinput.input('%s/share/vulkan/icd.d/intel_icd.x86_64.json' % backup_dir, inplace=1):
+            for line in fileinput.input('%s/share/vulkan/icd.d/intel_icd.x86_64.json' % rev_dir, inplace=1):
                 match = re.search('"library_path": "(.*)"', line)
                 if match:
                     line = line.replace(match.group(1), '../../../lib/x86_64-linux-gnu/libvulkan_intel.so')
@@ -239,6 +254,8 @@ python %(prog)s --revtohash 1
             self.sync()
         if args.build:
             self.build()
+        if args.upload:
+            self.upload()
         if args.revtohash:
             self.revtohash()
         if args.hashtorev:
