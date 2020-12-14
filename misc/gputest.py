@@ -286,6 +286,7 @@ python %(prog)s --run --inplace --email
             else:
                 rev_name, rev = Util.get_server_backup('mesa', self.args.run_mesa_rev)
             Util.set_mesa('%s/%s/%s/%s' % (Util.BACKUP_DIR, Util.HOST_OS, 'mesa', rev_name), self.args.run_mesa_rev)
+            Util.append_file(self.exec_log, 'Mesa Revision%s%s' % (self.SEPARATOR, rev_name))
 
         gpu_name, gpu_driver = Util.get_gpu_info()
         Util.append_file(self.exec_log, 'GPU name%s%s' % (self.SEPARATOR, gpu_name))
