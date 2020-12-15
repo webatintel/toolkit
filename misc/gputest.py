@@ -368,9 +368,10 @@ python %(prog)s --run --inplace --email
                     run_args.remove(run_arg)
                 elif run_arg == '--target=Release_x64':
                     run_args[i] = '--target=release'
-                # we use 5912 and 3e98 in test
-                elif run_arg == '3e92':
-                    run_args += ['--expected-device-id', '3e98']
+            if '--expected-device-id' in run_args:
+                for device_id in ['3e92', '3e98', '5912']:
+                    if device_id not in run_args:
+                        run_args += ['--expected-device-id', device_id]
 
             config_args = ''
             if run_args:
@@ -507,7 +508,7 @@ python %(prog)s --run --inplace --email
                 else:
                     pass_pass_info = len(pass_pass)
 
-                if pass_fail or not pass_pass:
+                if pass_fail:
                     color = 'red'
                 else:
                     color = 'green'
@@ -687,7 +688,11 @@ python %(prog)s --run --inplace --email
                 if match:
                     run_fps = int(match.group(1))
                     backend = virtual_name.replace('aquarium_', '')
-                    base_fps = self.AQUARIUM_BASE[Util.HOST_OS][backend]
+                    if self.args.dryrun:
+                        base_fps = 0
+                    else:
+                        base_fps = self.AQUARIUM_BASE[Util.HOST_OS][backend]
+
                     if run_fps < base_fps:
                         pass_fail.append('%s -> %s' % (base_fps, run_fps))
                     else:
