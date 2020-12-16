@@ -88,7 +88,7 @@ class GPUTest(Program):
         'vulkan_tests': ['gtest_chrome', 'BasicVulkanTest'],
 
         'info_collection_tests': ['telemetry_gpu_integration_test', 'InfoCollection_basic'],
-        'trace_test': ['telemetry_gpu_integration_test', 'TraceTest_2DCanvasWebGL'],
+        'trace_test': ['telemetry_gpu_integration_test', 'OverlayModeTraceTest_DirectComposition_Underlay_DXVA'],
         'webgl2_conformance_d3d11_passthrough_tests': ['telemetry_gpu_integration_test', 'conformance/attribs'],
         'webgl2_conformance_gl_passthrough_tests': ['telemetry_gpu_integration_test', 'conformance/attribs'],
         'webgl2_conformance_validating_tests': ['telemetry_gpu_integration_test', 'conformance/attribs'],   # d3d11
