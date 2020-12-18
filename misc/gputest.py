@@ -447,8 +447,7 @@ python %(prog)s --run --inplace --email
         self.run()
 
     def _report(self):
-        html = '''
-<head>
+        html = '''<head>
   <meta http-equiv="content-type" content="text/html; charset=windows-1252">
   <style type="text/css">
     table {
@@ -468,13 +467,15 @@ python %(prog)s --run --inplace --email
         for line in open(self.exec_log):
             fields = line.rstrip('\n').split(self.SEPARATOR)
             name = fields[0]
-            if not re.match('sync|build|backup|upload|run', name, re.I):
+            if not re.match('run', name, re.I):
                 html += '''
       <li>%s: %s</li>''' % (name, fields[1])
         html += '''
-      <li>Report: %s</li>''' % self.timestamp
-        html += '''
-    </ul>
+      <li>Report: %s</li>
+    </ul>''' % self.timestamp
+
+        has_details = False
+        details_html = '''
   <h2>Details</h2>
   <table>
     <tr>
@@ -490,11 +491,8 @@ python %(prog)s --run --inplace --email
         for line in open(self.exec_log):
             fields = line.split(self.SEPARATOR)
             name = fields[0]
-            if re.match('sync|build|backup|upload', name, re.I):
-                time = fields[1]
-                pass_fail_info = fail_pass_info = fail_fail_info = pass_pass_info = ''
-                color = 'white'
-            elif re.match('run', name, re.I):
+            if re.match('run', name, re.I):
+                has_details = True
                 op = name[4:]
                 result_file = '%s/%s.log' % (self.result_dir, op)
                 pass_fail, fail_pass, fail_fail, pass_pass = self._parse_result(result_file)
@@ -515,8 +513,7 @@ python %(prog)s --run --inplace --email
             else:
                 continue
 
-
-            html += '''
+            details_html += '''
     <tr style="color:%s">
       <td>%s</td>
       <td>%s</td>
@@ -526,8 +523,12 @@ python %(prog)s --run --inplace --email
       <td>%s</td>
     </tr>''' % (color, name, time, pass_fail_info, fail_pass_info, fail_fail_info, pass_pass_info)
 
+        details_html += '''
+  </table>'''
+
+        if has_details:
+            html += details_html
         html += '''
-  </table>
 </body>'''
         report_file = '%s/report.html' % self.result_dir
         Util.ensure_nofile(report_file)
