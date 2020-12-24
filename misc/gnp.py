@@ -101,7 +101,7 @@ python %(prog)s --backup --root-dir d:\workspace\chrome
             super(Gnp, self).__init__(parser)
         args = self.args
 
-        Util.prepend_path(Util.PROJECT_DEPOT_TOOLS)
+        Util.prepend_path(Util.PROJECT_DEPOT_TOOLS_DIR)
 
         if args.project:
             virtual_project = args.project
@@ -514,13 +514,13 @@ python %(prog)s --backup --root-dir d:\workspace\chrome
         if verbose:
             cmd += ' -v'
 
-        if not Util.has_depot_tools_in_path() and os.path.exists(Util.PROJECT_DEPOT_TOOLS):
-            Util.prepend_path(Util.PROJECT_DEPOT_TOOLS)
+        if not Util.has_depot_tools_in_path() and os.path.exists(Util.PROJECT_DEPOT_TOOLS_DIR):
+            Util.prepend_path(Util.PROJECT_DEPOT_TOOLS_DIR)
 
         self._execute(cmd=cmd, exit_on_error=self.exit_on_error)
 
-        if not Util.has_depot_tools_in_path() and os.path.exists(Util.PROJECT_DEPOT_TOOLS):
-            Util.remove_path(Util.PROJECT_DEPOT_TOOLS)
+        if not Util.has_depot_tools_in_path() and os.path.exists(Util.PROJECT_DEPOT_TOOLS_DIR):
+            Util.remove_path(Util.PROJECT_DEPOT_TOOLS_DIR)
 
     def _chromium_sync_integer_rev(self):
         if self.integer_rev:
