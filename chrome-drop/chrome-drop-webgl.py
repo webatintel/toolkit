@@ -73,9 +73,8 @@ python %(prog)s --batch
         args = self.args
 
         root_dir = self.root_dir
-        self.chrome_dir = '%s/chromium' % root_dir
-        self.chrome_src_dir = '%s/src' % self.chrome_dir
-        self.chrome_backup_dir = '%s/backup' % self.chrome_src_dir
+        self.chrome_dir = '%s/chromium/src' % root_dir
+        self.chrome_backup_dir = '%s/backup' % self.chrome_dir
         if args.mesa_dir:
             self.mesa_dir = args.mesa_dir
         else:
@@ -155,7 +154,7 @@ python %(prog)s --batch
             common_cmd += ' --browser=exact --browser-executable=%s' % chrome
         else:
             common_cmd += ' --browser=%s' % self.run_chrome
-            Util.chdir(self.chrome_src_dir)
+            Util.chdir(self.chrome_dir)
             self.chrome_rev = self.run_chrome
             if Util.HOST_OS == Util.DARWIN:
                 if self.run_chrome == 'canary':
