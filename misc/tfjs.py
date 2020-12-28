@@ -31,7 +31,7 @@ from util.base import * # pylint: disable=unused-wildcard-import
 
 class Tfjs(Program):
     def __init__(self, parser):
-        parser.add_argument('--provision', dest='provision', help='provision', action='store_true')
+        parser.add_argument('--model', dest='model', help='model', action='store_true')
         parser.add_argument('--build', dest='build', help='build')
         parser.add_argument('--run', dest='run', help='run as http server', action='store_true')
         parser.epilog = '''
@@ -46,22 +46,15 @@ python %(prog)s --build --run
             super(Tfjs, self).__init__(parser)
         args = self.args
 
-        self.tfjs_dir = '%s/tfjs' % self.root_dir
-
-        if args.provision:
-            self.provision()
+        if args.model:
+            self.model()
         if args.build:
             self.build()
         if args.run:
             self.run()
 
-    def provision(self):
-        # clone tfjs
-        if not os.path.exists(self.tfjs_dir):
-            self._execute('git clone https://github.com/webatintel/tfjs -b tfjs_2.7.0')
-
-        # download models
-        model_dir = '%s/e2e/benchmarks/local-benchmark/savedmodel' % self.tfjs_dir
+    def model(self):
+        model_dir = '%s/e2e/benchmarks/local-benchmark/savedmodel' % self.root_dir
         Util.ensure_dir(model_dir)
 
         files = [
@@ -87,14 +80,14 @@ python %(prog)s --build --run
 
         for target in build_targets:
             if target == 'core':
-                Util.chdir('%s/tfjs-core' % self.tfjs_dir)
+                Util.chdir('%s/tfjs-core' % self.root_dir)
                 self._execute('yarn && yarn tsc && yarn rollup -c --npm')
             elif target == 'webgpu':
-                Util.chdir('%s/tfjs-backend-webgpu' % self.tfjs_dir)
+                Util.chdir('%s/tfjs-backend-webgpu' % self.root_dir)
                 self._execute('yarn && yarn build')
 
     def run(self):
-        Util.chdir(self.tfjs_dir)
+        Util.chdir(self.root_dir)
         self._execute('npx http-server')
 
 if __name__ == '__main__':
