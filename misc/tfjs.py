@@ -76,7 +76,7 @@ python %(prog)s --build --run
         if self.args.build == 'all':
             build_targets = ['core', 'webgpu']
         else:
-            build_targets = [self.args.build]
+            build_targets = self.args.build.split(',')
 
         for target in build_targets:
             if target == 'core':
