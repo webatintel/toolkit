@@ -55,6 +55,7 @@ python %(prog)s --batch
             super(Angle, self).__init__(parser)
         args = self.args
 
+        self.result_dir = '%s/result/%s' % (self.root_dir, self.timestamp)
         self.angle_dir = '%s/angle' % self.root_dir
         self._handle_ops()
 
@@ -68,12 +69,47 @@ python %(prog)s --batch
 
     def run(self):
         cmd = 'python %s --run --run-target angle_e2e --run-rev latest --root-dir %s' % (Util.GNP_SCRIPT, self.angle_dir)
+        result_file = '%s/output.json' % self.result_dir
+        run_args = '--gtest_output=json:%s' % result_file
+        if self.args.dryrun:
+            run_args += ' --gtest_filter=*EGLAndroidFrameBufferTargetTest*'
+        cmd += ' --run-args="%s"' % run_args
         self._execute(cmd)
+        self.report()
+
+    def report(self):
+        if self.args.report:
+            self.result_dir = self.args.report
+
+        regression_count = 0
+        summary = 'Final summary:\n'
+        details = 'Final details:\n'
+
+        for result_file in os.listdir(self.result_dir):
+            if result_file in ['exec.log', 'report.txt']:
+                continue
+            pass_fail, fail_pass, fail_fail, pass_pass = Util.get_test_result('%s/%s' % (self.result_dir, result_file), 'angle')
+            regression_count += len(pass_fail)
+            result = '%s: PASS_FAIL %s, FAIL_PASS %s, FAIL_FAIL %s PASS_PASS %s\n' % (os.path.splitext(result_file)[0], len(pass_fail), len(fail_pass), len(fail_fail), len(pass_pass))
+            summary += result
+            if pass_fail:
+                result += '[PASS_FAIL]\n%s\n' % '\n'.join(pass_fail[:self.MAX_FAIL_IN_REPORT])
+            if fail_pass:
+                result += '[FAIL_PASS]\n%s\n' % '\n'.join(fail_pass[:self.MAX_FAIL_IN_REPORT])
+            details += result
+
+        Util.info(details)
+        Util.info(summary)
+
+        report_file = '%s/report.txt' % self.result_dir
+        Util.append_file(report_file, summary)
+        Util.append_file(report_file, details)
 
     def batch(self):
         self.sync()
         self.build()
         self.run()
+        self.report()
 
     def _handle_ops(self):
         args = self.args
@@ -85,6 +121,8 @@ python %(prog)s --batch
             self.run()
         if args.batch:
             self.batch()
+        if args.report:
+            self.report()
 
 if __name__ == '__main__':
     Angle()

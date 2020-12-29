@@ -242,7 +242,7 @@ python %(prog)s --batch
         details = 'Final details:\n'
 
         for result_file in os.listdir(self.result_dir):
-            if result_file == 'exec.log':
+            if result_file in ['exec.log', 'report.txt']:
                 continue
             pass_fail, fail_pass, fail_fail, pass_pass = Util.get_test_result('%s/%s' % (self.result_dir, result_file), 'gtest_angle')
             regression_count += len(pass_fail)
