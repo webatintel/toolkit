@@ -270,6 +270,7 @@ python %(prog)s --run --inplace --email
     def run(self):
         all_timer = Timer()
         args = self.args
+        Util.clear_proxy()
 
         if Util.HOST_OS == Util.LINUX and self.args.run_mesa_rev == 'latest':
             if True:
