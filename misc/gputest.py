@@ -291,9 +291,10 @@ python %(prog)s --run --inplace --email
 
             Util.append_file(self.exec_log, 'Mesa Revision%s%s' % (self.SEPARATOR, rev_name))
 
-        gpu_name, gpu_driver = Util.get_gpu_info()
+        gpu_name, gpu_driver, gpu_device_id = Util.get_gpu_info()
         Util.append_file(self.exec_log, 'GPU name%s%s' % (self.SEPARATOR, gpu_name))
         Util.append_file(self.exec_log, 'GPU driver%s%s' % (self.SEPARATOR, gpu_driver))
+        Util.append_file(self.exec_log, 'GPU device id%s%s' % (self.SEPARATOR, gpu_device_id))
 
         PROJECT_RUN_INFO_INDEX_ROOT_DIR = 0
         PROJECT_RUN_INFO_INDEX_REV = 1
@@ -370,9 +371,9 @@ python %(prog)s --run --inplace --email
                 elif run_arg == '--target=Release_x64':
                     run_args[i] = '--target=release'
             if '--expected-device-id' in run_args:
-                for device_id in ['3e92', '3e98', '5912']:
-                    if device_id not in run_args:
-                        run_args += ['--expected-device-id', device_id]
+                _, _, gpu_device_id = Util.get_gpu_info()
+                if gpu_device_id not in run_args:
+                    run_args += ['--expected-device-id', gpu_device_id]
 
             config_args = ''
             if run_args:

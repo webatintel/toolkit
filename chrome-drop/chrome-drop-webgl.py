@@ -131,9 +131,10 @@ python %(prog)s --batch
         if Util.HOST_OS == Util.LINUX:
             self.run_mesa_rev = Util.set_mesa(self.mesa_backup_dir, self.run_mesa_rev)
 
-        gpu_name, gpu_driver = Util.get_gpu_info()
+        gpu_name, gpu_driver, gpu_device_id = Util.get_gpu_info()
         Util.append_file(self.exec_log, 'GPU name%s%s' % (self.SEPARATOR, gpu_name))
         Util.append_file(self.exec_log, 'GPU driver%s%s' % (self.SEPARATOR, gpu_driver))
+        Util.append_file(self.exec_log, 'GPU device id%s%s' % (self.SEPARATOR, gpu_device_id))
 
         common_cmd = 'vpython content/test/gpu/run_gpu_integration_test.py webgl_conformance --disable-log-uploads'
         if self.run_chrome == 'build':
