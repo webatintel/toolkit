@@ -101,7 +101,7 @@ python %(prog)s --backup --root-dir d:\workspace\chrome
             super(Gnp, self).__init__(parser)
         args = self.args
 
-        Util.prepend_path(Util.PROJECT_DEPOT_TOOLS_DIR)
+        Util.prepend_path('%s:%s/python-bin' % (Util.PROJECT_DEPOT_TOOLS_DIR, Util.PROJECT_DEPOT_TOOLS_DIR))
 
         if args.project:
             virtual_project = args.project
@@ -513,9 +513,6 @@ python %(prog)s --backup --root-dir d:\workspace\chrome
 
         if verbose:
             cmd += ' -v'
-
-        if not Util.has_depot_tools_in_path() and os.path.exists(Util.PROJECT_DEPOT_TOOLS_DIR):
-            Util.prepend_path(Util.PROJECT_DEPOT_TOOLS_DIR)
 
         self._execute(cmd=cmd, exit_on_error=self.exit_on_error)
 
