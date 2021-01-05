@@ -67,6 +67,7 @@ python %(prog)s --build --run
 
         for file in files:
             file_path = '%s/%s' % (model_dir, file)
+            file_path = Util.format_slash(file_path)
             if os.path.exists(file_path):
                 continue
             Util.ensure_dir(os.path.dirname(file_path))
