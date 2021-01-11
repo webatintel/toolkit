@@ -484,7 +484,7 @@ python %(prog)s --backup --root-dir d:\workspace\chrome
                 archive_url = '"https://www.googleapis.com/download/storage/v1/b/chromium-browser-snapshots/o/Android%2F' + rev + '%2Fchrome-android.zip?generation=1542192867201693&alt=media"'
             else:
                 archive_url = 'http://commondatastorage.googleapis.com/chromium-browser-snapshots/%s%s/%s/chrome-%s.zip' % (target_os_tmp, target_arch_tmp, rev, target_os_tmp2)
-            self._execute('%s %s --show-progress -O %s' % (Util.WGET, archive_url, rev_zip), exit_on_error=self.exit_on_error)
+            self._execute('%s %s --show-progress -O %s' % (ScriptRepo.WGET_FILE, archive_url, rev_zip), exit_on_error=self.exit_on_error)
             if (os.path.getsize(rev_zip) == 0):
                 Util.warning('Could not find revision %s' % rev)
                 self._execute('rm %s' % rev_zip, exit_on_error=self.exit_on_error)

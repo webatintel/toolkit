@@ -71,7 +71,7 @@ python %(prog)s --build --run
             if os.path.exists(file_path):
                 continue
             Util.ensure_dir(os.path.dirname(file_path))
-            self._execute('%s https://storage.googleapis.com/tfjs-models/savedmodel/%s -O %s' % (Util.WGET, file, file_path))
+            self._execute('%s https://storage.googleapis.com/tfjs-models/savedmodel/%s -O %s' % (ScriptRepo.WGET_FILE, file, file_path))
 
     def build(self):
         if self.args.build == 'all':
