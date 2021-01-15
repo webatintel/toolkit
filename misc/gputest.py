@@ -358,7 +358,7 @@ python %(prog)s --run --inplace --email
                     virtual_names_to_remove.append(tmp_virtual_name)
             for i, run_arg in reversed(list(enumerate(run_args))):
                 if run_arg.startswith('--extra-browser-args'):
-                    run_arg = run_arg.replace('--extra-browser-args=', '')
+                    run_arg = run_arg.replace('--extra-browser-args=', '').replace('--enable-logging=stderr ', '')
                     run_args[i] = '--extra-browser-args=\\\"%s --disable-backgrounding-occluded-windows\\\"' % run_arg
                 elif run_arg == '--browser=release_x64':
                     run_args[i] = '--browser=release'
