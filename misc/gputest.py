@@ -207,7 +207,7 @@ python %(prog)s --run --inplace --email
             if project == 'aquarium' and self.args.sync_roll_dawn:
                 Util.chdir('%s/third_party/dawn' % root_dir)
                 self._execute('git checkout master && git pull', dryrun=dryrun)
-                Util.info('Roll Dawn in Aquarium to %s on %s' % (Util.get_repo_hash(), Util.get_repo_date()))
+                Util.info('Roll Dawn in Aquarium to %s on %s' % (Util.get_working_dir_hash(), Util.get_working_dir_date()))
 
             self._log_exec(timer.stop(), 'Sync %s' % project, cmd)
         self._log_exec(all_timer.stop(), 'Total Sync')
