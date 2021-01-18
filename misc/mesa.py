@@ -163,12 +163,10 @@ python %(prog)s --revtohash 1
         Util.error('Could not find rev for hash %s' % hash)
 
     def _build_one(self, rev, hash):
-        rev_dir = '%s/backup/%s' % (self.root_dir, Util.cal_backup_dir())
-
-        if (os.path.exists(rev_dir) or os.path.exists('%s' % rev_dir)) and os.path.exists(rev_dir + '/lib/dri/i965_dri.so') and not self.build_force:
+        rev_dir = '%s/backup/%s' % (self.root_dir, Util.cal_backup_dir(rev=rev))
+        if os.path.exists(rev_dir) and os.path.exists('%s/lib/dri/iris_dri.so' % rev_dir) and not self.build_force:
             Util.info('Rev %s has been built, so just skip it' % rev)
             return
-
         Util.info('Begin to build revision %s, hash %s' % (rev, hash))
 
         if self.args.clean or not self.build_force:
