@@ -127,7 +127,7 @@ class GPUTest(Program):
     EMAIL_ADMIN = 'yang.gu@intel.com'
     EMAIL_TO = 'yang.gu@intel.com'
 
-    MAX_FAIL_IN_REPORT = 20
+    MAX_FAIL_IN_REPORT = 30
 
     SEPARATOR = '|'
 
