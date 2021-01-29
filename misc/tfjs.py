@@ -61,9 +61,16 @@ python %(prog)s --build --run
             'posenet/resnet50/float/model-stride32.json',
             'posenet/mobilenet/quant2/075/model-stride16.json',
             'posenet/mobilenet/quant2/075/group1-shard1of1.bin',
+            'bodypix/mobilenet/float/075/model-stride16.json',
+            'bodypix/mobilenet/float/075/group1-shard1of2.bin',
+            'bodypix/mobilenet/float/075/group1-shard2of2.bin',
+            'bodypix/resnet50/float/model-stride32.json',
         ]
         for i in range(1, 24):
             files.append('posenet/resnet50/float/group1-shard%sof23.bin' % i)
+
+        for i in range(1, 24):
+            files.append('bodypix/resnet50/float/group1-shard%sof23.bin' % i)
 
         for file in files:
             file_path = '%s/%s' % (model_dir, file)
