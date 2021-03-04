@@ -115,7 +115,7 @@ python %(prog)s --revtohash 1
             Util.chdir(self.backup_dir)
             Util.execute('tar zcf %s.tar.gz %s' % (rev_name, rev_name))
 
-        if Util.check_server_backup(Util.BACKUP_SERVER, 'mesa', os.path.basename(rev_backup_file)):
+        if Util.check_server_backup('mesa', os.path.basename(rev_backup_file)):
             Util.info('Server already has rev %s' % rev_backup_file)
         else:
             Util.execute('scp %s wp@%s:/workspace/backup/%s/mesa/' % (rev_backup_file, Util.BACKUP_SERVER, Util.HOST_OS))
