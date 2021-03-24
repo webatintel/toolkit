@@ -297,7 +297,8 @@ python %(prog)s --run --inplace --email
         Util.append_file(self.exec_log, 'GPU device id%s%s' % (self.SEPARATOR, gpu_device_id))
 
         PROJECT_RUN_INFO_INDEX_ROOT_DIR = 0
-        PROJECT_RUN_INFO_INDEX_REV = 1
+        PROJECT_RUN_INFO_INDEX_DATE = 1
+        PROJECT_RUN_INFO_INDEX_REV = 2
         project_run_info = {}
         for project in sorted(self.PROJECTS):
             if project == 'chromium':
@@ -308,17 +309,19 @@ python %(prog)s --run --inplace --email
             if self.args.inplace:
                 root_dir = self.PROJECT_INFO[project][self.PROJECT_INFO_INDEX_ROOT_DIR]
                 if project == 'chromium':
+                    date = ChromiumRepo(root_dir).get_working_dir_date()
                     rev = ChromiumRepo(root_dir).get_working_dir_rev()
                 else:
                     Util.chdir(root_dir)
+                    date = Util.get_repo_date()
                     rev = Util.get_repo_rev()
-                project_run_info[project] = [root_dir, rev]
+                project_run_info[project] = [root_dir, date, rev]
             else:
                 if self.args.local:
-                    rev_name, rev = Util.get_local_backup(virtual_project, 'latest')
+                    rev_name, date, rev = Util.get_local_backup(virtual_project, 'latest')
                 else:
-                    rev_name, rev = Util.get_server_backup(virtual_project, 'latest')
-                project_run_info[project] = ['%s/%s/%s/%s' % (Util.BACKUP_DIR, Util.HOST_OS, virtual_project, rev_name), rev]
+                    rev_name, date, rev = Util.get_server_backup(virtual_project, 'latest')
+                project_run_info[project] = ['%s/%s/%s/%s' % (Util.BACKUP_DIR, Util.HOST_OS, virtual_project, rev_name), date, rev]
             if project == 'chromium':
                 self.chrome_config_dir = '%s/testing/buildbot' % (project_run_info[project][PROJECT_RUN_INFO_INDEX_ROOT_DIR])
                 self._update_target()
@@ -333,6 +336,8 @@ python %(prog)s --run --inplace --email
 
             if project not in logged_projects:
                 logged_projects.append(project)
+                info = '%s Date%s%s' % (project.capitalize(), self.SEPARATOR, project_run_info[project][PROJECT_RUN_INFO_INDEX_DATE])
+                Util.append_file(self.exec_log, info)
                 info = '%s Revision%s%s' % (project.capitalize(), self.SEPARATOR, project_run_info[project][PROJECT_RUN_INFO_INDEX_REV])
                 Util.append_file(self.exec_log, info)
 
