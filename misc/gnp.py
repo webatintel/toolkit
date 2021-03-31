@@ -369,7 +369,7 @@ python %(prog)s --backup --root-dir d:\workspace\chrome
                 dst_dir = os.path.dirname(os.path.dirname(dst_dir))
             cmd = 'cp -rf %s %s' % (src_file, dst_dir)
             Util.info('[%s/%s] %s' % (index + 1, src_file_count, cmd))
-            self._execute(cmd, exit_on_error=self.exit_on_error, show_cmd=False)
+            self._execute(cmd, exit_on_error=False, show_cmd=False)
 
             # permission denied
             #shutil.copyfile(file, dst_dir)
