@@ -336,7 +336,7 @@ python %(prog)s --backup --root-dir d:\workspace\chrome
                 target_files = self._execute('gn desc %s %s runtime_deps' % (self.out_dir, target), exit_on_error=self.exit_on_error, return_out=True)[1].rstrip('\n').split('\n')
                 tmp_files = Util.union_list(tmp_files, target_files)
 
-        exclude_files = ['gen/', 'obj/']
+        exclude_files = ['gen/', 'obj/', '../../testing/test_env.py', '../../testing/location_tags.json', '../../.vpython']
         src_files = []
         for tmp_file in tmp_files:
             tmp_file = tmp_file.rstrip('\r')
@@ -590,6 +590,9 @@ python %(prog)s --backup --root-dir d:\workspace\chrome
                 cmd += ' --browser=exact --browser-executable=./chrome'
             if target not in ['telemetry_gpu_integration_test', 'webgpu_blink_web_tests']:
                 cmd = './' + cmd
+
+        if target == 'dawn_end2end_tests' and 'exclusive-device-type-preference' not in cmd:
+            cmd += ' --exclusive-device-type-preference=discrete,integrated'
         self._execute(cmd, exit_on_error=self.exit_on_error)
 
     def _handle_ops(self):
