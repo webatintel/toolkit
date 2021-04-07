@@ -3,12 +3,11 @@ Chrome Drop contains below binaries:
 * WebGL CTS
 * ANGLE end2end tests
 * WebGPU CTS
+* Dawn end2end tests
+
+The naming convention of all the binaries follow the format [yyyymmdd-revision-hash].zip
 
 # WebGL CTS
-## Binary
-
-[yyyymmdd-revision].zip
-
 ## Command
 
 `python content/test/gpu/run_gpu_integration_test.py webgl_conformance --disable-log-uploads --browser=release --webgl-conformance-version=[webgl-conformance-version] --extra-browser-args="[extra-browser-args]"`
@@ -26,10 +25,10 @@ Other useful arguments:<br>
 
 ## Debug
 
-* Download binary from http://wp-27.sh.intel.com/chrome-drop/webgl/windows/
-* cd [yyyymmdd-revision]
-* Start browser with “out\Release\chrome.exe --use-angle=[angle-backend]”
-* Start http server using python "python -mSimpleHTTPServer" (python2) or "python -mhttp.server" (python3)
+* Download binary from http://wp-27.sh.intel.com/backup/windows/chrome-drop-webgl/
+* cd out/release
+* Start browser with `chrome.exe --use-angle=[angle-backend]`
+* Start http server using python `python -mSimpleHTTPServer` (python2) or `python -mhttp.server` (python3)
 * Browse to http://127.0.0.1:8000/third_party/webgl/src/sdk/tests/webgl-conformance-tests.html?version=[webgl-conformance-version]
 * Find the test case. Taking "conformance_textures_image_bitmap_from_video_tex-2d-alpha-alpha-unsigned_byte.html" as example, you need to find category "all/conformance/textures/image_bitmap_from_video" first, then find the case "tex-2d-alpha-alpha-unsigned_byte.html" under it.
 * Run the case by clicking the "run" button (running in place) or link (running in another tab)
@@ -37,16 +36,13 @@ Other useful arguments:<br>
 
 
 # ANGLE end2end tests
-## Binary
-[yyyymmdd-revision].zip
-
 ## Command
 
-`angle_end2end_tests.exe`
+`angle_end2end_tests.exe --bot-mode`
 
 Other useful arguments:<br>
-
---gtest_filter is used to filter the cases to run against.
+--gtest_output=json:[result.json] is used to record result in json file. <br>
+--gtest_filter is used to filter the cases to run against.<br>
 --test-launcher-total-shards and --test-launcher-shard-index are used for shard execution.<br>
 
 ## Example
@@ -56,14 +52,11 @@ Other useful arguments:<br>
 
 ## Debug
 
-* Download binary from http://wp-27.sh.intel.com/chrome-drop/angle/windows/
-* cd folder [yyyymmdd-revision]
+* Download binary from http://wp-27.sh.intel.com/backup/windows/chrome-drop-angle/
+* cd out/release
 * angle_end2end_tests.exe --gtest_filter=[filter]
 
 # WebGPU CTS
-## Binary
-[Chrome-revision].zip
-
 ## Command
 
 python2 is used, and package pywin32 is required.<br>
@@ -78,3 +71,19 @@ Other useful arguments:<br>
 
 ## Debug
 TBD
+
+# Dawn end2end tests
+## Command
+`dawn_end2end_tests.exe --exclusive-device-type-preference=discrete,integrated`
+
+Other useful arguments:<br>
+--gtest_output=json:[result.json] is used to record result in json file. <br>
+--gtest_filter is used to filter the cases to run against. <br>
+
+## Example
+`dawn_end2end_tests.exe --exclusive-device-type-preference=discrete,integrated --gtest_output=json:dawn.json`
+
+## Debug
+* Download binary from http://wp-27.sh.intel.com/backup/windows/chrome-drop-dawn/
+* cd out/release
+* dawn_end2end_tests.exe --exclusive-device-type-preference=discrete,integrated --gtest_filter=[filter]
