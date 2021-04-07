@@ -166,6 +166,8 @@ python %(prog)s --batch
             cmd = 'python %s --run --run-target angle_e2e --run-rev latest --root-dir %s' % (Util.GNP_SCRIPT, self.angle_dir)
             result_file = '%s/angle.json' % self.result_dir
             run_args = '--gtest_output=json:%s' % result_file
+            if self.run_filter != 'all':
+                run_args += ' --test-filter=*%s*' % self.run_filter
             if self.args.dryrun:
                 run_args += ' --gtest_filter=*EGLAndroidFrameBufferTargetTest*'
             cmd += ' --run-args="%s"' % run_args
@@ -175,6 +177,8 @@ python %(prog)s --batch
             cmd = 'python %s --run --run-target dawn_e2e --run-rev latest --root-dir %s' % (Util.GNP_SCRIPT, self.dawn_dir)
             result_file = '%s/dawn.json' % self.result_dir
             run_args = '--gtest_output=json:%s' % result_file
+            if self.run_filter != 'all':
+                run_args += ' --test-filter=*%s*' % self.run_filter
             if self.args.dryrun:
                 run_args += ' --gtest_filter=*BindGroupTests*'
             cmd += ' --run-args="%s"' % run_args
