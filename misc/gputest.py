@@ -287,7 +287,7 @@ python %(prog)s --run --inplace --email
                     rev_name, rev = Util.get_local_backup('mesa', self.args.run_mesa_rev)
                 else:
                     rev_name, rev = Util.get_server_backup('mesa', self.args.run_mesa_rev)
-                rev_name, _ = Util.set_mesa('%s/%s/%s/%s' % (Util.BACKUP_DIR, Util.HOST_OS, 'mesa', rev_name), self.args.run_mesa_rev)
+                rev_name, _ = Util.set_mesa('%s/%s/%s' % (Util.BACKUP_DIR, 'mesa', rev_name), self.args.run_mesa_rev)
 
             Util.append_file(self.exec_log, 'Mesa Revision%s%s' % (self.SEPARATOR, rev_name))
 
@@ -321,7 +321,7 @@ python %(prog)s --run --inplace --email
                     rev_name, date, rev = Util.get_local_backup(virtual_project, 'latest')
                 else:
                     rev_name, date, rev = Util.get_server_backup(virtual_project, 'latest')
-                project_run_info[project] = ['%s/%s/%s/%s' % (Util.BACKUP_DIR, Util.HOST_OS, virtual_project, rev_name), date, rev]
+                project_run_info[project] = ['%s/%s/%s' % (Util.BACKUP_DIR, virtual_project, rev_name), date, rev]
             if project == 'chromium':
                 self.chrome_config_dir = '%s/testing/buildbot' % (project_run_info[project][PROJECT_RUN_INFO_INDEX_ROOT_DIR])
                 self._update_target()
