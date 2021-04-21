@@ -572,7 +572,7 @@ python %(prog)s --backup --root-dir d:\workspace\chrome
         if target == 'telemetry_gpu_integration_test':
             cmd = 'vpython ../../content/test/gpu/run_gpu_integration_test.py'
         elif target == 'webgpu_blink_web_tests':
-            cmd = 'vpython ../../third_party/blink/tools/run_web_tests.py --target release'
+            cmd = 'bin/run_webgpu_blink_web_tests.bat'
         else:
             cmd = '%s%s' % (target, Util.EXEC_SUFFIX)
         if Util.HOST_OS == Util.WINDOWS:
