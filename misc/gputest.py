@@ -64,7 +64,7 @@ class GPUTest(Program):
         'gtest_angle': ['--gtest_filter', ''], # --cfi-diag=0
         'gtest_chrome': ['--gtest_filter', ''], # --cfi-diag=0
         'telemetry_gpu_integration_test': ['--test-filter', '--retry-limit 1 --retry-only-retry-on-failure-tests'],
-        'webgpu_blink_web_tests': ['--isolated-script-test-filter', '--seed 4 --jobs=1 --driver-logging --no-show-results --clobber-old-results --no-retry-failures --order=natural --isolated-script-test-filter=wpt_internal/webgpu/* --ignore-default-expectations --additional-expectations=../../third_party/blink/web_tests/WebGPUExpectations --additional-driver-flag=--enable-unsafe-webgpu --additional-driver-flag=--disable-gpu-sandbox'],
+        'webgpu_blink_web_tests': ['--isolated-script-test-filter', ''],
     }
 
     VIRTUAL_NAME_INFO_INDEX_REAL_TYPE = 0

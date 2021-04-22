@@ -336,7 +336,8 @@ python %(prog)s --backup --root-dir d:\workspace\chrome
                 target_files = self._execute('gn desc %s %s runtime_deps' % (self.out_dir, target), exit_on_error=self.exit_on_error, return_out=True)[1].rstrip('\n').split('\n')
                 tmp_files = Util.union_list(tmp_files, target_files)
 
-        exclude_files = ['gen/', 'obj/', '../../testing/test_env.py', '../../testing/location_tags.json', '../../.vpython']
+        # 'gen/', 'obj/', '../../testing/test_env.py', '../../testing/location_tags.json', '../../.vpython'
+        exclude_files = []
         src_files = []
         for tmp_file in tmp_files:
             tmp_file = tmp_file.rstrip('\r')
