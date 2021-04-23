@@ -121,7 +121,9 @@ python %(prog)s --backup --root-dir d:\workspace\chrome
 
         if real_project == 'chromium':
             self.repo = ChromiumRepo(self.root_dir)
-        self.backup_dir = '%s/backup' % self.root_dir
+            self.backup_dir = '%s/backup' % os.path.dirname(self.root_dir)
+        else:
+            self.backup_dir = '%s/backup' % self.root_dir
 
         if args.is_debug:
             build_type = 'debug'
@@ -299,8 +301,8 @@ python %(prog)s --backup --root-dir d:\workspace\chrome
             rev_dir = Util.cal_backup_dir(rev)
         else:
             rev_dir = Util.cal_backup_dir()
-        backup_path = '%s/backup/%s' % (self.root_dir, rev_dir)
-        Util.ensure_dir('%s/backup' % self.root_dir)
+        backup_path = '%s/%s' % (self.backup_dir, rev_dir)
+        Util.ensure_dir(self.backup_dir)
 
         Util.info('Begin to backup %s' % rev_dir)
         if os.path.exists(backup_path):
