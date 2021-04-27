@@ -270,7 +270,6 @@ python %(prog)s --run --inplace --email
     def run(self):
         all_timer = Timer()
         args = self.args
-        Util.clear_proxy()
 
         if Util.HOST_OS == Util.LINUX and self.args.run_mesa_rev == 'latest':
             if True:
@@ -402,7 +401,7 @@ python %(prog)s --run --inplace --email
                     if Util.HOST_OS == skip_case[self.SKIP_CASES_INDEX_OS] and virtual_name == skip_case[self.SKIP_CASES_INDEX_VIRTUAL_NAME] and len(skip_case) == self.SKIP_CASES_INDEX_CASES + 1:
                         config_args += ' %s=-%s' % (self.REAL_TYPE_INFO[real_type][self.REAL_TYPE_INFO_INDEX_FILTER], skip_case[self.SKIP_CASES_INDEX_CASES])
 
-            if real_type in ['telemetry_gpu_integration_test', 'webgpu_blink_web_tests']:
+            if real_type in ['telemetry_gpu_integration_test']:
                 shard_count_arg = '--total-shards'
                 shard_index_arg = '--shard-index'
                 output_arg = '--write-full-results-to'
@@ -427,7 +426,7 @@ python %(prog)s --run --inplace --email
 
                 if real_type in ['aquarium']:
                     shard_args += ' > %s' % result_file
-                elif real_type in ['telemetry_gpu_integration_test', 'webgpu_blink_web_tests', 'gtest_chrome']:
+                elif real_type in ['telemetry_gpu_integration_test', 'gtest_chrome']:
                     shard_args += ' %s=%s' % (output_arg, result_file)
                     Util.ensure_file(result_file)
 
@@ -436,8 +435,11 @@ python %(prog)s --run --inplace --email
                 self._execute(cmd, exit_on_error=False)
                 self._log_exec(timer.stop(), 'Run %s' % op, cmd)
 
-                if real_type in ['gtest_angle']:
-                    output_file = '%s/out/release/output.json' % project_run_info[project][PROJECT_RUN_INFO_INDEX_ROOT_DIR]
+                if real_type in ['gtest_angle', 'webgpu_blink_web_tests']:
+                    if real_type == 'gtest_angle':
+                        output_file = '%s/out/release/output.json' % project_run_info[project][PROJECT_RUN_INFO_INDEX_ROOT_DIR]
+                    elif real_type == 'webgpu_blink_web_tests':
+                        output_file = '%s/out/release/layout-test-results/full_results.json' % project_run_info[project][PROJECT_RUN_INFO_INDEX_ROOT_DIR]
                     if os.path.exists(output_file):
                         shutil.move(output_file, result_file)
                     else:
@@ -708,9 +710,9 @@ python %(prog)s --run --inplace --email
                     break
 
         else:
-            if real_type in ['gtest_chrome']:
+            if real_type in ['gtest_chrome', 'webgpu_blink_web_tests']:
                 type = real_type
-            elif real_type in ['gtest_angle', 'telemetry_gpu_integration_test', 'webgpu_blink_web_tests']:
+            elif real_type in ['gtest_angle', 'telemetry_gpu_integration_test']:
                 type = 'gtest_angle'
             pass_fail, fail_pass, fail_fail, pass_pass = Util.get_test_result(result_file, type)
 

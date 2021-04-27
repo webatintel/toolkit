@@ -399,27 +399,7 @@ python %(prog)s --backup --root-dir d:\workspace\chrome
         else:
             Util.execute('scp %s wp@%s:/workspace/backup/%s/%s/' % (rev_backup_file, Util.BACKUP_SERVER, Util.HOST_OS, self.virtual_project))
 
-    def backup_webgl(self):
-        # generate telemetry_gpu_integration_test
-        if self.rev:
-            rev = self.rev
-        else:
-            rev = self.repo.get_working_dir_rev()
-        rev_str = str(rev)
-
-        if not os.path.exists('%s/%s-orig.zip' % (self.backup_dir, rev_str)):
-            cmd = 'vpython tools/mb/mb.py zip %s telemetry_gpu_integration_test %s/%s-orig.zip' % (self.out_dir, self.backup_dir, rev_str)
-            self._execute(cmd, exit_on_error=self.exit_on_error)
-
-        Util.chdir(self.backup_dir)
-        if not os.path.exists(rev_str):
-            zipfile.ZipFile('%s-orig.zip' % rev_str).extractall(rev_str)
-            Util.del_filetype_in_dir(rev_str, 'pdb')
-            shutil.make_archive(rev_str, 'zip', rev_str)
-
     def run(self):
-        Util.clear_proxy()
-
         if Util.HOST_OS == Util.LINUX and self.args.run_mesa_rev == 'latest':
             Util.set_mesa(Util.PROJECT_MESA_BACKUP_DIR, self.args.run_mesa_rev)
 
