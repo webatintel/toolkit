@@ -422,7 +422,11 @@ python %(prog)s --run --inplace --email
                     shard_count_str_len = len(shard_count_str)
                     op += '-shard%s' % str(shard_index).zfill(shard_count_str_len)
                 op += '-%s' % virtual_name
-                result_file = '%s/%s.log' % (self.result_dir, op)
+                if real_type in ['aquarium']:
+                    suffix = 'log'
+                else:
+                    suffix = 'json'
+                result_file = '%s/%s.%s' % (self.result_dir, op, suffix)
 
                 if real_type in ['aquarium']:
                     shard_args += ' > %s' % result_file
