@@ -78,7 +78,7 @@ python %(prog)s --batch
         root_dir = self.root_dir
         self.angle_dir = '%s/angle' % self.root_dir
         self.chrome_dir = '%s/chromium/src' % root_dir
-        self.chrome_backup_dir = '%s/backup' % self.chrome_dir
+        self.chrome_backup_dir = '%s/chromium/backup' % self.root_dir
         self.dawn_dir = '%s/dawn' % self.root_dir
         if args.mesa_dir:
             self.mesa_dir = args.mesa_dir
@@ -232,6 +232,7 @@ python %(prog)s --batch
             if self.run_filter != 'all':
                 common_cmd += ' --test-filter=*%s*' % self.run_filter
             if self.args.dryrun:
+                #common_cmd += ' --test-filter=*copy-texture-image-same-texture*::*ext-texture-norm16*'
                 common_cmd += ' --test-filter=*conformance/attribs*'
 
             if Util.HOST_OS in self.SKIP_CASES:
