@@ -574,6 +574,9 @@ python %(prog)s --backup --root-dir d:\workspace\chrome
             if target not in ['telemetry_gpu_integration_test', 'webgpu_blink_web_tests']:
                 cmd = './' + cmd
 
+        if target == 'angle_end2end_tests' and 'bot-mode' not in cmd:
+            cmd += ' --bot-mode'
+
         if target == 'dawn_end2end_tests' and 'exclusive-device-type-preference' not in cmd:
             cmd += ' --exclusive-device-type-preference=discrete,integrated'
         self._execute(cmd, exit_on_error=self.exit_on_error)
