@@ -56,29 +56,38 @@ python %(prog)s --build --run
     def model(self):
         model_dir = '%s/e2e/benchmarks/local-benchmark/savedmodel' % self.root_dir
         Util.ensure_dir(model_dir)
+        tfjs_model_url = 'https://storage.googleapis.com/tfjs-models/savedmodel/'
+        tfhub_model_url = 'https://storage.googleapis.com/tfhub-tfjs-modules/'
+        tfhub_tensorflow_model_url = 'https://storage.googleapis.com/tfhub-tfjs-modules/tensorflow/tfjs-model/'
+        tfhub_mediapipe_model_url = 'https://storage.googleapis.com/tfhub-tfjs-modules/mediapipe/tfjs-model/'
 
         files = [
-            'posenet/resnet50/float/model-stride32.json',
-            'posenet/mobilenet/quant2/075/model-stride16.json',
-            'posenet/mobilenet/quant2/075/group1-shard1of1.bin',
-            'bodypix/mobilenet/float/075/model-stride16.json',
-            'bodypix/mobilenet/float/075/group1-shard1of2.bin',
-            'bodypix/mobilenet/float/075/group1-shard2of2.bin',
-            'bodypix/resnet50/float/model-stride32.json',
+            ['posenet/resnet50/float/model-stride32.json',tfjs_model_url],
+            ['posenet/mobilenet/quant2/075/model-stride16.json',tfjs_model_url],
+            ['posenet/mobilenet/quant2/075/group1-shard1of1.bin',tfjs_model_url],
+            ['bodypix/mobilenet/float/075/model-stride16.json',tfjs_model_url],
+            ['bodypix/mobilenet/float/075/group1-shard1of2.bin',tfjs_model_url],
+            ['bodypix/mobilenet/float/075/group1-shard2of2.bin',tfjs_model_url],
+            ['bodypix/resnet50/float/model-stride32.json',tfjs_model_url],
+            ['blazeface/1/default/1/model.json',tfhub_tensorflow_model_url],
+            ['blazeface/1/default/1/group1-shard1of1.bin',tfhub_tensorflow_model_url],
+            ['handskeleton/1/default/1/model.json',tfhub_mediapipe_model_url],
+            ['handskeleton/1/default/1/group1-shard1of2.bin',tfhub_mediapipe_model_url],
+            ['handskeleton/1/default/1/group1-shard2of2.bin',tfhub_mediapipe_model_url]
         ]
         for i in range(1, 24):
-            files.append('posenet/resnet50/float/group1-shard%sof23.bin' % i)
+            files.append(['posenet/resnet50/float/group1-shard%sof23.bin' % i, tfjs_model_url])
 
         for i in range(1, 24):
-            files.append('bodypix/resnet50/float/group1-shard%sof23.bin' % i)
+            files.append(['bodypix/resnet50/float/group1-shard%sof23.bin' % i, tfjs_model_url])
 
         for file in files:
-            file_path = '%s/%s' % (model_dir, file)
+            file_path = '%s/%s' % (model_dir, file[0])
             file_path = Util.format_slash(file_path)
             if os.path.exists(file_path):
                 continue
             Util.ensure_dir(os.path.dirname(file_path))
-            self._execute('%s https://storage.googleapis.com/tfjs-models/savedmodel/%s -O %s' % (ScriptRepo.WGET_FILE, file, file_path))
+            self._execute('%s %s%s -O %s' % (ScriptRepo.WGET_FILE, file[1], file[0], file_path))
 
     def build(self):
         if self.args.build == 'all':
