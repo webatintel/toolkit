@@ -121,7 +121,8 @@ class GPUTest(Program):
     TARGET_INDEX_SHARD_COUNT = index
     TARGET_INDEX_MAX = index
 
-    RESULT_FILE_PATTERN = r'^.*-(.*).log$'
+    RESULT_FILE_SUFFIX = '.json'
+    RESULT_FILE_PATTERN = r'^.*-(.*)%s$' % RESULT_FILE_SUFFIX
 
     EMAIL_SENDER = 'webgraphics@intel.com'
     EMAIL_ADMIN = 'yang.gu@intel.com'
@@ -422,11 +423,7 @@ python %(prog)s --run --inplace --email
                     shard_count_str_len = len(shard_count_str)
                     op += '-shard%s' % str(shard_index).zfill(shard_count_str_len)
                 op += '-%s' % virtual_name
-                if real_type in ['aquarium']:
-                    suffix = 'log'
-                else:
-                    suffix = 'json'
-                result_file = '%s/%s.%s' % (self.result_dir, op, suffix)
+                result_file = '%s/%s%s' % (self.result_dir, op, self.RESULT_FILE_SUFFIX)
 
                 if real_type in ['aquarium']:
                     shard_args += ' > %s' % result_file
@@ -441,9 +438,9 @@ python %(prog)s --run --inplace --email
 
                 if real_type in ['gtest_angle', 'webgpu_blink_web_tests']:
                     if real_type == 'gtest_angle':
-                        output_file = '%s/out/release/output.json' % project_run_info[project][PROJECT_RUN_INFO_INDEX_ROOT_DIR]
+                        output_file = '%s/out/release/output%s' % (project_run_info[project][PROJECT_RUN_INFO_INDEX_ROOT_DIR], self.RESULT_FILE_SUFFIX)
                     elif real_type == 'webgpu_blink_web_tests':
-                        output_file = '%s/out/release/layout-test-results/full_results.json' % project_run_info[project][PROJECT_RUN_INFO_INDEX_ROOT_DIR]
+                        output_file = '%s/out/release/layout-test-results/full_results%s' % (project_run_info[project][PROJECT_RUN_INFO_INDEX_ROOT_DIR], self.RESULT_FILE_SUFFIX)
                     if os.path.exists(output_file):
                         shutil.move(output_file, result_file)
                     else:
@@ -507,7 +504,7 @@ python %(prog)s --run --inplace --email
             if re.match('run', name, re.I):
                 has_details = True
                 op = name[4:]
-                result_file = '%s/%s.log' % (self.result_dir, op)
+                result_file = '%s/%s%s' % (self.result_dir, op, self.RESULT_FILE_SUFFIX)
                 pass_fail, fail_pass, fail_fail, pass_pass = self._parse_result(result_file)
                 regression_count += len(pass_fail)
                 time = fields[1]
@@ -685,7 +682,7 @@ python %(prog)s --run --inplace --email
 
     def _parse_result(self, result_file, verbose=False):
         file_name = os.path.basename(result_file)
-        op = file_name.replace('.log', '')
+        op = file_name.replace(self.RESULT_FILE_SUFFIX, '')
         match = re.search(self.RESULT_FILE_PATTERN, file_name)
         virtual_name = match.group(1)
 
