@@ -80,7 +80,7 @@ class GPUTest(Program):
         'angle_white_box_tests': ['gtest_angle', 'VulkanDescriptorSetTest.AtomicCounterReadLimitedDescriptorPool'],
 
         'dawn_end2end_skip_validation_tests': ['gtest_chrome', 'BindGroupTests', '--adapter-vendor-id=0x8086'],
-        'dawn_end2end_tests': ['gtest_chrome', 'BindGroupTests', '', 'SwapChainTests.SwitchPresentMode/Vulkan_Intel_R_UHD_Graphics_630_CFL_GT2'],
+        'dawn_end2end_tests': ['gtest_chrome', 'BindGroupTests', ''],
         'dawn_end2end_validation_layers_tests': ['gtest_chrome', 'BindGroupTests'],
         'dawn_end2end_wire_tests': ['gtest_chrome', 'BindGroupTests'],
         'dawn_perf_tests': ['gtest_chrome', 'BufferUploadPerf.Run/Vulkan_Intel', '--override-steps=1'],
