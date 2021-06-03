@@ -136,14 +136,16 @@ python %(prog)s --sync --build --run
     def makefile(self):
         cmd = 'gn gen out/release --args="is_debug=false"'
         Util.execute(cmd)
-        cmd = 'gn gen out/anglerelease --args="is_debug=false enable_angle=true"'
-        Util.execute(cmd)
+        if Util.HOST_OS == Util.WINDOWS:
+            cmd = 'gn gen out/anglerelease --args="is_debug=false enable_angle=true"'
+            Util.execute(cmd)
 
     def build(self):
         cmd = 'ninja -C out/release aquarium'
         Util.execute(cmd)
-        cmd = 'ninja -C out/anglerelease aquarium'
-        Util.execute(cmd)
+        if Util.HOST_OS == Util.WINDOWS:
+            cmd = 'ninja -C out/anglerelease aquarium'
+            Util.execute(cmd)
 
     def run(self):
         cmd = 'out/release/aquarium --backend d3d12 --test-time 10'
@@ -152,8 +154,9 @@ python %(prog)s --sync --build --run
         cmd = 'out/release/aquarium --backend dawn_d3d12 --test-time 10'
         Util.execute(cmd)
 
-        cmd = 'out/release/aquarium --backend angle_d3d11 --test-time 10'
-        Util.execute(cmd)
+        if Util.HOST_OS == Util.WINDOWS:
+            cmd = 'out/release/aquarium --backend angle_d3d11 --test-time 10'
+            Util.execute(cmd)
 
     def _handle_ops(self):
         args = self.args
