@@ -131,6 +131,7 @@ class GPUTest(Program):
     MAX_FAIL_IN_REPORT = 30
 
     SEPARATOR = '|'
+    self.build_type_cap = 'Release'
 
     def __init__(self):
         parser = argparse.ArgumentParser(description='GPU Test')
@@ -438,9 +439,9 @@ python %(prog)s --run --inplace --email
 
                 if real_type in ['gtest_angle', 'webgpu_blink_web_tests']:
                     if real_type == 'gtest_angle':
-                        output_file = '%s/out/release/output%s' % (project_run_info[project][PROJECT_RUN_INFO_INDEX_ROOT_DIR], self.RESULT_FILE_SUFFIX)
+                        output_file = '%s/out/%s/output%s' % (project_run_info[project][PROJECT_RUN_INFO_INDEX_ROOT_DIR], self.build_type_cap, self.RESULT_FILE_SUFFIX)
                     elif real_type == 'webgpu_blink_web_tests':
-                        output_file = '%s/out/release/layout-test-results/full_results%s' % (project_run_info[project][PROJECT_RUN_INFO_INDEX_ROOT_DIR], self.RESULT_FILE_SUFFIX)
+                        output_file = '%s/out/%s/layout-test-results/full_results%s' % (project_run_info[project][PROJECT_RUN_INFO_INDEX_ROOT_DIR], self.build_type_cap, self.RESULT_FILE_SUFFIX)
                     if os.path.exists(output_file):
                         shutil.move(output_file, result_file)
                     else:
