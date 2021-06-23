@@ -129,12 +129,14 @@ python %(prog)s --backup --root-dir d:\workspace\chrome
             build_type = 'debug'
         else:
             build_type = 'release'
+        self.build_type_cap = build_type.capitalize()
 
         if self.args.special_out_dir:
             out_dir = Util.cal_relative_out_dir(self.target_arch, self.target_os, args.symbol_level, args.no_component_build, args.dcheck)
         else:
             out_dir = 'out'
-        self.out_dir = '%s/%s' % (out_dir, build_type)
+        # capitalize() is required by WebGPU CTS
+        self.out_dir = '%s/%s' % (out_dir, self.build_type_cap)
 
         if self.real_project == 'angle':
             default_target = 'angle_e2e'
@@ -362,7 +364,11 @@ python %(prog)s --backup --root-dir d:\workspace\chrome
             src_files += ['assets/', 'shaders/']
 
         if self.virtual_project == 'chromiumgputest':
-            src_files += ['out/release/args.gn', 'out/release/../../testing/buildbot/chromium.gpu.fyi.json', 'out/release/../../testing/buildbot/chromium.dawn.json']
+            src_files += [
+                'out/%s/args.gn' % self.build_type_cap,
+                'out/%s/../../testing/buildbot/chromium.gpu.fyi.json' % self.build_type_cap,
+                'out/%s/../../testing/buildbot/chromium.dawn.json' % self.build_type_cap,
+            ]
 
         src_file_count = len(src_files)
         for index, src_file in enumerate(src_files):
@@ -407,7 +413,7 @@ python %(prog)s --backup --root-dir d:\workspace\chrome
             run_dir = self.out_dir
         else:
             rev_name, _ = Util.get_backup_dir('backup', self.args.run_rev)
-            run_dir = 'backup/%s/out/release' % rev_name
+            run_dir = 'backup/%s/out/%s' % (rev_name, self.build_type_cap)
 
         Util.chdir(run_dir, verbose=True)
         run_target = self.args.run_target
