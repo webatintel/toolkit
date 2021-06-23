@@ -131,7 +131,7 @@ class GPUTest(Program):
     MAX_FAIL_IN_REPORT = 30
 
     SEPARATOR = '|'
-    self.build_type_cap = 'Release'
+
 
     def __init__(self):
         parser = argparse.ArgumentParser(description='GPU Test')
@@ -177,6 +177,7 @@ python %(prog)s --run --inplace --email
         Util.append_file(self.exec_log, 'OS%s%s' % (self.SEPARATOR, Util.HOST_OS_RELEASE))
         self.chrome_config_dir = '%s/testing/buildbot' % self.PROJECT_INFO['chromium'][self.PROJECT_INFO_INDEX_ROOT_DIR]
         self.targets = []
+        self.build_type_cap = 'Release'
 
         if args.sync:
             self.sync()
