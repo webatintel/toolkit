@@ -91,9 +91,10 @@ class Gnp(Program):
 
         parser.epilog = '''
 examples:
-python %(prog)s --sync --runhooks --makefile --build --backup --build --run --download
-python %(prog)s --backup --root-dir d:\workspace\chrome
-'''
+{0} {1} --sync --runhooks --makefile --build --backup --build --run --download
+{0} {1} --backup --root-dir d:\workspace\chrome
+'''.format(Util.PYTHON, parser.prog)
+
         python_ver = Util.get_python_ver()
         if python_ver[0] == 3:
             super().__init__(parser)
@@ -286,7 +287,7 @@ python %(prog)s --backup --root-dir d:\workspace\chrome
                 rev = self.repo.get_working_dir_rev()
             Util.info('Begin to build rev %s' % rev)
             Util.chdir(self.root_dir + '/build/util')
-            self._execute('python lastchange.py -o LASTCHANGE', exit_on_error=self.exit_on_error)
+            self._execute('%s lastchange.py -o LASTCHANGE' % Util.PYTHON, exit_on_error=self.exit_on_error)
             Util.chdir(self.root_dir)
 
         cmd = 'ninja -k%s -j%s -C %s %s' % (str(self.args.build_max_fail), str(Util.CPU_COUNT * 2), self.out_dir, ' '.join(targets))

@@ -62,8 +62,9 @@ class Webgl(Program):
         parser.add_argument('--run-manual', dest='run_manual', help='run manual', action='store_true')
 
         parser.epilog = '''
-python %(prog)s --batch
-'''
+{0} {1} --batch
+'''.format(Util.PYTHON, parser.prog)
+
         python_ver = Util.get_python_ver()
         if python_ver[0] == 3:
             super().__init__(parser)
@@ -100,9 +101,9 @@ python %(prog)s --batch
 
     def sync(self):
         if self.target_os == Util.LINUX:
-            self._execute('python %s/mesa/mesa.py --sync --root-dir %s' % (ScriptRepo.ROOT_DIR, self.mesa_dir))
+            self._execute('%s %s/mesa/mesa.py --sync --root-dir %s' % (util.PYTHON, ScriptRepo.ROOT_DIR, self.mesa_dir))
 
-        cmd = 'python %s --sync --runhooks --root-dir %s' % (Util.GNP_SCRIPT, self.chrome_dir)
+        cmd = '%s %s --sync --runhooks --root-dir %s' % (Util.PYTHON, Util.GNP_SCRIPT, self.chrome_dir)
         if self.args.build_chrome_rev != 'latest':
             cmd += ' --rev %s' % self.args.build_chrome_rev
         self._execute(cmd)
@@ -110,15 +111,15 @@ python %(prog)s --batch
     def build(self):
         # build mesa
         if self.target_os == Util.LINUX and not self.args.build_skip_mesa:
-            self._execute('python %s/mesa/mesa.py --build --root-dir %s' % (ScriptRepo.ROOT_DIR, self.mesa_dir))
+            self._execute('%s %s/mesa/mesa.py --build --root-dir %s' % (Util.PYTHON, ScriptRepo.ROOT_DIR, self.mesa_dir))
 
         # build chrome
         if self.run_chrome == 'build':
             if not self.args.build_skip_chrome:
-                cmd = 'python %s --no-component-build --makefile --symbol-level 0 --build --build-target webgl --root-dir %s' % (Util.GNP_SCRIPT, self.chrome_dir)
+                cmd = '%s %s --no-component-build --makefile --symbol-level 0 --build --build-target webgl --root-dir %s' % (Util.PYTHON, Util.GNP_SCRIPT, self.chrome_dir)
                 self._execute(cmd)
             if not self.args.build_skip_backup:
-                cmd = 'python %s --backup --backup-target webgl --root-dir %s' % (Util.GNP_SCRIPT, self.chrome_dir)
+                cmd = '%s %s --backup --backup-target webgl --root-dir %s' % (Util.PYTHON, Util.GNP_SCRIPT, self.chrome_dir)
                 if self.target_os == Util.CHROMEOS:
                     cmd += ' --target-os chromeos'
                 self._execute(cmd)

@@ -37,9 +37,10 @@ class Connect(Program):
 
         parser.epilog = '''
 examples:
-  python %(prog)s --check wp-27
-  python %(prog)s --connect wp-27
-'''
+  {0} {1} --check wp-27
+  {0} {1} --connect wp-27
+'''.format(Util.PYTHON, parser.prog)
+
         python_ver = Util.get_python_ver()
         if python_ver[0] == 3:
             super().__init__(parser)

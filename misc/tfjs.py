@@ -36,9 +36,10 @@ class Tfjs(Program):
         parser.add_argument('--run', dest='run', help='run as http server', action='store_true')
         parser.epilog = '''
 examples:
-python %(prog)s --provision
-python %(prog)s --build --run
-'''
+{0} {1} --provision
+{0} {1} --build --run
+'''.format(Util.PYTHON, parser.prog)
+
         python_ver = Util.get_python_ver()
         if python_ver[0] == 3:
             super().__init__(parser)

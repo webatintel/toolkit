@@ -45,9 +45,10 @@ class Cros(Program):
 
         parser.epilog = '''
 examples:
-python %(prog)s --board samus --sync --build
-python %(prog)s --board auron_yuna --chrome-dir /workspace/project/chromium --pkg chrome
-'''
+{0} {1} --board samus --sync --build
+{0} {1} --board auron_yuna --chrome-dir /workspace/project/chromium --pkg chrome
+'''.format(Util.PYTHON, parser.prog)
+
         python_ver = Util.get_python_ver()
         if python_ver[0] == 3:
             super().__init__(parser)

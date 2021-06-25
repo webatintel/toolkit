@@ -64,8 +64,8 @@ class ChromeDrop(Program):
         parser.add_argument('--run-manual', dest='run_manual', help='run manual', action='store_true')
 
         parser.epilog = '''
-python %(prog)s --batch
-'''
+{0} {1} --batch
+'''.format(Util.PYTHON, parser.prog)
 
         python_ver = Util.get_python_ver()
         if python_ver[0] == 3:
@@ -110,18 +110,18 @@ python %(prog)s --batch
 
     def sync(self):
         if 'angle' in self.targets:
-            cmd = 'python %s --sync --runhooks --root-dir %s' % (Util.GNP_SCRIPT, self.angle_dir)
+            cmd = '%s %s --sync --runhooks --root-dir %s' % (Util.PYTHON, Util.GNP_SCRIPT, self.angle_dir)
             self._execute(cmd)
 
         if 'dawn' in self.targets:
-            cmd = 'python %s --sync --runhooks --root-dir %s' % (Util.GNP_SCRIPT, self.dawn_dir)
+            cmd = '%s %s --sync --runhooks --root-dir %s' % (Util.PYTHON, Util.GNP_SCRIPT, self.dawn_dir)
             self._execute(cmd)
 
         if 'webgl' in self.targets:
             if self.target_os == Util.LINUX:
-                self._execute('python %s/mesa/mesa.py --sync --root-dir %s' % (ScriptRepo.ROOT_DIR, self.mesa_dir))
+                self._execute('%s %s/mesa/mesa.py --sync --root-dir %s' % (Util.PYTHON, ScriptRepo.ROOT_DIR, self.mesa_dir))
 
-            cmd = 'python %s --sync --runhooks --root-dir %s' % (Util.GNP_SCRIPT, self.chrome_dir)
+            cmd = '%s %s --sync --runhooks --root-dir %s' % (Util.PYTHON, Util.GNP_SCRIPT, self.chrome_dir)
             if self.args.build_chrome_rev != 'latest':
                 cmd += ' --rev %s' % self.args.build_chrome_rev
             self._execute(cmd)
@@ -129,22 +129,22 @@ python %(prog)s --batch
     def build(self):
         # build mesa
         if self.target_os == Util.LINUX and not self.args.build_skip_mesa:
-            self._execute('python %s/mesa/mesa.py --build --root-dir %s' % (ScriptRepo.ROOT_DIR, self.mesa_dir))
+            self._execute('%s %s/mesa/mesa.py --build --root-dir %s' % (Util.PYTHON, ScriptRepo.ROOT_DIR, self.mesa_dir))
 
         if 'angle' in self.targets:
-            cmd = 'python %s --makefile --build --build-target angle_e2e --backup --backup-target angle_e2e --root-dir %s' % (Util.GNP_SCRIPT, self.angle_dir)
+            cmd = '%s %s --makefile --build --build-target angle_e2e --backup --backup-target angle_e2e --root-dir %s' % (Util.PYTHON, Util.GNP_SCRIPT, self.angle_dir)
             self._execute(cmd)
 
         if 'dawn' in self.targets:
-            cmd = 'python %s --makefile --build --build-target dawn_e2e --backup --backup-target dawn_e2e --root-dir %s' % (Util.GNP_SCRIPT, self.dawn_dir)
+            cmd = '%s %s --makefile --build --build-target dawn_e2e --backup --backup-target dawn_e2e --root-dir %s' % (Util.PYTHON, Util.GNP_SCRIPT, self.dawn_dir)
             self._execute(cmd)
 
         if 'webgl' in self.targets and self.run_chrome_channel == 'build':
             if not self.args.build_skip_chrome:
-                cmd = 'python %s --no-component-build --makefile --symbol-level 0 --build --build-target webgl --root-dir %s' % (Util.GNP_SCRIPT, self.chrome_dir)
+                cmd = '%s %s --no-component-build --makefile --symbol-level 0 --build --build-target webgl --root-dir %s' % (Util.PYTHON, Util.GNP_SCRIPT, self.chrome_dir)
                 self._execute(cmd)
             if not self.args.build_skip_backup:
-                cmd = 'python %s --backup --backup-target webgl --root-dir %s' % (Util.GNP_SCRIPT, self.chrome_dir)
+                cmd = '%s %s --backup --backup-target webgl --root-dir %s' % (Util.PYTHON, Util.GNP_SCRIPT, self.chrome_dir)
                 if self.target_os == Util.CHROMEOS:
                     cmd += ' --target-os chromeos'
                 self._execute(cmd)
@@ -163,7 +163,7 @@ python %(prog)s --batch
         Util.append_file(self.exec_log, 'GPU device id%s%s' % (self.SEPARATOR, gpu_device_id))
 
         if 'angle' in self.targets:
-            cmd = 'python %s --run --run-target angle_e2e --run-rev latest --root-dir %s' % (Util.GNP_SCRIPT, self.angle_dir)
+            cmd = '%s %s --run --run-target angle_e2e --run-rev latest --root-dir %s' % (Util.PYTHON, Util.GNP_SCRIPT, self.angle_dir)
             result_file = '%s/angle.json' % self.result_dir
             run_args = '--gtest_output=json:%s' % result_file
             if self.run_filter != 'all':
@@ -174,7 +174,7 @@ python %(prog)s --batch
             self._execute(cmd)
 
         if 'dawn' in self.targets:
-            cmd = 'python %s --run --run-target dawn_e2e --run-rev latest --root-dir %s' % (Util.GNP_SCRIPT, self.dawn_dir)
+            cmd = '%s %s --run --run-target dawn_e2e --run-rev latest --root-dir %s' % (Util.PYTHON, Util.GNP_SCRIPT, self.dawn_dir)
             result_file = '%s/dawn.json' % self.result_dir
             run_args = '--gtest_output=json:%s' % result_file
             if self.run_filter != 'all':

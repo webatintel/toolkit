@@ -51,12 +51,11 @@ class Webmark():
         Suites(data).run()
 
     def _parse_args(self):
-        parser = argparse.ArgumentParser(description='Automation tool to measure the performance of browser and web runtime with benchmarks',
-                                        formatter_class=argparse.RawTextHelpFormatter,
-                                        epilog='''
+        parser = argparse.ArgumentParser(description='Automation tool to measure the performance of browser and web runtime with benchmarks')
+        parser.epilog='''
 examples:
-python %(prog)s --config config.json
-    ''')
+{0} {1} --config config.json
+'''.format(Util.PYTHON, parser.prog)
 
         parser.add_argument('--config', dest='config', help='config file to put in all the configurations')
         parser.add_argument('--dryrun', dest='codryrunnfig', help='dryrun')

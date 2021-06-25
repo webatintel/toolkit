@@ -45,8 +45,8 @@ class Angle(Program):
         parser.add_argument('--report', dest='report', help='report file')
 
         parser.epilog = '''
-python %(prog)s --batch
-'''
+{0} {1} --batch
+'''.format(Util.PYTHON, parser.prog)
 
         python_ver = Util.get_python_ver()
         if python_ver[0] == 3:
@@ -60,15 +60,15 @@ python %(prog)s --batch
         self._handle_ops()
 
     def sync(self):
-        cmd = 'python %s --sync --runhooks --root-dir %s' % (Util.GNP_SCRIPT, self.angle_dir)
+        cmd = '%s %s --sync --runhooks --root-dir %s' % (Util.PYTHON, Util.GNP_SCRIPT, self.angle_dir)
         self._execute(cmd)
 
     def build(self):
-        cmd = 'python %s --makefile --build --build-target angle_e2e --backup --backup-target angle_e2e --root-dir %s' % (Util.GNP_SCRIPT, self.angle_dir)
+        cmd = '%s %s --makefile --build --build-target angle_e2e --backup --backup-target angle_e2e --root-dir %s' % (Util.PYTHON, Util.GNP_SCRIPT, self.angle_dir)
         self._execute(cmd)
 
     def run(self):
-        cmd = 'python %s --run --run-target angle_e2e --run-rev latest --root-dir %s' % (Util.GNP_SCRIPT, self.angle_dir)
+        cmd = '%s %s --run --run-target angle_e2e --run-rev latest --root-dir %s' % (Util.PYTHON, Util.GNP_SCRIPT, self.angle_dir)
         result_file = '%s/output.json' % self.result_dir
         run_args = '--gtest_output=json:%s' % result_file
         if self.args.dryrun:

@@ -80,7 +80,8 @@ class GPUTest(Program):
         'angle_white_box_tests': ['gtest_angle', 'VulkanDescriptorSetTest.AtomicCounterReadLimitedDescriptorPool'],
 
         'dawn_end2end_skip_validation_tests': ['gtest_chrome', 'BindGroupTests', '--adapter-vendor-id=0x8086'],
-        'dawn_end2end_tests': ['gtest_chrome', 'BindGroupTests', ''],
+        'dawn_end2end_tests': ['gtest_chrome', 'ComputeStorageBufferBarrierTests', ''],
+        'dawn_end2end_tests_runsuppressed': ['gtest_chrome', 'ComputeStorageBufferBarrierTests', ''],
         'dawn_end2end_validation_layers_tests': ['gtest_chrome', 'BindGroupTests'],
         'dawn_end2end_wire_tests': ['gtest_chrome', 'BindGroupTests'],
         'dawn_perf_tests': ['gtest_chrome', 'BufferUploadPerf.Run/Vulkan_Intel', '--override-steps=1'],
@@ -158,10 +159,11 @@ class GPUTest(Program):
 
         parser.epilog = '''
 examples:
-python %(prog)s --sync --build --backup --upload --email
-python %(prog)s --run --email
-python %(prog)s --run --inplace --email
-'''
+{0} {1} --sync --build --backup --upload --email
+{0} {1} --run --email
+{0} {1} --run --inplace --email
+'''.format(Util.PYTHON, parser.prog)
+
         python_ver = Util.get_python_ver()
         if python_ver[0] == 3:
             super().__init__(parser)
@@ -200,7 +202,7 @@ python %(prog)s --run --inplace --email
         for project in sorted(self.PROJECTS):
             timer = Timer()
             root_dir = self.PROJECT_INFO[project][self.PROJECT_INFO_INDEX_ROOT_DIR]
-            cmd = 'python %s --root-dir %s --sync --runhooks' % (Util.GNP_SCRIPT, root_dir)
+            cmd = '%s %s --root-dir %s --sync --runhooks' % (Util.PYTHON, Util.GNP_SCRIPT, root_dir)
             dryrun = self.args.dryrun
             if self._execute(cmd, exit_on_error=False, dryrun=dryrun)[0]:
                 error_info = 'Project %s sync failed' % project
@@ -252,15 +254,15 @@ python %(prog)s --run --inplace --email
             root_dir = self.PROJECT_INFO[project][self.PROJECT_INFO_INDEX_ROOT_DIR]
 
             if op == 'build':
-                cmd = 'python %s --root-dir %s --no-component-build --makefile --build --build-target %s' % (Util.GNP_SCRIPT, root_dir, ','.join(project_targets[project]))
+                cmd = '%s %s --root-dir %s --no-component-build --makefile --build --build-target %s' % (Util.PYTHON, Util.GNP_SCRIPT, root_dir, ','.join(project_targets[project]))
             elif op == 'backup':
-                cmd = 'python %s --root-dir %s --backup --backup-target %s' % (Util.GNP_SCRIPT, root_dir, ','.join(project_targets[project]))
+                cmd = '%s %s --root-dir %s --backup --backup-target %s' % (Util.PYTHON, Util.GNP_SCRIPT, root_dir, ','.join(project_targets[project]))
             elif op == 'upload':
                 if project == 'chromium':
                     virtual_project = 'chromiumgputest'
                 else:
                     virtual_project = project
-                cmd = 'python %s --root-dir %s --project %s --upload' % (Util.GNP_SCRIPT, root_dir, virtual_project)
+                cmd = '%s %s --root-dir %s --project %s --upload' % (Util.PYTHON, Util.GNP_SCRIPT, root_dir, virtual_project)
 
             if self._execute(cmd, exit_on_error=False, dryrun=self.args.dryrun)[0]:
                 error_info = 'Project %s %s failed' % (project, op)
@@ -272,11 +274,12 @@ python %(prog)s --run --inplace --email
 
     def run(self):
         all_timer = Timer()
+        self._update_target()
         args = self.args
 
         if Util.HOST_OS == Util.LINUX and self.args.run_mesa_rev == 'latest':
             if True:
-                cmd = 'python %s --root-dir %s --sync --build' % (Util.MESA_SCRIPT, Util.PROJECT_MESA_DIR)
+                cmd = '%s %s --root-dir %s --sync --build' % (Util.PYTHON, Util.MESA_SCRIPT, Util.PROJECT_MESA_DIR)
                 dryrun = self.args.dryrun
                 if self._execute(cmd, exit_on_error=False, dryrun=dryrun)[0]:
                     error_info = 'Project Mesa build failed'
@@ -326,7 +329,6 @@ python %(prog)s --run --inplace --email
                 project_run_info[project] = ['%s/%s/%s' % (Util.BACKUP_DIR, virtual_project, rev_name), date, rev]
             if project == 'chromium':
                 self.chrome_config_dir = '%s/testing/buildbot' % (project_run_info[project][PROJECT_RUN_INFO_INDEX_ROOT_DIR])
-                self._update_target()
 
         logged_projects = []
         for index, target_index in enumerate(self.target_indexes):
@@ -344,7 +346,6 @@ python %(prog)s --run --inplace --email
                 Util.append_file(self.exec_log, info)
 
             virtual_name = self.os_targets[target_index][self.TARGET_INDEX_VIRTUAL_NAME]
-
             skip = False
             for skip_case in self.SKIP_CASES:
                 if Util.HOST_OS == skip_case[self.SKIP_CASES_INDEX_OS] and virtual_name == skip_case[self.SKIP_CASES_INDEX_VIRTUAL_NAME] and len(skip_case) == self.SKIP_CASES_INDEX_VIRTUAL_NAME + 1:
@@ -355,7 +356,7 @@ python %(prog)s --run --inplace --email
 
             real_name = self.os_targets[target_index][self.TARGET_INDEX_REAL_NAME]
             real_type = self.os_targets[target_index][self.TARGET_INDEX_REAL_TYPE]
-            config_cmd = 'python %s --run --root-dir %s --run-target %s --run-rev out' % (Util.GNP_SCRIPT, project_run_info[project][PROJECT_RUN_INFO_INDEX_ROOT_DIR], real_name)
+            config_cmd = '%s %s --run --root-dir %s --run-target %s --run-rev out' % (Util.PYTHON, Util.GNP_SCRIPT, project_run_info[project][PROJECT_RUN_INFO_INDEX_ROOT_DIR], real_name)
             if Util.HOST_OS == Util.LINUX:
                 config_cmd += ' --run-mesa-rev %s' % self.args.run_mesa_rev
             run_args = self.os_targets[target_index][self.TARGET_INDEX_RUN_ARGS]
@@ -409,7 +410,7 @@ python %(prog)s --run --inplace --email
                 shard_index_arg = '--shard-index'
                 output_arg = '--write-full-results-to'
             elif real_type in ['gtest_chrome']:
-                output_arg = '--test-launcher-summary-output'
+                output_arg = '--gtest_output=json:'
 
             shard_count = int(self.os_targets[target_index][self.TARGET_INDEX_SHARD_COUNT])
             if real_type in ['gtest_angle', 'gtest_chrome']:
@@ -429,8 +430,11 @@ python %(prog)s --run --inplace --email
 
                 if real_type in ['aquarium']:
                     shard_args += ' > %s' % result_file
-                elif real_type in ['telemetry_gpu_integration_test', 'gtest_chrome']:
+                elif real_type in ['telemetry_gpu_integration_test']:
                     shard_args += ' %s=%s' % (output_arg, result_file)
+                    Util.ensure_file(result_file)
+                elif real_type in ['gtest_chrome']:
+                    shard_args += ' %s%s' % (output_arg, result_file)
                     Util.ensure_file(result_file)
 
                 cmd = '%s --run-args="%s%s"' % (config_cmd, config_args, shard_args)
@@ -639,20 +643,34 @@ python %(prog)s --run --inplace --email
 
                         # init
                         target = [0] * (self.TARGET_INDEX_MAX + 1)
-                        target[self.TARGET_INDEX_SHARD_COUNT] = 1
                         target[self.TARGET_INDEX_OS] = target_os
-                        target[self.TARGET_INDEX_VIRTUAL_NAME] = virtual_name
                         target[self.TARGET_INDEX_PROJECT] = 'chromium'
+                        target[self.TARGET_INDEX_VIRTUAL_NAME] = virtual_name
                         target[self.TARGET_INDEX_REAL_NAME] = real_name
                         target[self.TARGET_INDEX_REAL_TYPE] = self.VIRTUAL_NAME_INFO[virtual_name][self.VIRTUAL_NAME_INFO_INDEX_REAL_TYPE]
                         if 'args' in target_detail:
                             target_run_args = target_detail['args']
-
+                        else:
+                            target_run_args = []
                         target[self.TARGET_INDEX_RUN_ARGS] = target_run_args
                         if 'swarming' in target_detail and 'shards' in target_detail['swarming']:
-                            target[self.TARGET_INDEX_SHARD_COUNT] = target_detail['swarming']['shards']
-
+                            target_shard_count = target_detail['swarming']['shards']
+                        else:
+                            target_shard_count = 1
+                        target[self.TARGET_INDEX_SHARD_COUNT] = target_shard_count
                         targets.append(target)
+
+                        # dawn_end2end_tests suppressed tests
+                        if target[self.TARGET_INDEX_VIRTUAL_NAME] == 'dawn_end2end_tests':
+                            target_runsuppressed = [0] * (self.TARGET_INDEX_MAX + 1)
+                            target_runsuppressed[self.TARGET_INDEX_OS] = target_os
+                            target_runsuppressed[self.TARGET_INDEX_PROJECT] = 'chromium'
+                            target_runsuppressed[self.TARGET_INDEX_VIRTUAL_NAME] = virtual_name + '_runsuppressed'
+                            target_runsuppressed[self.TARGET_INDEX_REAL_NAME] = real_name
+                            target_runsuppressed[self.TARGET_INDEX_REAL_TYPE] = self.VIRTUAL_NAME_INFO[virtual_name][self.VIRTUAL_NAME_INFO_INDEX_REAL_TYPE]
+                            target_runsuppressed[self.TARGET_INDEX_RUN_ARGS] = target_run_args + ['--run-suppressed-tests', '--bot-mode']
+                            target_runsuppressed[self.TARGET_INDEX_SHARD_COUNT] = target_shard_count
+                            targets.append(target_runsuppressed)
 
         # aquarium
         os_backends = {

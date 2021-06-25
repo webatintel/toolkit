@@ -21,13 +21,14 @@ class Mesa(Program):
         parser = argparse.ArgumentParser(description='mesa')
         parser.epilog='''
 examples:
-python %(prog)s --sync --build
-python %(prog)s --build --build-system autotools --rev-stride 50 --build-novulkan --rev 96700-96900
-python %(prog)s --build --dir-install 20200810-126997-f7e7cf637e1 --build-replace
-python %(prog)s --build --dir-install 20200810-126997-f7e7cf637e1 --build-replace # if build fails
-python %(prog)s --hashtorev e58a10af640ba58b6001f5c5ad750b782547da76
-python %(prog)s --revtohash 1
-'''
+{0} {1} --sync --build
+{0} {1} --build --build-system autotools --rev-stride 50 --build-novulkan --rev 96700-96900
+{0} {1} --build --dir-install 20200810-126997-f7e7cf637e1 --build-replace
+{0} {1} --build --dir-install 20200810-126997-f7e7cf637e1 --build-replace # if build fails
+{0} {1} --hashtorev e58a10af640ba58b6001f5c5ad750b782547da76
+{0} {1} --revtohash 1
+'''.format(Util.PYTHON, parser.prog)
+
         parser.add_argument('--repo', dest='repo', help='repo, can be freedesktop or chromeos', default='freedesktop')
         parser.add_argument('--init', dest='init', help='init', action='store_true')
         parser.add_argument('--sync', dest='sync', help='sync', action='store_true')

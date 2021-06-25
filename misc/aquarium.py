@@ -21,9 +21,10 @@ class Aquarium(Program):
         parser = argparse.ArgumentParser(description='aquarium')
         parser.epilog='''
 examples:
-python %(prog)s --roll
-python %(prog)s --sync --build --run
-'''
+{0} {1} --roll
+{0} {1} --sync --build --run
+'''.format(Util.PYTHON, parser.prog)
+
         parser.add_argument('--sync', dest='sync', help='sync', action='store_true')
         parser.add_argument('--makefile', dest='makefile', help='makefile', action='store_true')
         parser.add_argument('--build', dest='build', help='build', action='store_true')
@@ -64,7 +65,7 @@ python %(prog)s --sync --build --run
 
             Util.chdir(repo_dir)
             if repo in ['googletest', 'jsoncpp']:
-                key = '%s_shell_revision' % repo
+                key = '%s_gn_revision' % repo
             else:
                 key = '%s_revision' % repo
             repo_rev[key] = Util.get_working_dir_hash()
@@ -130,7 +131,7 @@ python %(prog)s --sync --build --run
         Util.execute('dos2unix %s/DEPS' % self.root_dir)
 
     def sync(self):
-        cmd = 'python %s --root-dir %s --sync --runhooks' % (Util.GNP_SCRIPT, self.root_dir)
+        cmd = '%s %s --root-dir %s --sync --runhooks' % (Util.PYTHON, Util.GNP_SCRIPT, self.root_dir)
         Util.execute(cmd)
 
     def makefile(self):
