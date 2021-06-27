@@ -89,6 +89,7 @@ class ChromeDrop(Program):
         self.result_dir = '%s/result/%s' % (root_dir, self.timestamp)
 
         self.exec_log = '%s/exec.log' % self.result_dir
+        Util.ensure_nofile(self.exec_log)
         self.run_chrome_channel = args.run_chrome_channel
         self.run_chrome_rev = args.run_chrome_rev
         self.run_mesa_rev = args.run_mesa_rev
@@ -173,6 +174,9 @@ class ChromeDrop(Program):
             cmd += ' --run-args="%s"' % run_args
             self._execute(cmd)
 
+            rev_name, _ = Util.get_backup_dir('%s/%s' % (self.angle_dir, 'backup'), 'latest')
+            Util.append_file(self.exec_log, 'ANGLE Rev%s%s' % (self.SEPARATOR, rev_name))
+
         if 'dawn' in self.targets:
             cmd = '%s %s --run --run-target dawn_e2e --run-rev latest --root-dir %s' % (Util.PYTHON, Util.GNP_SCRIPT, self.dawn_dir)
             result_file = '%s/dawn.json' % self.result_dir
@@ -183,6 +187,9 @@ class ChromeDrop(Program):
                 run_args += ' --gtest_filter=*BindGroupTests*'
             cmd += ' --run-args="%s"' % run_args
             self._execute(cmd)
+
+            rev_name, _ = Util.get_backup_dir('%s/%s' % (self.dawn_dir, 'backup'), 'latest')
+            Util.append_file(self.exec_log, 'Dawn Rev%s%s' % (self.SEPARATOR, rev_name))
 
         if 'webgl' in self.targets:
             common_cmd = 'vpython content/test/gpu/run_gpu_integration_test.py webgl_conformance --disable-log-uploads'
@@ -280,6 +287,9 @@ class ChromeDrop(Program):
                 cmd += ' --write-full-results-to %s' % result_file
                 self._execute(cmd, exit_on_error=False, show_duration=True)
 
+            rev_name, _ = Util.get_backup_dir('%s/%s' % (os.path.dirname(self.chrome_dir), 'backup'), 'latest')
+            Util.append_file(self.exec_log, 'Chrome Rev%s%s' % (self.SEPARATOR, rev_name))
+
         self.report()
 
     def report(self):
@@ -309,6 +319,8 @@ class ChromeDrop(Program):
 
         Util.info(details)
         Util.info(summary)
+        for line in open(self.exec_log).readlines():
+            print(line.rstrip())
 
         report_file = '%s/report.txt' % self.result_dir
         Util.ensure_nofile(report_file)
