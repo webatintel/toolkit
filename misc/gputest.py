@@ -179,7 +179,7 @@ examples:
         self.build_type_cap = 'Release'
         if args.location == 'default':
             if args.run:
-                args.locaion = 'remote'
+                args.location = 'remote'
             else:
                 args.location = 'source'
 
@@ -556,6 +556,7 @@ examples:
                     virtual_project = 'chromiumgputest'
                 else:
                     virtual_project = project
+
                 if self.args.location == 'local':
                     rev_name, date, rev = Util.get_local_backup(virtual_project, 'latest')
                 elif self.args.location == 'remote':
