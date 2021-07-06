@@ -73,6 +73,7 @@ class Gnp(Program):
         parser.add_argument('--sync-src-only', dest='sync_src_only', help='sync src only', action='store_true')
         parser.add_argument('--runhooks', dest='runhooks', help='runhooks', action='store_true')
         parser.add_argument('--makefile', dest='makefile', help='generate makefile', action='store_true')
+        parser.add_argument('--makefile-vs', dest='makefile_vs', help='generate visual studio sln', action='store_true')
         parser.add_argument('--build', dest='build', help='build', action='store_true')
         parser.add_argument('--build-max-fail', dest='build_max_fail', help='build keeps going until N jobs fail', type=int, default=1)
         parser.add_argument('--build-target', dest='build_target', help='build target')
@@ -264,7 +265,10 @@ examples:
             gn_args += ' enable_nacl=false proprietary_codecs=true'
 
         quotation = Util.get_quotation()
-        cmd = 'gn --args=%s%s%s gen %s' % (quotation, gn_args, quotation, self.out_dir)
+        cmd = 'gn --args=%s%s%s' % (quotation, gn_args, quotation)
+        if args.makefile_vs:
+            cmd += ' --ide=vs'
+        cmd += ' gen %s' % self.out_dir
         Util.ensure_dir(self.out_dir)
         Util.info('GN ARGS: {}'.format(gn_args))
         self._execute(cmd, exit_on_error=self.exit_on_error)
