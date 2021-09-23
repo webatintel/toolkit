@@ -53,8 +53,8 @@ examples:
         args = self.args
         self.build_type = args.build_type
         self.build_force = args.build_force
-        self.drm_dir = 'drm-master'
-        self.mesa_dir = 'mesa-master'
+        self.drm_dir = 'drm-main'
+        self.mesa_dir = 'mesa-main'
         self.backup_dir = '%s/backup' % self.root_dir
         self.hashes = []
         self.rev = args.rev
@@ -71,7 +71,7 @@ examples:
             self._execute('git clone https://gitlab.freedesktop.org/mesa/drm %s' % self.drm_dir)
 
         if not os.path.exists(self.mesa_dir):
-            self._execute('git clone -b master https://gitlab.freedesktop.org/mesa/mesa %s' % self.mesa_dir)
+            self._execute('git clone -b main https://gitlab.freedesktop.org/mesa/mesa %s' % self.mesa_dir)
 
     def sync(self):
         for dir in [self.drm_dir, self.mesa_dir]:
@@ -136,7 +136,7 @@ examples:
     def _init_hash(self):
         if not self.hashes:
             Util.chdir('%s/%s' % (self.root_dir, self.mesa_dir))
-            self.hashes = Util.get_repo_hashes()
+            self.hashes = Util.get_repo_hashes(branch='main')
 
     def _rev_to_hash(self, rev):
         self._init_hash()
