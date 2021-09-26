@@ -331,6 +331,9 @@ class ChromeDrop(Program):
         Util.append_file(report_file, summary)
         Util.append_file(report_file, details)
 
+        subject = '[Chrome Drop] %s %s' % (Util.HOST_NAME, self.timestamp)
+        Util.send_email(subject, summary)
+
     def batch(self):
         self.sync()
         self.build()
