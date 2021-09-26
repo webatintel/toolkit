@@ -124,11 +124,6 @@ class GPUTest(Program):
 
     RESULT_FILE_SUFFIX = '.json'
     RESULT_FILE_PATTERN = r'^.*-(.*)%s$' % RESULT_FILE_SUFFIX
-
-    EMAIL_SENDER = 'webgraphics@intel.com'
-    EMAIL_ADMIN = 'yang.gu@intel.com'
-    EMAIL_TO = 'yang.gu@intel.com'
-
     MAX_FAIL_IN_REPORT = 30
 
     SEPARATOR = '|'
@@ -140,6 +135,7 @@ class GPUTest(Program):
         parser.add_argument('--debug', dest='debug', help='debug', action='store_true')
         parser.add_argument('--target', dest='target', help='target', default='all')
         parser.add_argument('--email', dest='email', help='email', action='store_true')
+        parser.add_argument('--email-to', dest='email_to', help='email to')
         parser.add_argument('--location', dest='location', help='local for local backup, remote for remote backup and source for source code', default='default')
         parser.add_argument('--repeat', dest='repeat', help='repeat', type=int, default=1)
         parser.add_argument('--list', dest='list', help='list', action='store_true')
@@ -544,7 +540,7 @@ examples:
         Util.append_file(report_file, html)
         subject = 'Regression %s' % regression_count
 
-        self._send_email(subject, html, type='html')
+        self._send_email(subject, html)
 
     def _update_target(self):
         if self.args.location == 'source':
@@ -744,10 +740,10 @@ examples:
 
         return pass_fail, fail_pass, fail_fail, pass_pass
 
-    def _send_email(self, subject, content='', type='plain'):
+    def _send_email(self, subject, content=''):
         if self.args.email:
             subject = '[GPUTest] %s %s %s' % (Util.HOST_NAME, self.timestamp, subject)
-            Util.send_email(subject, content, type)
+            Util.send_email(subject, content, to=self.args.email_to, type='html')
 
 if __name__ == '__main__':
     GPUTest()
