@@ -542,10 +542,9 @@ examples:
         report_file = '%s/report.html' % self.result_dir
         Util.ensure_nofile(report_file)
         Util.append_file(report_file, html)
-        subject = '[GPUTest] Host %s Datetime %s Regressions %s' % (Util.HOST_NAME, self.timestamp, regression_count)
+        subject = 'Regression %s' % regression_count
 
-        if self.args.email:
-            Util.send_email(self.EMAIL_SENDER, self.EMAIL_TO, subject, html, type='html')
+        self._send_email(subject, html, type='html')
 
     def _update_target(self):
         if self.args.location == 'source':
@@ -745,10 +744,10 @@ examples:
 
         return pass_fail, fail_pass, fail_fail, pass_pass
 
-    def _send_email(self, subject='', content=''):
+    def _send_email(self, subject, content='', type='plain'):
         if self.args.email:
-            subject = '[GPUTest] %s %s' % (Util.HOST_NAME, subject)
-            Util.send_email(self.EMAIL_SENDER, self.EMAIL_ADMIN, subject, content)
+            subject = '[GPUTest] %s %s %s' % (Util.HOST_NAME, self.timestamp, subject)
+            Util.send_email(subject, content, type)
 
 if __name__ == '__main__':
     GPUTest()
