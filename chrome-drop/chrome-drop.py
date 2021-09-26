@@ -153,6 +153,10 @@ class ChromeDrop(Program):
     def run(self):
         if self.target_os == Util.CHROMEOS:
             return
+
+        if 'webgl' in self.targets:
+            Util.execute('vpython -m pip install pywin32 requests pathos six')
+
         Util.clear_proxy()
 
         if Util.HOST_OS == Util.LINUX:
@@ -192,7 +196,6 @@ class ChromeDrop(Program):
             Util.append_file(self.exec_log, 'Dawn Rev%s%s' % (self.SEPARATOR, rev_name))
 
         if 'webgl' in self.targets:
-            Util.execute('vpython -m pip install pywin32 requests pathos six')
             common_cmd = 'vpython content/test/gpu/run_gpu_integration_test.py webgl_conformance --disable-log-uploads'
             if self.run_chrome_channel == 'build':
                 self.chrome_rev = self.run_chrome_rev
