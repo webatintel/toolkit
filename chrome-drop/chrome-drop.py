@@ -294,6 +294,8 @@ class ChromeDrop(Program):
             rev_name, _ = Util.get_backup_dir('%s/%s' % (os.path.dirname(self.chrome_dir), 'backup'), 'latest')
             Util.append_file(self.exec_log, 'Chrome Rev%s%s' % (self.SEPARATOR, rev_name))
 
+        self.report()
+
     def report(self):
         if self.args.report:
             self.result_dir = self.args.report
@@ -319,10 +321,11 @@ class ChromeDrop(Program):
                 result += '[FAIL_PASS]\n%s\n' % '\n'.join(fail_pass[:self.MAX_FAIL_IN_REPORT])
             details += result
 
+        exec_log_content = open(self.exec_log).read()
+
         Util.info(details)
         Util.info(summary)
-        for line in open(self.exec_log).readlines():
-            print(line.rstrip())
+        Util.info(exec_log_content)
 
         report_file = '%s/report.txt' % self.result_dir
         Util.ensure_nofile(report_file)
@@ -330,13 +333,12 @@ class ChromeDrop(Program):
         Util.append_file(report_file, details)
 
         subject = '[Chrome Drop] %s %s' % (Util.HOST_NAME, self.timestamp)
-        Util.send_email(subject, summary + details)
+        Util.send_email(subject, summary + '\n' + details + '\n' + exec_log_content)
 
     def batch(self):
         self.sync()
         self.build()
         self.run()
-        self.report()
 
     def _handle_ops(self):
         args = self.args
