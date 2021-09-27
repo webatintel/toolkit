@@ -294,8 +294,6 @@ class ChromeDrop(Program):
             rev_name, _ = Util.get_backup_dir('%s/%s' % (os.path.dirname(self.chrome_dir), 'backup'), 'latest')
             Util.append_file(self.exec_log, 'Chrome Rev%s%s' % (self.SEPARATOR, rev_name))
 
-        self.report()
-
     def report(self):
         if self.args.report:
             self.result_dir = self.args.report
@@ -332,7 +330,7 @@ class ChromeDrop(Program):
         Util.append_file(report_file, details)
 
         subject = '[Chrome Drop] %s %s' % (Util.HOST_NAME, self.timestamp)
-        Util.send_email(subject, summary)
+        Util.send_email(subject, summary + details)
 
     def batch(self):
         self.sync()
