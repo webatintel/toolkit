@@ -62,6 +62,7 @@ class ChromeDrop(Program):
         parser.add_argument('--dryrun', dest='dryrun', help='dryrun', action='store_true')
         parser.add_argument('--mesa-dir', dest='mesa_dir', help='mesa dir')
         parser.add_argument('--run-manual', dest='run_manual', help='run manual', action='store_true')
+        parser.add_argument('--email', dest='email', help='email', action='store_true')
 
         parser.epilog = '''
 {0} {1} --batch
@@ -169,16 +170,24 @@ class ChromeDrop(Program):
 
         if 'angle' in self.targets:
             cmd = '%s %s --run --run-target angle_e2e --run-rev latest --root-dir %s' % (Util.PYTHON, Util.GNP_SCRIPT, self.angle_dir)
-            result_file = '%s/angle.json' % self.result_dir
-            run_args = '--gtest_output=json:%s' % result_file
-            if self.run_filter != 'all':
-                run_args += ' --test-filter=*%s*' % self.run_filter
+            run_args = ''
             if self.args.dryrun:
-                run_args += ' --gtest_filter=*EGLAndroidFrameBufferTargetTest*'
-            cmd += ' --run-args="%s"' % run_args
+                run_args = '--gtest_filter=*EGLAndroidFrameBufferTargetTest*'
+            elif self.run_filter != 'all':
+                run_args = '--gtest_filter=*%s*' % self.run_filter
+
+            if run_args:
+                cmd += ' --run-args="%s"' % run_args
             self._execute(cmd)
 
             rev_name, _ = Util.get_backup_dir('%s/%s' % (self.angle_dir, 'backup'), 'latest')
+            output_file = '%s/backup/%s/out/Release/output.json' % (self.angle_dir, rev_name)
+            result_file = '%s/angle.json' % self.result_dir
+            if os.path.exists(output_file):
+                shutil.move(output_file, result_file)
+            else:
+                Util.ensure_file(result_file)
+
             Util.append_file(self.exec_log, 'ANGLE Rev%s%s' % (self.SEPARATOR, rev_name))
 
         if 'dawn' in self.targets:
@@ -303,14 +312,14 @@ class ChromeDrop(Program):
         regression_count = 0
         summary = 'Final summary:\n'
         details = 'Final details:\n'
-
         for result_file in os.listdir(self.result_dir):
-            if 'angle' in result_file or 'dawn' in result_file:
-                type = 'angle'
-            elif 'webgl' in result_file:
+            if 'angle' in result_file or 'webgl' in result_file:
                 type = 'gtest_angle'
+            elif 'dawn' in result_file:
+                type = 'angle'
             else:
                 continue
+
             pass_fail, fail_pass, fail_fail, pass_pass = Util.get_test_result('%s/%s' % (self.result_dir, result_file), type)
             regression_count += len(pass_fail)
             result = '%s: PASS_FAIL %s, FAIL_PASS %s, FAIL_FAIL %s PASS_PASS %s\n' % (os.path.splitext(result_file)[0], len(pass_fail), len(fail_pass), len(fail_fail), len(pass_pass))
@@ -332,8 +341,9 @@ class ChromeDrop(Program):
         Util.append_file(report_file, summary)
         Util.append_file(report_file, details)
 
-        subject = '[Chrome Drop] %s %s' % (Util.HOST_NAME, self.timestamp)
-        Util.send_email(subject, summary + '\n' + details + '\n' + exec_log_content)
+        if self.args.batch or self.args.email:
+            subject = '[Chrome Drop] %s %s' % (Util.HOST_NAME, self.timestamp)
+            Util.send_email(subject, summary + '\n' + details + '\n' + exec_log_content)
 
     def batch(self):
         self.sync()
