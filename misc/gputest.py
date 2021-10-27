@@ -394,7 +394,7 @@ examples:
                     if Util.HOST_OS == skip_case[self.SKIP_CASES_INDEX_OS] and virtual_name == skip_case[self.SKIP_CASES_INDEX_VIRTUAL_NAME] and len(skip_case) == self.SKIP_CASES_INDEX_CASES + 1:
                         config_args += ' %s=-%s' % (self.REAL_TYPE_INFO[real_type][self.REAL_TYPE_INFO_INDEX_FILTER], skip_case[self.SKIP_CASES_INDEX_CASES])
 
-            if real_type in ['telemetry_gpu_integration_test']:
+            if real_type in ['telemetry_gpu_integration_test', 'webgpu_blink_web_tests']:
                 shard_count_arg = '--total-shards'
                 shard_index_arg = '--shard-index'
                 output_arg = '--write-full-results-to'
