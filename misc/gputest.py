@@ -81,7 +81,7 @@ class GPUTest(Program):
 
         'dawn_end2end_skip_validation_tests': ['gtest_chrome', 'BindGroupTests', '--adapter-vendor-id=0x8086'],
         'dawn_end2end_tests': ['gtest_chrome', 'ComputeStorageBufferBarrierTests', ''],
-        'dawn_end2end_tests_runsuppressed': ['gtest_chrome', 'ComputeStorageBufferBarrierTests', ''],
+        'dawn_end2end_tests_runsuppressed': ['gtest_chrome', 'AlignSmall', ''],
         'dawn_end2end_validation_layers_tests': ['gtest_chrome', 'BindGroupTests'],
         'dawn_end2end_wire_tests': ['gtest_chrome', 'BindGroupTests'],
         'dawn_perf_tests': ['gtest_chrome', 'BufferUploadPerf.Run/Vulkan_Intel', '--override-steps=1'],
@@ -99,7 +99,7 @@ class GPUTest(Program):
         'webgl_conformance_validating_tests': ['telemetry_gpu_integration_test', 'conformance/attribs'],
         'webgl_conformance_vulkan_passthrough_tests': ['telemetry_gpu_integration_test', 'conformance/attribs'],
 
-        'webgpu_blink_web_tests': ['webgpu_blink_web_tests', 'wpt_internal/webgpu/cts.html?q=webgpu:api,operation,render_pass,storeOp:*'],
+        'webgpu_blink_web_tests': ['webgpu_blink_web_tests', 'wpt_internal/webgpu/cts.https.html?q=webgpu:api,operation,resource_init,texture_zero:uninitialized_texture_is_zero:*'],
         'webgpu_blink_web_tests_with_partial_backend_validation': ['webgpu_blink_web_tests', 'wpt_internal/webgpu/cts.html?q=webgpu:api,operation,render_pass,storeOp:*'],
     }
 
@@ -399,7 +399,7 @@ examples:
                 shard_index_arg = '--shard-index'
                 output_arg = '--write-full-results-to'
             elif real_type in ['gtest_chrome']:
-                output_arg = '--gtest_output=json:'
+                output_arg = '--test-launcher-summary-output'
 
             shard_count = int(self.os_targets[target_index][self.TARGET_INDEX_SHARD_COUNT])
             if real_type in ['gtest_angle', 'gtest_chrome']:
@@ -419,11 +419,8 @@ examples:
 
                 if real_type in ['aquarium']:
                     shard_args += ' > %s' % result_file
-                elif real_type in ['telemetry_gpu_integration_test']:
+                elif real_type in ['gtest_chrome', 'telemetry_gpu_integration_test']:
                     shard_args += ' %s=%s' % (output_arg, result_file)
-                    Util.ensure_file(result_file)
-                elif real_type in ['gtest_chrome']:
-                    shard_args += ' %s%s' % (output_arg, result_file)
                     Util.ensure_file(result_file)
 
                 cmd = '%s --run-args="%s%s"' % (config_cmd, config_args, shard_args)
