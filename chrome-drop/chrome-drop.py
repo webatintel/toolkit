@@ -175,10 +175,12 @@ class ChromeDrop(Program):
                 run_args = '--gtest_filter=*EGLAndroidFrameBufferTargetTest*'
             elif self.run_filter != 'all':
                 run_args = '--gtest_filter=*%s*' % self.run_filter
+            else:
+                run_args = '--gtest_filter=*D3D11*'
 
             if run_args:
                 cmd += ' --run-args="%s"' % run_args
-            self._execute(cmd)
+            self._execute(cmd, show_duration=True)
 
             rev_name, _ = Util.get_backup_dir('%s/%s' % (self.angle_dir, 'backup'), 'latest')
             output_file = '%s/backup/%s/out/Release/output.json' % (self.angle_dir, rev_name)
@@ -199,7 +201,7 @@ class ChromeDrop(Program):
             if self.args.dryrun:
                 run_args += ' --gtest_filter=*BindGroupTests*'
             cmd += ' --run-args="%s"' % run_args
-            self._execute(cmd)
+            self._execute(cmd, show_duration=True)
 
             rev_name, _ = Util.get_backup_dir('%s/%s' % (self.dawn_dir, 'backup'), 'latest')
             Util.append_file(self.exec_log, 'Dawn Rev%s%s' % (self.SEPARATOR, rev_name))
