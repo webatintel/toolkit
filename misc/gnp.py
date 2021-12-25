@@ -172,7 +172,7 @@ examples:
             if '.' in min_rev:
                 integer_rev = int(float(min_rev)) + 1
                 self.integer_rev = integer_rev
-                self.repo.get_info(integer_rev)
+                self.repo.get_info(integer_rev, integer_rev, 'main')
                 roll_count = self.repo.info[ChromiumRepo.INFO_INDEX_REV_INFO][integer_rev][ChromiumRepo.REV_INFO_INDEX_ROLL_COUNT]
                 if roll_count <= 1:
                     Util.error('Rev %s cannot be built as a roll')
@@ -211,11 +211,11 @@ examples:
                 self._execute('git reset --hard HEAD && git clean -fd', exit_on_error=self.exit_on_error)
 
             if self.integer_rev:
-                self.repo.get_info(self.integer_rev)
+                self.repo.get_info(self.integer_rev, self.integer_rev, 'main')
             self._chromium_sync_integer_rev()
             if not self.integer_rev:
                 self.integer_rev = self.repo.get_working_dir_rev()
-                self.repo.get_info(self.integer_rev)
+                self.repo.get_info(self.integer_rev, self.integer_rev, 'main')
             if self.decimal_rev:
                 self._chromium_sync_decimal_rev()
         else:
@@ -524,7 +524,7 @@ examples:
             working_dir_rev = self.repo.get_working_dir_rev()
             if working_dir_rev == self.integer_rev:
                 return
-            tmp_hash = self.repo.get_hash_from_rev(self.integer_rev)
+            tmp_hash = self.repo.get_hash_from_rev(self.integer_rev, 'main')
 
         if tmp_hash:
             extra_cmd = '--revision src@' + tmp_hash
