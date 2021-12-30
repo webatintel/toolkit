@@ -70,6 +70,8 @@ class GPUTest(Program):
     VIRTUAL_NAME_INFO_INDEX_REAL_TYPE = 0
     VIRTUAL_NAME_INFO_INDEX_DRYRUN = 1
     VIRTUAL_NAME_INFO_INDEX_EXTRA_ARGS = 2
+    # In the windows configuration of chromium.dawn.json, webgpu blink web tests with backend validation is renamed to 'webgpu_blink_web_tests_with_partial_backend_validation'
+    WEBGPU_BLINK_WEB_TESTS_WITH_BACKEND_VALIDATION_VIRTUAL_NAME = 'webgpu_blink_web_tests_with_partial_backend_validation' if Util.HOST_OS == Util.WINDOWS else 'webgpu_blink_web_tests_with_backend_validation'
     VIRTUAL_NAME_INFO = {
         'aquarium_d3d12': ['aquarium', '1'],
         'aquarium_dawn_d3d12': ['aquarium', '1'],
@@ -100,7 +102,7 @@ class GPUTest(Program):
         'webgl_conformance_vulkan_passthrough_tests': ['telemetry_gpu_integration_test', 'conformance/attribs'],
 
         'webgpu_blink_web_tests': ['webgpu_blink_web_tests', 'wpt_internal/webgpu/cts.https.html?q=webgpu:api,operation,resource_init,texture_zero:uninitialized_texture_is_zero:*'],
-        'webgpu_blink_web_tests_with_partial_backend_validation': ['webgpu_blink_web_tests', 'wpt_internal/webgpu/cts.html?q=webgpu:api,operation,render_pass,storeOp:*'],
+        WEBGPU_BLINK_WEB_TESTS_WITH_BACKEND_VALIDATION_VIRTUAL_NAME: ['webgpu_blink_web_tests', 'wpt_internal/webgpu/cts.html?q=webgpu:api,operation,render_pass,storeOp:*'],
     }
 
     CHROME_CONFIG_FILES = ['chromium.gpu.fyi.json', 'chromium.dawn.json']
