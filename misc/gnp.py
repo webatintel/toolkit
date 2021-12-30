@@ -262,7 +262,7 @@ examples:
             else:
                 gn_args += ' ffmpeg_branding="Chrome"'
 
-            gn_args += ' enable_nacl=false proprietary_codecs=true'
+            gn_args += ' enable_nacl=false proprietary_codecs=true is_official_build=true'
 
         quotation = Util.get_quotation()
         cmd = 'gn --args=%s%s%s' % (quotation, gn_args, quotation)
