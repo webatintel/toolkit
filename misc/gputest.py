@@ -45,7 +45,7 @@ class GPUTest(Program):
             'dawn_vulkan': 38,
         },
         Util.LINUX: {
-            'dawn_vulkan': 40,
+            'dawn_vulkan': 38,
         }
     }
 
