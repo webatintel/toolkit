@@ -84,6 +84,7 @@ class Gnp(Program):
         parser.add_argument('--upload', dest='upload', help='upload', action='store_true')
         parser.add_argument('--run', dest='run', help='run', action='store_true')
         parser.add_argument('--run-target', dest='run_target', help='run target')
+        parser.add_argument('--run-output', dest='run_output', help='run output file')
         parser.add_argument('--run-args', dest='run_args', help='run args')
         parser.add_argument('--run-disabled', dest='run_disabled', help='run disabled cases', action='store_true')
         parser.add_argument('--run-filter', dest='run_filter', help='run filter', default='all')
@@ -587,11 +588,15 @@ examples:
             if target not in ['telemetry_gpu_integration_test', 'webgpu_blink_web_tests']:
                 cmd = './' + cmd
 
-        if target == 'angle_end2end_tests' and 'bot-mode' not in cmd:
-            cmd += ' --bot-mode'
+        if target == 'angle_end2end_tests':
+            if 'bot-mode' not in cmd:
+                cmd += ' --bot-mode'
 
-        if target == 'dawn_end2end_tests' and 'exclusive-device-type-preference' not in cmd:
-            cmd += ' --exclusive-device-type-preference=discrete,integrated'
+        if target == 'dawn_end2end_tests':
+            if 'exclusive-device-type-preference' not in cmd:
+                cmd += ' --exclusive-device-type-preference=discrete,integrated'
+            # for output, Chrome build uses --gtest_output=json:%s, standalone build uses --test-launcher-summary-output=%s
+
         self._execute(cmd, exit_on_error=self.exit_on_error)
 
     def _handle_ops(self):

@@ -197,7 +197,7 @@ class ChromeDrop(Program):
             result_file = '%s/dawn.json' % self.result_dir
             run_args = '--gtest_output=json:%s' % result_file
             if self.run_filter != 'all':
-                run_args += ' --test-filter=*%s*' % self.run_filter
+                run_args += ' --gtest_filter=*%s*' % self.run_filter
             if self.args.dryrun:
                 run_args += ' --gtest_filter=*BindGroupTests*'
             run_args += ' --enable-backend-validation=full'
@@ -319,7 +319,7 @@ class ChromeDrop(Program):
             if 'angle' in result_file or 'webgl' in result_file:
                 type = 'gtest_angle'
             elif 'dawn' in result_file:
-                type = 'angle'
+                type = 'dawn'
             else:
                 continue
 
