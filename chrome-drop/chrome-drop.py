@@ -200,6 +200,7 @@ class ChromeDrop(Program):
                 run_args += ' --test-filter=*%s*' % self.run_filter
             if self.args.dryrun:
                 run_args += ' --gtest_filter=*BindGroupTests*'
+            run_args += ' --enable-backend-validation=full'
             cmd += ' --run-args="%s"' % run_args
             self._execute(cmd, show_duration=True)
 
