@@ -38,7 +38,7 @@ examples:
         parser.add_argument('--build-novulkan', dest='build_novulkan', help='build novulkan', action='store_true')
         parser.add_argument('--upload', dest='upload', help='upload', action='store_true')
         parser.add_argument('--run', dest='run', help='run')
-        parser.add_argument('--type', dest='type', help='type', default='i965')
+        parser.add_argument('--type', dest='type', help='type', default='iris')
         parser.add_argument('--rev', dest='rev', help='rev, can be system, latest, or any specific revision', default='latest')
         parser.add_argument('--rev-stride', dest='rev_stride', help='rev stride', type=int, default=1)
         parser.add_argument('--revtohash', dest='revtohash', help='get hash of commit rev starting from 1', type=int)
@@ -180,7 +180,7 @@ examples:
         Util.ensure_nodir('build')
         Util.ensure_dir('build')
         self._execute('echo "#define MESA_GIT_SHA1 \\\"git-%s\\\"" >src/mesa/main/git_sha1.h' % hash)
-        build_cmd = 'PKG_CONFIG_PATH=%s/lib/x86_64-linux-gnu/pkgconfig meson build/ -Dprefix=%s -Dvulkan-drivers=intel -Ddri-drivers=i915,i965 -Ddri-drivers-path=%s/lib/dri -Dgles1=true -Dgles2=true -Dshared-glapi=true -Dplatforms=x11 -Dgbm=true -Ddri3=true -Dgallium-drivers=iris' % (rev_dir, rev_dir, rev_dir)
+        build_cmd = 'PKG_CONFIG_PATH=%s/lib/x86_64-linux-gnu/pkgconfig meson build/ -Dprefix=%s -Dvulkan-drivers=intel -Dgles1=enabled -Dgles2=enabled -Dshared-glapi=enabled -Dplatforms=x11 -Dgbm=enabled -Ddri3=enabled -Dgallium-drivers=iris' % (rev_dir, rev_dir)
         if not self.args.build_novulkan:
             build_cmd += ' -Dvulkan-drivers=intel'
         if self.build_type == 'release':
