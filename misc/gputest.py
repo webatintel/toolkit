@@ -34,7 +34,7 @@ from util.base import *  # pylint: disable=unused-wildcard-import
 class GPUTest(Program):
     PROJECT_INFO_INDEX_ROOT_DIR = 0
     PROJECT_INFO = {
-        'aquarium': [Util.PROJECT_AQUARIUM_DIR],
+        #'aquarium': [Util.PROJECT_AQUARIUM_DIR],
         'chromium': [Util.PROJECT_CHROMIUMGPUTEST_DIR],
     }
     PROJECTS = sorted(PROJECT_INFO.keys())
@@ -647,14 +647,14 @@ examples:
                             target_runsuppressed[self.TARGET_INDEX_SHARD_COUNT] = target_shard_count
                             targets.append(target_runsuppressed)
 
-        # aquarium
-        os_backends = {
-            'windows': ['d3d12', 'dawn_d3d12', 'dawn_vulkan'],
-            'linux': ['dawn_vulkan']
-        }
-        for os in os_backends:
-            for backend in os_backends[os]:
-                targets.append([os, 'aquarium', 'aquarium_%s' % backend, 'aquarium', 'aquarium', ['--test-time 30', '--num-fish 30000', '--enable-msaa', '--turn-off-vsync', '--integrated-gpu', '--window-size=1920,1080', '--print-log', '--backend %s' % backend], 1])
+        if 'aquarium' in self.PROJECTS:
+            os_backends = {
+                'windows': ['d3d12', 'dawn_d3d12', 'dawn_vulkan'],
+                'linux': ['dawn_vulkan']
+            }
+            for os in os_backends:
+                for backend in os_backends[os]:
+                    targets.append([os, 'aquarium', 'aquarium_%s' % backend, 'aquarium', 'aquarium', ['--test-time 30', '--num-fish 30000', '--enable-msaa', '--turn-off-vsync', '--integrated-gpu', '--window-size=1920,1080', '--print-log', '--backend %s' % backend], 1])
 
         targets = sorted(targets, key=operator.itemgetter(self.TARGET_INDEX_OS, self.TARGET_INDEX_PROJECT, self.TARGET_INDEX_REAL_TYPE, self.TARGET_INDEX_VIRTUAL_NAME))
         Util.dump_json('%s/gputest/config.json' % ScriptRepo.IGNORE_DIR, targets)
