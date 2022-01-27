@@ -34,7 +34,7 @@ class ChromeDrop(Program):
         #Util.LINUX: ['WebglConformance_conformance2_textures_misc_tex_3d_size_limit'],
         Util.LINUX: [],
     }
-    MAX_FAIL_IN_REPORT = 20
+    MAX_FAIL_IN_REPORT = 100
     SEPARATOR = '|'
 
     def __init__(self):
