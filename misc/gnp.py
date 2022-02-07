@@ -63,7 +63,7 @@ class Gnp(Program):
         parser.add_argument('--special-out-dir', dest='special_out_dir', help='special out dir', action='store_true')
         parser.add_argument('--rev', dest='rev', help='revision')
         parser.add_argument('--rev-stride', dest='rev_stride', help='rev stride', type=int, default=1)
-        parser.add_argument('--symbol-level', dest='symbol_level', help='symbol level', type=int, default=0)
+        parser.add_argument('--symbol-level', dest='symbol_level', help='symbol level', type=int, default=-1)
         parser.add_argument('--batch', dest='batch', help='batch', action='store_true')
         parser.add_argument('--download', dest='download', help='download', action='store_true')
         parser.add_argument('--no-exit-on-error', dest='no_exit_on_error', help='no exit on error', action='store_true')
@@ -133,6 +133,12 @@ examples:
         else:
             build_type = 'release'
         self.build_type_cap = build_type.capitalize()
+
+        if args.symbol_level == -1:
+            if args.is_debug:
+                args.symbol_level = 2
+            else:
+                args.symbol_level = 0
 
         if self.args.special_out_dir:
             out_dir = Util.cal_relative_out_dir(self.target_arch, self.target_os, args.symbol_level, args.no_component_build, args.dcheck)
