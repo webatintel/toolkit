@@ -107,22 +107,20 @@ examples:
         Util.prepend_path('%s:%s/python-bin' % (Util.PROJECT_DEPOT_TOOLS_DIR, Util.PROJECT_DEPOT_TOOLS_DIR))
 
         if args.project:
-            virtual_project = args.project
+            project = args.project
         else:
-            virtual_project = os.path.basename(self.root_dir)
+            project = os.path.basename(self.root_dir)
             # handle repo chromium
-            if virtual_project == 'src':
-                virtual_project = os.path.basename(os.path.dirname(self.root_dir))
-        if 'chromium' in virtual_project:
-            real_project = 'chromium'
-        elif 'chrome' in virtual_project:
-            real_project = 'chromium'
-        else:
-            real_project = virtual_project
-        self.virtual_project = virtual_project
-        self.real_project = real_project
+            if project == 'src':
+                project = os.path.basename(os.path.dirname(self.root_dir))
+        if 'chromium' in project:
+            project = 'chromium'
+        elif 'chrome' in project:
+            project = 'chromium'
 
-        if real_project == 'chromium':
+        self.project = project
+
+        if project == 'chromium':
             self.repo = ChromiumRepo(self.root_dir)
             self.backup_dir = '%s/backup' % os.path.dirname(self.root_dir)
         else:
@@ -147,11 +145,11 @@ examples:
         # capitalize() is required by WebGPU CTS
         self.out_dir = '%s/%s' % (out_dir, self.build_type_cap)
 
-        if self.real_project == 'angle':
+        if self.project == 'angle':
             default_target = 'angle_e2e'
-        elif self.real_project == 'chromium':
+        elif self.project == 'chromium':
             default_target = 'chrome'
-        elif self.real_project == 'dawn':
+        elif self.project == 'dawn':
             default_target = 'dawn_e2e'
         else:
             default_target = ''
@@ -210,7 +208,7 @@ examples:
             self._handle_ops()
 
     def sync(self):
-        if self.real_project == 'chromium':
+        if self.project == 'chromium':
             if self.rev:
                 Util.info('Begin to sync rev %s' % self.rev)
 
@@ -240,7 +238,7 @@ examples:
         else:
             gn_args = 'is_debug=false'
 
-        if self.real_project != 'aquarium':
+        if self.project != 'aquarium':
             if args.dcheck:
                 gn_args += ' dcheck_always_on=true'
             else:
@@ -259,7 +257,7 @@ examples:
             gn_args += ' symbol_level=%s' % self.args.symbol_level
             gn_args += ' is_clang=true'
 
-        if self.real_project == 'chromium':
+        if self.project == 'chromium':
             if self.args.symbol_level == 0:
                 gn_args += ' blink_symbol_level=0'
 
@@ -293,7 +291,7 @@ examples:
             if key in targets:
                 targets[targets.index(key)] = value
 
-        if self.real_project == 'chromium':
+        if self.project == 'chromium':
             if self.rev:
                 rev = self.rev
             else:
@@ -309,7 +307,7 @@ examples:
         self._execute(cmd, show_duration=True)
 
     def backup(self):
-        if self.real_project == 'chromium':
+        if self.project == 'chromium':
             if self.rev:
                 rev = self.rev
             else:
@@ -338,13 +336,13 @@ examples:
         for index, target in enumerate(targets):
             for tmp_project in ['angle', 'dawn']:
                 if target.startswith(tmp_project):
-                    if self.real_project == 'chromium':
+                    if self.project == 'chromium':
                         targets[index] = '//third_party/%s/src/tests:%s' % (tmp_project, target)
                     else:
                         targets[index] = '//src/tests:%s' % target
 
         tmp_files = []
-        if self.real_project == 'aquarium':
+        if self.project == 'aquarium':
             for tmp_file in os.listdir(self.out_dir):
                 if os.path.isdir('%s/%s' % (self.out_dir, tmp_file)):
                     tmp_file += '/'
@@ -374,10 +372,17 @@ examples:
             else:
                 src_files.append('%s/%s' % (self.out_dir, tmp_file))
 
-        if self.real_project == 'aquarium':
+        if self.project == 'angle':
+            src_files += [
+                'out/%s/args.gn' % self.build_type_cap,
+                'out/%s/../../testing/buildbot/chromium.gpu.fyi.json' % self.build_type_cap,
+                'out/%s/../../testing/buildbot/chromium.dawn.json' % self.build_type_cap,
+            ]
+
+        if self.project == 'aquarium':
             src_files += ['assets/', 'shaders/']
 
-        if self.virtual_project == 'chromiumgputest':
+        if self.project == 'chromium':
             src_files += [
                 'out/%s/args.gn' % self.build_type_cap,
                 'out/%s/../../testing/buildbot/chromium.gpu.fyi.json' % self.build_type_cap,
@@ -414,10 +419,13 @@ examples:
             if not os.path.exists(rev_backup_file):
                 shutil.make_archive(rev_dir, 'zip', rev_dir)
 
-        if Util.check_server_backup(self.virtual_project, os.path.basename(rev_backup_file)):
+        print(self.root_dir)
+        exit(1)
+        relative_path = ''
+        if Util.check_server_backup(relative_path, os.path.basename(rev_backup_file)):
             Util.info('Server already has rev %s' % rev_backup_file)
         else:
-            Util.execute('scp %s wp@%s:/workspace/backup/%s/%s/' % (rev_backup_file, Util.BACKUP_SERVER, Util.HOST_OS, self.virtual_project))
+            Util.execute('scp %s wp@%s:/workspace/backup/%s/%s/' % (rev_backup_file, Util.BACKUP_SERVER, Util.HOST_OS, relative_path))
 
     def run(self):
         if Util.HOST_OS == Util.LINUX and self.args.run_mesa_rev == 'latest':
@@ -444,7 +452,7 @@ examples:
             self._run(target)
 
     def download(self):
-        if not self.real_project == 'chromium':
+        if not self.project == 'chromium':
             return
 
         rev = self.rev

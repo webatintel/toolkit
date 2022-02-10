@@ -32,10 +32,14 @@ sys.path.append(script_dir + '/..')
 from util.base import *  # pylint: disable=unused-wildcard-import
 
 class GPUTest(Program):
+    GPUTEST_FOLDER = 'gputest'
+
     PROJECT_INFO_INDEX_ROOT_DIR = 0
+    PROJECT_INFO_INDEX_CONFIG_FILES = 1
     PROJECT_INFO = {
-        #'aquarium': [Util.PROJECT_AQUARIUM_DIR],
-        'chromium': [Util.PROJECT_CHROMIUMGPUTEST_DIR],
+        'angle': ['%s/%s/angle' % (Util.PROJECT_DIR, GPUTEST_FOLDER), ['chromium.angle.json']],
+        'aquarium': ['%s/%s/aquarium' % (Util.PROJECT_DIR, GPUTEST_FOLDER)],
+        'chromium': ['%s/%s/chromium/src' % (Util.PROJECT_DIR, GPUTEST_FOLDER), ['chromium.gpu.fyi.json', 'chromium.dawn.json']],
     }
     PROJECTS = sorted(PROJECT_INFO.keys())
     AQUARIUM_BASE = {
@@ -106,7 +110,6 @@ class GPUTest(Program):
         'webgpu_blink_web_tests_with_partial_backend_validation': ['webgpu_blink_web_tests', 'wpt_internal/webgpu/cts.html?q=webgpu:api,operation,render_pass,storeOp:*'],
     }
 
-    CHROME_CONFIG_FILES = ['chromium.gpu.fyi.json', 'chromium.dawn.json']
     CONFIG_FILE = 'config.json'
 
     index = 0
@@ -169,7 +172,7 @@ examples:
 
         args = self.args
 
-        self.result_dir = '%s/gputest/%s' % (ScriptRepo.IGNORE_DIR, self.timestamp)
+        self.result_dir = '%s/%s/%s' % (ScriptRepo.IGNORE_DIR, self.GPUTEST_FOLDER, self.timestamp)
         Util.ensure_dir(self.result_dir)
         self.exec_log = '%s/exec.log' % self.result_dir
         Util.ensure_nofile(self.exec_log)
@@ -201,7 +204,7 @@ examples:
     def sync(self):
         all_timer = Timer()
 
-        for project in sorted(self.PROJECTS):
+        for project in self.PROJECTS:
             timer = Timer()
             root_dir = self.PROJECT_INFO[project][self.PROJECT_INFO_INDEX_ROOT_DIR]
             cmd = '%s %s --root-dir %s --sync --runhooks' % (Util.PYTHON, Util.GNP_SCRIPT, root_dir)
@@ -256,11 +259,7 @@ examples:
             elif op == 'backup':
                 cmd = '%s %s --root-dir %s --backup --backup-target %s' % (Util.PYTHON, Util.GNP_SCRIPT, root_dir, ','.join(project_targets[project]))
             elif op == 'upload':
-                if project == 'chromium':
-                    virtual_project = 'chromiumgputest'
-                else:
-                    virtual_project = project
-                cmd = '%s %s --root-dir %s --project %s --upload' % (Util.PYTHON, Util.GNP_SCRIPT, root_dir, virtual_project)
+                cmd = '%s %s --root-dir %s --upload' % (Util.PYTHON, Util.GNP_SCRIPT, root_dir)
 
             if self._execute(cmd, exit_on_error=False, dryrun=self.args.dryrun)[0]:
                 error_info = 'Project %s %s failed' % (project, op)
@@ -303,11 +302,6 @@ examples:
         PROJECT_RUN_INFO_INDEX_REV = 2
         project_run_info = {}
         for project in sorted(self.PROJECTS):
-            if project == 'chromium':
-                virtual_project = 'chromiumgputest'
-            else:
-                virtual_project = project
-
             if self.args.location == 'source':
                 root_dir = self.PROJECT_INFO[project][self.PROJECT_INFO_INDEX_ROOT_DIR]
                 if project == 'chromium':
@@ -319,17 +313,13 @@ examples:
                     rev = Util.get_repo_rev()
                 project_run_info[project] = [root_dir, date, rev]
             else:
-                rev_name, date, rev = Util.get_local_backup(virtual_project, 'latest')
-                project_run_info[project] = ['%s/%s/%s' % (Util.BACKUP_DIR, virtual_project, rev_name), date, rev]
+                relative_path = '%s/%s' % (self.GPUTEST_FOLDER, project)
+                rev_name, date, rev = Util.get_local_backup(relative_path, 'latest')
+                project_run_info[project] = ['%s/%s/%s' % (Util.BACKUP_DIR, relative_path, rev_name), date, rev]
 
         logged_projects = []
         for index, target_index in enumerate(self.target_indexes):
             project = self.os_targets[target_index][self.TARGET_INDEX_PROJECT]
-            if project == 'chromium':
-                virtual_project = 'chromiumgputest'
-            else:
-                virtual_project = project
-
             if project not in logged_projects:
                 logged_projects.append(project)
                 info = '%s Date%s%s' % (project.capitalize(), self.SEPARATOR, project_run_info[project][PROJECT_RUN_INFO_INDEX_DATE])
@@ -543,109 +533,109 @@ examples:
         self._send_email(subject, html)
 
     def _update_target(self):
-        if self.args.location == 'source':
-            chrome_config_dir = '%s/testing/buildbot' % self.PROJECT_INFO['chromium'][self.PROJECT_INFO_INDEX_ROOT_DIR]
-        else:
-            for project in sorted(self.PROJECTS):
-                if project == 'chromium':
-                    virtual_project = 'chromiumgputest'
-                else:
-                    virtual_project = project
-
-                if self.args.location == 'local':
-                    rev_name, date, rev = Util.get_local_backup(virtual_project, 'latest')
-                elif self.args.location == 'remote':
-                    rev_name, date, rev = Util.get_server_backup(virtual_project, 'latest')
-
-                if project == 'chromium':
-                    chrome_config_dir = '%s/%s/%s/testing/buildbot' % (Util.BACKUP_DIR, virtual_project, rev_name)
-
-        Util.info('chrome_config_dir: %s' % chrome_config_dir)
-
         targets = []
         recorded_os_virtual_name = []
         if self.args.debug:
             recorded_virtual_name = []
 
-        for config_file in self.CHROME_CONFIG_FILES:
-            configs = Util.load_json('%s/%s' % (chrome_config_dir, config_file))
-            for config in configs:
-                if not re.search('Intel', config):
-                    continue
+        for project in self.PROJECT_INFO:
+            if project == 'aquarium':
+                continue
 
-                if re.search('Linux', config):
-                    target_os = Util.LINUX
-                elif re.search('Win10', config):
-                    target_os = Util.WINDOWS
-                else:
-                    continue
+            if self.args.location == 'source':
+                config_dir = self.PROJECT_INFO[project][self.PROJECT_INFO_INDEX_ROOT_DIR]
+            else:
+                relative_path = '%s/%s' % (self.GPUTEST_FOLDER, project)
+                if self.args.location == 'local':
+                    rev_name, _, _ = Util.get_local_backup(relative_path, 'latest')
+                elif self.args.location == 'remote':
+                    rev_name, _, _ = Util.get_server_backup(relative_path, 'latest')
 
-                if self.args.debug:
-                    Util.debug(config)
+                config_dir = '%s/%s/%s' % (Util.BACKUP_DIR, relative_path, rev_name)
+            config_dir += '/testing/buildbot'
+            Util.info('config_dir: %s' % config_dir)
 
-                target_types = configs[config]
-                for target_type in target_types:
-                    for target_detail in target_types[target_type]:
-                        if 'name' in target_detail:
-                            tmp_name = target_detail['name']
-                        else:
-                            tmp_name = ''
-                        if 'test' in target_detail:
-                            tmp_test = target_detail['test']
-                        else:
-                            tmp_test = ''
-                        if 'isolate_name' in target_detail:
-                            tmp_isolate_name = target_detail['isolate_name']
-                        else:
-                            tmp_isolate_name = ''
+            config_files = self.PROJECT_INFO[project][self.PROJECT_INFO_INDEX_CONFIG_FILES]
+            for config_file in config_files:
+                config_file = '%s/%s' % (config_dir, config_file)
+                configs = Util.load_json(config_file)
+                for config in configs:
+                    if not re.search('Intel', config):
+                        continue
 
-                        virtual_name = tmp_name or tmp_test
-                        real_name = tmp_isolate_name or tmp_test or tmp_name
+                    if re.search('Linux', config):
+                        target_os = Util.LINUX
+                    elif re.search('Win10', config):
+                        target_os = Util.WINDOWS
+                    else:
+                        continue
 
-                        if virtual_name not in self.VIRTUAL_NAME_INFO.keys():
-                            continue
+                    if self.args.debug:
+                        Util.debug(config)
 
-                        if self.args.debug:
-                            Util.debug(virtual_name)
+                    target_types = configs[config]
+                    for target_type in target_types:
+                        for target_detail in target_types[target_type]:
+                            if 'name' in target_detail:
+                                tmp_name = target_detail['name']
+                            else:
+                                tmp_name = ''
+                            if 'test' in target_detail:
+                                tmp_test = target_detail['test']
+                            else:
+                                tmp_test = ''
+                            if 'isolate_name' in target_detail:
+                                tmp_isolate_name = target_detail['isolate_name']
+                            else:
+                                tmp_isolate_name = ''
 
-                        if self.args.debug and virtual_name not in recorded_virtual_name:
-                            recorded_name.append(virtual_name)
+                            virtual_name = tmp_name or tmp_test
+                            real_name = tmp_isolate_name or tmp_test or tmp_name
 
-                        if [target_os, virtual_name] in recorded_os_virtual_name:
-                            continue
-                        else:
-                            recorded_os_virtual_name.append([target_os, virtual_name])
+                            if virtual_name not in self.VIRTUAL_NAME_INFO.keys():
+                                continue
 
-                        # init
-                        target = [0] * (self.TARGET_INDEX_MAX + 1)
-                        target[self.TARGET_INDEX_OS] = target_os
-                        target[self.TARGET_INDEX_PROJECT] = 'chromium'
-                        target[self.TARGET_INDEX_VIRTUAL_NAME] = virtual_name
-                        target[self.TARGET_INDEX_REAL_NAME] = real_name
-                        target[self.TARGET_INDEX_REAL_TYPE] = self.VIRTUAL_NAME_INFO[virtual_name][self.VIRTUAL_NAME_INFO_INDEX_REAL_TYPE]
-                        if 'args' in target_detail:
-                            target_run_args = target_detail['args']
-                        else:
-                            target_run_args = []
-                        target[self.TARGET_INDEX_RUN_ARGS] = target_run_args
-                        if 'swarming' in target_detail and 'shards' in target_detail['swarming']:
-                            target_shard_count = target_detail['swarming']['shards']
-                        else:
-                            target_shard_count = 1
-                        target[self.TARGET_INDEX_SHARD_COUNT] = target_shard_count
-                        targets.append(target)
+                            if self.args.debug:
+                                Util.debug(virtual_name)
 
-                        # dawn_end2end_tests suppressed tests
-                        if target[self.TARGET_INDEX_VIRTUAL_NAME] == 'dawn_end2end_tests':
-                            target_runsuppressed = [0] * (self.TARGET_INDEX_MAX + 1)
-                            target_runsuppressed[self.TARGET_INDEX_OS] = target_os
-                            target_runsuppressed[self.TARGET_INDEX_PROJECT] = 'chromium'
-                            target_runsuppressed[self.TARGET_INDEX_VIRTUAL_NAME] = virtual_name + '_runsuppressed'
-                            target_runsuppressed[self.TARGET_INDEX_REAL_NAME] = real_name
-                            target_runsuppressed[self.TARGET_INDEX_REAL_TYPE] = self.VIRTUAL_NAME_INFO[virtual_name][self.VIRTUAL_NAME_INFO_INDEX_REAL_TYPE]
-                            target_runsuppressed[self.TARGET_INDEX_RUN_ARGS] = target_run_args + ['--run-suppressed-tests', '--bot-mode']
-                            target_runsuppressed[self.TARGET_INDEX_SHARD_COUNT] = target_shard_count
-                            targets.append(target_runsuppressed)
+                            if self.args.debug and virtual_name not in recorded_virtual_name:
+                                recorded_name.append(virtual_name)
+
+                            if [target_os, virtual_name] in recorded_os_virtual_name:
+                                continue
+                            else:
+                                recorded_os_virtual_name.append([target_os, virtual_name])
+
+                            # init
+                            target = [0] * (self.TARGET_INDEX_MAX + 1)
+                            target[self.TARGET_INDEX_OS] = target_os
+                            target[self.TARGET_INDEX_PROJECT] = 'chromium'
+                            target[self.TARGET_INDEX_VIRTUAL_NAME] = virtual_name
+                            target[self.TARGET_INDEX_REAL_NAME] = real_name
+                            target[self.TARGET_INDEX_REAL_TYPE] = self.VIRTUAL_NAME_INFO[virtual_name][self.VIRTUAL_NAME_INFO_INDEX_REAL_TYPE]
+                            if 'args' in target_detail:
+                                target_run_args = target_detail['args']
+                            else:
+                                target_run_args = []
+                            target[self.TARGET_INDEX_RUN_ARGS] = target_run_args
+                            if 'swarming' in target_detail and 'shards' in target_detail['swarming']:
+                                target_shard_count = target_detail['swarming']['shards']
+                            else:
+                                target_shard_count = 1
+                            target[self.TARGET_INDEX_SHARD_COUNT] = target_shard_count
+                            targets.append(target)
+
+                            # dawn_end2end_tests suppressed tests
+                            if target[self.TARGET_INDEX_VIRTUAL_NAME] == 'dawn_end2end_tests':
+                                target_runsuppressed = [0] * (self.TARGET_INDEX_MAX + 1)
+                                target_runsuppressed[self.TARGET_INDEX_OS] = target_os
+                                target_runsuppressed[self.TARGET_INDEX_PROJECT] = 'chromium'
+                                target_runsuppressed[self.TARGET_INDEX_VIRTUAL_NAME] = virtual_name + '_runsuppressed'
+                                target_runsuppressed[self.TARGET_INDEX_REAL_NAME] = real_name
+                                target_runsuppressed[self.TARGET_INDEX_REAL_TYPE] = self.VIRTUAL_NAME_INFO[virtual_name][self.VIRTUAL_NAME_INFO_INDEX_REAL_TYPE]
+                                target_runsuppressed[self.TARGET_INDEX_RUN_ARGS] = target_run_args + ['--run-suppressed-tests', '--bot-mode']
+                                target_runsuppressed[self.TARGET_INDEX_SHARD_COUNT] = target_shard_count
+                                targets.append(target_runsuppressed)
 
         if 'aquarium' in self.PROJECTS:
             os_backends = {
@@ -657,7 +647,7 @@ examples:
                     targets.append([os, 'aquarium', 'aquarium_%s' % backend, 'aquarium', 'aquarium', ['--test-time 30', '--num-fish 30000', '--enable-msaa', '--turn-off-vsync', '--integrated-gpu', '--window-size=1920,1080', '--print-log', '--backend %s' % backend], 1])
 
         targets = sorted(targets, key=operator.itemgetter(self.TARGET_INDEX_OS, self.TARGET_INDEX_PROJECT, self.TARGET_INDEX_REAL_TYPE, self.TARGET_INDEX_VIRTUAL_NAME))
-        Util.dump_json('%s/gputest/config.json' % ScriptRepo.IGNORE_DIR, targets)
+        Util.dump_json('%s/%s/config.json' % (ScriptRepo.IGNORE_DIR, self.GPUTEST_FOLDER), targets)
         self.targets = targets
 
         if self.args.debug:
