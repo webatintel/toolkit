@@ -581,7 +581,7 @@ examples:
 
     def _run(self, target):
         if target == 'telemetry_gpu_integration_test':
-            cmd = 'vpython ../../content/test/gpu/run_gpu_integration_test.py'
+            cmd = 'vpython3 ../../content/test/gpu/run_gpu_integration_test.py'
         elif target == 'webgpu_blink_web_tests':
             cmd = 'bin/run_webgpu_blink_web_tests'
             if Util.HOST_OS == Util.WINDOWS:
