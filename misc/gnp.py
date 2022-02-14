@@ -323,7 +323,6 @@ examples:
             Util.info('Backup folder "%s" alreadys exists' % backup_path)
             os.rename(backup_path, '%s-%s' % (backup_path, Util.get_datetime()))
 
-        backup_target = self.args.backup_target
         if self.args.backup_target:
             targets = self.args.backup_target.split(',')
         else:
@@ -375,14 +374,11 @@ examples:
         if self.project == 'angle':
             src_files += [
                 'out/%s/args.gn' % self.build_type_cap,
-                'out/%s/../../testing/buildbot/chromium.gpu.fyi.json' % self.build_type_cap,
-                'out/%s/../../testing/buildbot/chromium.dawn.json' % self.build_type_cap,
+                'out/%s/../../testing/buildbot/chromium.angle.json' % self.build_type_cap,
             ]
-
-        if self.project == 'aquarium':
+        elif self.project == 'aquarium':
             src_files += ['assets/', 'shaders/']
-
-        if self.project == 'chromium':
+        elif self.project == 'chromium':
             src_files += [
                 'out/%s/args.gn' % self.build_type_cap,
                 'out/%s/../../testing/buildbot/chromium.gpu.fyi.json' % self.build_type_cap,
@@ -419,9 +415,7 @@ examples:
             if not os.path.exists(rev_backup_file):
                 shutil.make_archive(rev_dir, 'zip', rev_dir)
 
-        print(self.root_dir)
-        exit(1)
-        relative_path = ''
+        relative_path = self.root_dir[self.root_dir.index('project') + len('project') + 1:].replace('\\', '/').replace('/src', '')
         if Util.check_server_backup(relative_path, os.path.basename(rev_backup_file)):
             Util.info('Server already has rev %s' % rev_backup_file)
         else:
@@ -581,7 +575,7 @@ examples:
 
     def _run(self, target):
         if target == 'telemetry_gpu_integration_test':
-            cmd = 'vpython ../../content/test/gpu/run_gpu_integration_test.py'
+            cmd = 'vpython3 ../../content/test/gpu/run_gpu_integration_test.py'
         elif target == 'webgpu_blink_web_tests':
             cmd = 'bin/run_webgpu_blink_web_tests'
             if Util.HOST_OS == Util.WINDOWS:

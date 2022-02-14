@@ -38,8 +38,8 @@ class GPUTest(Program):
     PROJECT_INFO_INDEX_CONFIG_FILES = 1
     PROJECT_INFO = {
         'angle': ['%s/%s/angle' % (Util.PROJECT_DIR, GPUTEST_FOLDER), ['chromium.angle.json']],
-        'aquarium': ['%s/%s/aquarium' % (Util.PROJECT_DIR, GPUTEST_FOLDER)],
-        'chromium': ['%s/%s/chromium/src' % (Util.PROJECT_DIR, GPUTEST_FOLDER), ['chromium.gpu.fyi.json', 'chromium.dawn.json']],
+        #'aquarium': ['%s/%s/aquarium' % (Util.PROJECT_DIR, GPUTEST_FOLDER)],
+        'chromium': ['%s/%s/chromium/src' % (Util.PROJECT_DIR, GPUTEST_FOLDER), ['chromium.dawn.json', 'chromium.gpu.fyi.json']],
     }
     PROJECTS = sorted(PROJECT_INFO.keys())
     AQUARIUM_BASE = {
@@ -80,7 +80,7 @@ class GPUTest(Program):
         'aquarium_dawn_vulkan': ['aquarium', '1'],
 
         'angle_end2end_tests': ['gtest_angle', 'EGLAndroidFrameBufferTargetTest'],
-        'angle_perftests': ['gtest_angle', 'BindingsBenchmark'],
+        #'angle_perftests': ['gtest_angle', 'BindingsBenchmark'],
         'angle_white_box_tests': ['gtest_angle', 'VulkanDescriptorSetTest.AtomicCounterReadLimitedDescriptorPool'],
 
         'dawn_end2end_skip_validation_tests': ['gtest_chrome', 'BindGroupTests', '--adapter-vendor-id=0x8086'],
@@ -301,7 +301,7 @@ examples:
         PROJECT_RUN_INFO_INDEX_DATE = 1
         PROJECT_RUN_INFO_INDEX_REV = 2
         project_run_info = {}
-        for project in sorted(self.PROJECTS):
+        for project in self.PROJECTS:
             if self.args.location == 'source':
                 root_dir = self.PROJECT_INFO[project][self.PROJECT_INFO_INDEX_ROOT_DIR]
                 if project == 'chromium':
@@ -538,10 +538,7 @@ examples:
         if self.args.debug:
             recorded_virtual_name = []
 
-        for project in self.PROJECT_INFO:
-            if project == 'aquarium':
-                continue
-
+        for project in self.PROJECTS:
             if self.args.location == 'source':
                 config_dir = self.PROJECT_INFO[project][self.PROJECT_INFO_INDEX_ROOT_DIR]
             else:
@@ -555,17 +552,30 @@ examples:
             config_dir += '/testing/buildbot'
             Util.info('config_dir: %s' % config_dir)
 
+            if project == 'aquarium':
+                os_backends = {
+                    'windows': ['d3d12', 'dawn_d3d12', 'dawn_vulkan'],
+                    'linux': ['dawn_vulkan']
+                }
+                for os in os_backends:
+                    for backend in os_backends[os]:
+                        targets.append([os, 'aquarium', 'aquarium_%s' % backend, 'aquarium', 'aquarium', ['--test-time 30', '--num-fish 30000', '--enable-msaa', '--turn-off-vsync', '--integrated-gpu', '--window-size=1920,1080', '--print-log', '--backend %s' % backend], 1])
+                continue
+
+            # projects other than Aquarium
             config_files = self.PROJECT_INFO[project][self.PROJECT_INFO_INDEX_CONFIG_FILES]
             for config_file in config_files:
                 config_file = '%s/%s' % (config_dir, config_file)
                 configs = Util.load_json(config_file)
                 for config in configs:
-                    if not re.search('Intel', config):
+                    if not re.search('intel', config, re.IGNORECASE):
+                        continue
+                    if re.search('angle-chromium', config):
                         continue
 
-                    if re.search('Linux', config):
+                    if re.search('linux', config, re.IGNORECASE):
                         target_os = Util.LINUX
-                    elif re.search('Win10', config):
+                    elif re.search('win10', config, re.IGNORECASE):
                         target_os = Util.WINDOWS
                     else:
                         continue
@@ -609,7 +619,7 @@ examples:
                             # init
                             target = [0] * (self.TARGET_INDEX_MAX + 1)
                             target[self.TARGET_INDEX_OS] = target_os
-                            target[self.TARGET_INDEX_PROJECT] = 'chromium'
+                            target[self.TARGET_INDEX_PROJECT] = project
                             target[self.TARGET_INDEX_VIRTUAL_NAME] = virtual_name
                             target[self.TARGET_INDEX_REAL_NAME] = real_name
                             target[self.TARGET_INDEX_REAL_TYPE] = self.VIRTUAL_NAME_INFO[virtual_name][self.VIRTUAL_NAME_INFO_INDEX_REAL_TYPE]
@@ -636,15 +646,6 @@ examples:
                                 target_runsuppressed[self.TARGET_INDEX_RUN_ARGS] = target_run_args + ['--run-suppressed-tests', '--bot-mode']
                                 target_runsuppressed[self.TARGET_INDEX_SHARD_COUNT] = target_shard_count
                                 targets.append(target_runsuppressed)
-
-        if 'aquarium' in self.PROJECTS:
-            os_backends = {
-                'windows': ['d3d12', 'dawn_d3d12', 'dawn_vulkan'],
-                'linux': ['dawn_vulkan']
-            }
-            for os in os_backends:
-                for backend in os_backends[os]:
-                    targets.append([os, 'aquarium', 'aquarium_%s' % backend, 'aquarium', 'aquarium', ['--test-time 30', '--num-fish 30000', '--enable-msaa', '--turn-off-vsync', '--integrated-gpu', '--window-size=1920,1080', '--print-log', '--backend %s' % backend], 1])
 
         targets = sorted(targets, key=operator.itemgetter(self.TARGET_INDEX_OS, self.TARGET_INDEX_PROJECT, self.TARGET_INDEX_REAL_TYPE, self.TARGET_INDEX_VIRTUAL_NAME))
         Util.dump_json('%s/%s/config.json' % (ScriptRepo.IGNORE_DIR, self.GPUTEST_FOLDER), targets)
