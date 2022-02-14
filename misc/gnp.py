@@ -333,12 +333,13 @@ examples:
                 targets[targets.index(key)] = value
 
         for index, target in enumerate(targets):
-            for tmp_project in ['angle', 'dawn']:
-                if target.startswith(tmp_project):
-                    if self.project == 'chromium':
-                        targets[index] = '//third_party/%s/src/tests:%s' % (tmp_project, target)
-                    else:
-                        targets[index] = '//src/tests:%s' % target
+            if target.startswith('angle'):
+                targets[index] = '//src/tests:%s' % target
+            elif target.startswith('dawn'):
+                if self.project == 'chromium':
+                    targets[index] = '//third_party/dawn/src/dawn/tests:%s' % target
+                else:
+                    targets[index] = '//src/dawn/tests:%s' % target
 
         tmp_files = []
         if self.project == 'aquarium':
