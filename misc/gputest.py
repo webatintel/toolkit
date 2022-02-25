@@ -309,8 +309,8 @@ examples:
                     rev = ChromiumRepo(root_dir).get_working_dir_rev()
                 else:
                     Util.chdir(root_dir)
-                    date = Util.get_repo_date()
-                    rev = Util.get_repo_rev()
+                    date = Util.get_working_dir_date()
+                    rev = Util.get_working_dir_rev()
                 project_run_info[project] = [root_dir, date, rev]
             else:
                 relative_path = '%s/%s' % (self.GPUTEST_FOLDER, project)
@@ -360,10 +360,11 @@ examples:
                     run_args.remove(run_arg)
                 elif run_arg == '--target=Release_x64':
                     run_args[i] = '--target=release'
-            if '--expected-device-id' in run_args:
+            if virtual_name in ['info_collection_tests', 'trace_test']:
                 _, _, gpu_device_id = Util.get_gpu_info()
-                if gpu_device_id not in run_args:
+                if virtual_name == 'info_collection_tests' and gpu_device_id not in run_args:
                     run_args += ['--expected-device-id', gpu_device_id]
+                run_args += ['--extra-intel-device-id-with-overlays', gpu_device_id]
 
             config_args = ''
             if run_args:
