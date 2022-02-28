@@ -269,7 +269,7 @@ examples:
 
             gn_args += ' enable_nacl=false proprietary_codecs=true chrome_pgo_phase=0'
             if self.args.no_component_build:
-                gn_args += ' is_official_build=true'
+                gn_args += ' is_official_build=true use_cfi_icall=false'
 
         quotation = Util.get_quotation()
         cmd = 'gn --args=%s%s%s' % (quotation, gn_args, quotation)
