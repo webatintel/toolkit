@@ -606,6 +606,8 @@ examples:
         if target == 'dawn_end2end_tests':
             if 'exclusive-device-type-preference' not in cmd:
                 cmd += ' --exclusive-device-type-preference=discrete,integrated'
+            if Util.HOST_OS == Util.LINUX:
+                cmd += ' --backend=vulkan'
             # for output, Chrome build uses --gtest_output=json:%s, standalone build uses --test-launcher-summary-output=%s
 
         self._execute(cmd, exit_on_error=self.exit_on_error)
