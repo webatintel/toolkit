@@ -352,7 +352,7 @@ examples:
                     run_args[i] = '--extra-browser-args=\\\"%s --disable-backgrounding-occluded-windows\\\"' % run_arg
                 elif run_arg == '--browser=release_x64':
                     run_args[i] = '--browser=release'
-                elif run_arg.startswith('--gtest-benchmark-name'):
+                elif run_arg.startswith('--gtest-benchmark-name') or run_arg.startswith('--git-revision'):
                     run_args.remove(run_arg)
                 elif run_arg in ['-v', '--show-stdout', '--print-test-stdout']:
                     run_args.remove(run_arg)
