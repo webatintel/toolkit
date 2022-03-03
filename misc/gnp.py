@@ -581,6 +581,8 @@ examples:
             cmd = 'bin/run_webgpu_blink_web_tests'
             if Util.HOST_OS == Util.WINDOWS:
                 cmd += '.bat'
+                # Workaround for content shell crash on Windows when building webgpu_blink_web_tests with is_official_build which is configured in makefile().
+                cmd += ' --additional-driver-flag=--disable-gpu-sandbox'
         else:
             cmd = '%s%s' % (target, Util.EXEC_SUFFIX)
         if Util.HOST_OS == Util.WINDOWS:
