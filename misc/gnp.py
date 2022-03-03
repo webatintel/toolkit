@@ -59,6 +59,7 @@ class Gnp(Program):
         parser.add_argument('--dcheck', dest='dcheck', help='dcheck', action='store_true')
         parser.add_argument('--is-debug', dest='is_debug', help='is debug', action='store_true')
         parser.add_argument('--no-component-build', dest='no_component_build', help='no component build', action='store_true')
+        parser.add_argument('--is-official-build', dest='is_official_build', help='is official build', action='store_true')
         parser.add_argument('--no-warning-as-error', dest='no_warning_as_error', help='not treat warning as error', action='store_true')
         parser.add_argument('--special-out-dir', dest='special_out_dir', help='special out dir', action='store_true')
         parser.add_argument('--rev', dest='rev', help='revision')
@@ -267,9 +268,9 @@ examples:
             else:
                 gn_args += ' ffmpeg_branding="Chrome"'
 
-            gn_args += ' enable_nacl=false proprietary_codecs=true chrome_pgo_phase=0'
-            if self.args.no_component_build:
-                gn_args += ' is_official_build=true use_cfi_icall=false'
+            gn_args += ' enable_nacl=false proprietary_codecs=true'
+            if self.args.is_official_build:
+                gn_args += ' is_official_build=true use_cfi_icall=false chrome_pgo_phase=0'
 
         quotation = Util.get_quotation()
         cmd = 'gn --args=%s%s%s' % (quotation, gn_args, quotation)
@@ -582,7 +583,7 @@ examples:
             if Util.HOST_OS == Util.WINDOWS:
                 cmd += '.bat'
                 # Workaround for content shell crash on Windows when building webgpu_blink_web_tests with is_official_build which is configured in makefile().
-                cmd += ' --additional-driver-flag=--disable-gpu-sandbox'
+                #cmd += ' --additional-driver-flag=--disable-gpu-sandbox'
         else:
             cmd = '%s%s' % (target, Util.EXEC_SUFFIX)
         if Util.HOST_OS == Util.WINDOWS:
