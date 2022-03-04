@@ -41,7 +41,6 @@ class GPUTest(Program):
         #'aquarium': ['%s/%s/aquarium' % (Util.PROJECT_DIR, GPUTEST_FOLDER)],
         'chromium': ['%s/%s/chromium/src' % (Util.PROJECT_DIR, GPUTEST_FOLDER), ['chromium.dawn.json', 'chromium.gpu.fyi.json']],
     }
-    PROJECTS = sorted(PROJECT_INFO.keys())
     AQUARIUM_BASE = {
         Util.WINDOWS: {
             'd3d12': 33,
@@ -172,6 +171,7 @@ examples:
 
         args = self.args
 
+        self.projects = sorted(self.PROJECT_INFO.keys())
         self.result_dir = '%s/%s/%s' % (ScriptRepo.IGNORE_DIR, self.GPUTEST_FOLDER, self.timestamp)
         Util.ensure_dir(self.result_dir)
         self.exec_log = '%s/exec.log' % self.result_dir
@@ -203,8 +203,9 @@ examples:
 
     def sync(self):
         all_timer = Timer()
+        del_projects = []
 
-        for project in self.PROJECTS:
+        for project in self.projects:
             timer = Timer()
             root_dir = self.PROJECT_INFO[project][self.PROJECT_INFO_INDEX_ROOT_DIR]
             cmd = '%s %s --root-dir %s --sync --runhooks' % (Util.PYTHON, Util.GNP_SCRIPT, root_dir)
@@ -213,6 +214,7 @@ examples:
                 error_info = 'Project %s sync failed' % project
                 self._send_email(subject=error_info)
                 Util.error(error_info)
+                del_projects.append(project)
 
             if project == 'aquarium' and self.args.sync_roll_dawn:
                 Util.chdir('%s/third_party/dawn' % root_dir)
@@ -220,6 +222,9 @@ examples:
                 Util.info('Roll Dawn in Aquarium to %s on %s' % (Util.get_working_dir_hash(), Util.get_working_dir_date()))
 
             self._log_exec(timer.stop(), 'Sync %s' % project, cmd)
+
+        if del_projects:
+            self.projects = Util.diff_list(self.projects, del_projects)
         self._log_exec(all_timer.stop(), 'Total Sync')
 
     def list(self):
@@ -238,11 +243,14 @@ examples:
     def _op(self, op):
         all_timer = Timer()
 
+        del_projects = []
         projects = []
         project_targets = {}
         for target_index in self.target_indexes:
             if target_index < len(self.os_targets) and target_index >= 0:
                 project = self.os_targets[target_index][self.TARGET_INDEX_PROJECT]
+                if project not in self.projects:
+                    continue
                 real_name = self.os_targets[target_index][self.TARGET_INDEX_REAL_NAME]
                 if project not in projects:
                     projects.append(project)
@@ -265,8 +273,12 @@ examples:
                 error_info = 'Project %s %s failed' % (project, op)
                 self._send_email(subject=error_info)
                 Util.error(error_info)
+                del_projects.append(project)
 
             self._log_exec(timer.stop(), '%s %s' % (op.capitalize(), project), cmd)
+
+        if del_projects:
+            self.projects = Util.diff_list(self.projects, del_projects)
         self._log_exec(all_timer.stop(), 'Total %s' % op.capitalize())
 
     def run(self):
@@ -301,7 +313,7 @@ examples:
         PROJECT_RUN_INFO_INDEX_DATE = 1
         PROJECT_RUN_INFO_INDEX_REV = 2
         project_run_info = {}
-        for project in self.PROJECTS:
+        for project in self.projects:
             if self.args.location == 'source':
                 root_dir = self.PROJECT_INFO[project][self.PROJECT_INFO_INDEX_ROOT_DIR]
                 if project == 'chromium':
@@ -539,7 +551,7 @@ examples:
         if self.args.debug:
             recorded_virtual_name = []
 
-        for project in self.PROJECTS:
+        for project in self.projects:
             if self.args.location == 'source':
                 config_dir = self.PROJECT_INFO[project][self.PROJECT_INFO_INDEX_ROOT_DIR]
             else:
@@ -551,7 +563,6 @@ examples:
 
                 config_dir = '%s/%s/%s' % (Util.BACKUP_DIR, relative_path, rev_name)
             config_dir += '/testing/buildbot'
-            Util.info('config_dir: %s' % config_dir)
 
             if project == 'aquarium':
                 os_backends = {
