@@ -96,6 +96,7 @@ class Gnp(Program):
 examples:
 {0} {1} --sync --runhooks --makefile --build --backup --build --run --download
 {0} {1} --backup --root-dir d:\workspace\chrome
+{0} {1} --no-component-build --symbol-level 2 --build --build-target chrome,chromedriver --backup --backup-target chrome,chromedriver --backup-symbol # debug
 '''.format(Util.PYTHON, parser.prog)
 
         python_ver = Util.get_python_ver()
