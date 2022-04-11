@@ -51,6 +51,7 @@ class Gnp(Program):
         'vulkan_tests': '//gpu/vulkan:vulkan_tests',
         'telemetry_gpu_integration_test': '//chrome/test:telemetry_gpu_integration_test',
         'webgl': '//chrome/test:telemetry_gpu_integration_test',
+        'webgpu_cts_tests': '//chrome/test:telemetry_gpu_integration_test',
         'webgpu_blink_web_tests': '//:webgpu_blink_web_tests',
         'webgpu': '//:webgpu_blink_web_tests',
     }
@@ -386,6 +387,7 @@ examples:
                 'out/%s/args.gn' % self.build_type_cap,
                 'out/%s/../../testing/buildbot/chromium.gpu.fyi.json' % self.build_type_cap,
                 'out/%s/../../testing/buildbot/chromium.dawn.json' % self.build_type_cap,
+                'out/%s/../../content/test/gpu/.webgpu_typescript/' % self.build_type_cap,
             ]
 
         src_file_count = len(src_files)
