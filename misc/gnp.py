@@ -387,7 +387,6 @@ examples:
                 'out/%s/args.gn' % self.build_type_cap,
                 'out/%s/../../testing/buildbot/chromium.gpu.fyi.json' % self.build_type_cap,
                 'out/%s/../../testing/buildbot/chromium.dawn.json' % self.build_type_cap,
-                'out/%s/../../content/test/gpu/.webgpu_typescript/' % self.build_type_cap,
             ]
 
         src_file_count = len(src_files)
@@ -395,7 +394,7 @@ examples:
             dst_dir = '%s/%s' % (backup_path, src_file)
             Util.ensure_dir(os.path.dirname(dst_dir))
             if os.path.isdir(src_file):
-                dst_dir = os.path.dirname(os.path.dirname(dst_dir))
+                dst_dir = os.path.dirname(dst_dir.rstrip('/'))
             cmd = 'cp -rf %s %s' % (src_file, dst_dir)
             Util.info('[%s/%s] %s' % (index + 1, src_file_count, cmd))
             self._execute(cmd, exit_on_error=False, show_cmd=False)
