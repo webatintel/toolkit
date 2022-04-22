@@ -67,7 +67,6 @@ class GPUTest(Program):
         'gtest_angle': ['--gtest_filter', ''], # --cfi-diag=0
         'gtest_chrome': ['--gtest_filter', ''], # --cfi-diag=0
         'telemetry_gpu_integration_test': ['--test-filter', '--retry-limit 1 --retry-only-retry-on-failure-tests'],
-        'webgpu_blink_web_tests': ['--isolated-script-test-filter', ''],
     }
 
     VIRTUAL_NAME_INFO_INDEX_REAL_TYPE = 0
@@ -103,12 +102,6 @@ class GPUTest(Program):
         'webgl_conformance_vulkan_passthrough_tests': ['telemetry_gpu_integration_test', 'conformance/attribs'],
         'webgpu_cts_tests': ['telemetry_gpu_integration_test', 'webgpu:idl,constants,flags:*'],
         'webgpu_cts_with_validation_tests': ['telemetry_gpu_integration_test', 'webgpu:idl,constants,flags:*'],
-
-        'webgpu_blink_web_tests': ['webgpu_blink_web_tests', 'wpt_internal/webgpu/cts.https.html?q=webgpu:api,operation,resource_init,texture_zero:uninitialized_texture_is_zero:*'],
-        # Virtual name on Linux
-        'webgpu_blink_web_tests_with_backend_validation': ['webgpu_blink_web_tests', 'wpt_internal/webgpu/cts.html?q=webgpu:api,operation,render_pass,storeOp:*'],
-        # Virtual name on Windows
-        'webgpu_blink_web_tests_with_partial_backend_validation': ['webgpu_blink_web_tests', 'wpt_internal/webgpu/cts.html?q=webgpu:api,operation,render_pass,storeOp:*'],
     }
 
     CONFIG_FILE = 'config.json'
@@ -394,7 +387,7 @@ examples:
 
             dryrun_cond = self.VIRTUAL_NAME_INFO[virtual_name][self.VIRTUAL_NAME_INFO_INDEX_DRYRUN]
             if args.dryrun and dryrun_cond:
-                if real_type not in ['aquarium', 'webgpu_blink_web_tests']:
+                if real_type not in ['aquarium']:
                     dryrun_cond = '*%s*' % dryrun_cond
                 config_args += ' %s=%s' % (self.REAL_TYPE_INFO[real_type][self.REAL_TYPE_INFO_INDEX_FILTER], dryrun_cond)
             else:
@@ -402,7 +395,7 @@ examples:
                     if Util.HOST_OS == skip_case[self.SKIP_CASES_INDEX_OS] and virtual_name == skip_case[self.SKIP_CASES_INDEX_VIRTUAL_NAME] and len(skip_case) == self.SKIP_CASES_INDEX_CASES + 1:
                         config_args += ' %s=-%s' % (self.REAL_TYPE_INFO[real_type][self.REAL_TYPE_INFO_INDEX_FILTER], skip_case[self.SKIP_CASES_INDEX_CASES])
 
-            if real_type in ['telemetry_gpu_integration_test', 'webgpu_blink_web_tests']:
+            if real_type in ['telemetry_gpu_integration_test']:
                 shard_count_arg = '--total-shards'
                 shard_index_arg = '--shard-index'
                 output_arg = '--write-full-results-to'
@@ -436,11 +429,9 @@ examples:
                 self._execute(cmd, exit_on_error=False)
                 self._log_exec(timer.stop(), 'Run %s' % op, cmd)
 
-                if real_type in ['gtest_angle', 'webgpu_blink_web_tests']:
-                    if real_type == 'gtest_angle':
-                        output_file = '%s/out/%s/output%s' % (project_run_info[project][PROJECT_RUN_INFO_INDEX_ROOT_DIR], self.build_type_cap, self.RESULT_FILE_SUFFIX)
-                    elif real_type == 'webgpu_blink_web_tests':
-                        output_file = '%s/out/%s/layout-test-results/full_results%s' % (project_run_info[project][PROJECT_RUN_INFO_INDEX_ROOT_DIR], self.build_type_cap, self.RESULT_FILE_SUFFIX)
+                if real_type == 'gtest_angle':
+                    output_file = '%s/out/%s/output%s' % (project_run_info[project][PROJECT_RUN_INFO_INDEX_ROOT_DIR], self.build_type_cap, self.RESULT_FILE_SUFFIX)
+
                     if os.path.exists(output_file):
                         shutil.move(output_file, result_file)
                     else:
@@ -737,7 +728,7 @@ examples:
                     break
 
         else:
-            if real_type in ['gtest_chrome', 'webgpu_blink_web_tests']:
+            if real_type in ['gtest_chrome']:
                 type = real_type
             elif real_type in ['gtest_angle', 'telemetry_gpu_integration_test']:
                 type = 'gtest_angle'
