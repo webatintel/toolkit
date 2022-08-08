@@ -210,7 +210,7 @@ examples:
         for project in self.projects:
             timer = Timer()
             root_dir = self.PROJECT_INFO[project][self.PROJECT_INFO_INDEX_ROOT_DIR]
-            cmd = '%s %s --root-dir %s --sync --runhooks' % (Util.PYTHON, Util.GNP_SCRIPT, root_dir)
+            cmd = '%s %s --root-dir %s --sync --sync-reset --runhooks' % (Util.PYTHON, Util.GNP_SCRIPT, root_dir)
             dryrun = self.args.dryrun
             if self._execute(cmd, exit_on_error=False, dryrun=dryrun)[0]:
                 error_info = 'Project %s sync failed' % project
