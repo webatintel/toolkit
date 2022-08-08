@@ -37,7 +37,7 @@ class GPUTest(Program):
     PROJECT_INFO_INDEX_ROOT_DIR = 0
     PROJECT_INFO_INDEX_CONFIG_FILES = 1
     PROJECT_INFO = {
-        'angle': ['%s/%s/angle' % (Util.PROJECT_DIR, GPUTEST_FOLDER), ['chromium.angle.json']],
+        'angle': ['%s/%s/angle' % (Util.PROJECT_DIR, GPUTEST_FOLDER), ['angle.json']],
         #'aquarium': ['%s/%s/aquarium' % (Util.PROJECT_DIR, GPUTEST_FOLDER)],
         'chromium': ['%s/%s/chromium/src' % (Util.PROJECT_DIR, GPUTEST_FOLDER), ['chromium.dawn.json', 'chromium.gpu.fyi.json']],
     }
@@ -564,7 +564,11 @@ examples:
                     rev_name, _, _ = Util.get_server_backup(relative_path, 'latest')
 
                 config_dir = '%s/%s/%s' % (Util.BACKUP_DIR, relative_path, rev_name)
-            config_dir += '/testing/buildbot'
+
+            if project == 'angle':
+                config_dir += '/infra/specs'
+            else:
+                config_dir += '/testing/buildbot'
 
             if project == 'aquarium':
                 os_backends = {
@@ -623,7 +627,7 @@ examples:
                                 Util.debug(virtual_name)
 
                             if self.args.debug and virtual_name not in recorded_virtual_name:
-                                recorded_name.append(virtual_name)
+                                recorded_virtual_name.append(virtual_name)
 
                             if [target_os, virtual_name] in recorded_os_virtual_name:
                                 continue
