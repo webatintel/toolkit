@@ -378,7 +378,7 @@ examples:
         if self.project == 'angle':
             src_files += [
                 'out/%s/args.gn' % self.build_type_cap,
-                'out/%s/../../testing/buildbot/chromium.angle.json' % self.build_type_cap,
+                'out/%s/../../infra/specs/angle.json' % self.build_type_cap,
             ]
         elif self.project == 'aquarium':
             src_files += ['assets/', 'shaders/']
