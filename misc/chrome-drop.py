@@ -56,6 +56,7 @@ class ChromeDrop(Program):
         parser.add_argument('--run-verbose', dest='run_verbose', help='verbose mode of run', action='store_true')
         parser.add_argument('--run-webgl-target', dest='run_webgl_target', help='run webgl target, split by comma, like "0,2"', default='all')
         parser.add_argument('--run-no-angle', dest='run_no_angle', help='run without angle', action='store_true')
+        parser.add_argument('--run-jobs', dest='run_jobs', help='run jobs', default=1)
         parser.add_argument('--report', dest='report', help='report')
 
         parser.add_argument('--batch', dest='batch', help='batch', action='store_true')
@@ -264,6 +265,8 @@ class ChromeDrop(Program):
                     common_cmd += ' --skip=%s' % skip_tmp
             if self.run_verbose:
                 common_cmd += ' --verbose'
+
+            common_cmd += ' --jobs=%s' % self.args.run_jobs
 
             Util.ensure_dir(self.result_dir)
             datetime = Util.get_datetime()
