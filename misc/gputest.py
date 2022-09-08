@@ -4,8 +4,8 @@ import re
 import subprocess
 import sys
 
-HOST_OS = platform.system().lower()
-if HOST_OS == 'windows':
+HOST_OS = sys.platform
+if HOST_OS == 'win32':
     lines = subprocess.Popen('dir %s' % __file__.replace(
         '/', '\\'), shell=True, stdout=subprocess.PIPE).stdout.readlines()
     for line in lines:
@@ -572,8 +572,8 @@ examples:
 
             if project == 'aquarium':
                 os_backends = {
-                    'windows': ['d3d12', 'dawn_d3d12', 'dawn_vulkan'],
-                    'linux': ['dawn_vulkan']
+                    Util.WINDOWS: ['d3d12', 'dawn_d3d12', 'dawn_vulkan'],
+                    Util.LINUX: ['dawn_vulkan']
                 }
                 for os in os_backends:
                     for backend in os_backends[os]:

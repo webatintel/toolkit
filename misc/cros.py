@@ -4,8 +4,8 @@ import re
 import subprocess
 import sys
 
-HOST_OS = platform.system().lower()
-if HOST_OS == 'windows':
+HOST_OS = sys.platform
+if HOST_OS == 'win32':
     lines = subprocess.Popen('dir %s' % __file__.replace('/', '\\'), shell=True, stdout=subprocess.PIPE).stdout.readlines()
     for line in lines:
         match = re.search(r'\[(.*)\]', line.decode('utf-8'))

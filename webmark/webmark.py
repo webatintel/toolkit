@@ -4,8 +4,8 @@ import re
 import subprocess
 import sys
 
-HOST_OS = platform.system().lower()
-if HOST_OS == 'windows':
+HOST_OS = sys.platform
+if HOST_OS == 'win32':
     lines = subprocess.Popen('dir %s' % __file__.replace('/', '\\'), shell=True, stdout=subprocess.PIPE).stdout.readlines()
     for line in lines:
         match = re.search(r'\[(.*)\]', line.decode('utf-8'))
@@ -101,7 +101,7 @@ class Suite():
         Format.format(self)
 
     def run(self):
-        if Util.HOST_OS == 'windows':
+        if Util.HOST_OS == Util.WINDOWS:
             webdriver = Util.get_webdriver(browser_name=self.browser.name, browser_path=self.browser.path, browser_options=self.browser.options, webdriver_path=self.browser.webdriver_path)
             for case in self.cases:
                 case.run(webdriver)
