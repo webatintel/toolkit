@@ -62,6 +62,8 @@ class Gnp(Program):
         parser.add_argument('--no-component-build', dest='no_component_build', help='no component build', action='store_true')
         parser.add_argument('--is-official-build', dest='is_official_build', help='is official build', action='store_true')
         parser.add_argument('--no-warning-as-error', dest='no_warning_as_error', help='not treat warning as error', action='store_true')
+        parser.add_argument('--vulkan-only', dest='vulkan_only', help='gn args with vulkan only', action='store_true')
+
         parser.add_argument('--special-out-dir', dest='special_out_dir', help='special out dir', action='store_true')
         parser.add_argument('--rev', dest='rev', help='revision')
         parser.add_argument('--rev-stride', dest='rev_stride', help='rev stride', type=int, default=1)
@@ -273,6 +275,13 @@ examples:
             gn_args += ' enable_nacl=false proprietary_codecs=true'
             if self.args.is_official_build:
                 gn_args += ' is_official_build=true use_cfi_icall=false chrome_pgo_phase=0'
+
+        if self.args.vulkan_only:
+            if self.project == 'angle':
+                #angle_enable_glsl=false angle_enable_essl=false angle_enable_hlsl=false
+                gn_args += ' angle_enable_gl=false angle_enable_metal=false angle_enable_d3d9=false angle_enable_d3d11=false angle_enable_null=false'
+            elif self.project == 'dawn':
+                gn_args += ' dawn_enable_d3d12=false dawn_enable_metal=false dawn_enable_null=false dawn_enable_opengles=false'
 
         quotation = Util.get_quotation()
         cmd = 'gn --args=%s%s%s' % (quotation, gn_args, quotation)
