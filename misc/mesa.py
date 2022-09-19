@@ -163,7 +163,7 @@ examples:
         Util.chdir('%s/%s' % (self.root_dir, self.drm_dir))
         Util.ensure_nodir('build')
         Util.ensure_dir('build')
-        build_cmd = 'meson build/ -Dprefix=%s -Dintel=true -Dvmwgfx=false -Dradeon=false -Damdgpu=false -Dnouveau=false' % rev_dir
+        build_cmd = 'meson build/ -Dprefix=%s --auto-features=disabled -Dintel=enabled -Dvmwgfx=disabled -Dradeon=disabled -Damdgpu=disabled -Dnouveau=disabled' % rev_dir
         if self.build_type == 'release':
             build_cmd += ' -Dbuildtype=release'
         elif self.build_type == 'debug':
