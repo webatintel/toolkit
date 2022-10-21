@@ -613,9 +613,9 @@ examples:
             if target not in ['telemetry_gpu_integration_test', 'webgpu_blink_web_tests']:
                 cmd = './' + cmd
 
-        if target == 'angle_end2end_tests':
-            if 'bot-mode' not in cmd:
-                cmd += ' --bot-mode'
+        if target in ['angle_end2end_tests', 'angle_white_box_tests']:
+            if 'test-launcher-bot-mode' not in cmd:
+                cmd += ' --test-launcher-bot-mode'
 
         if target == 'dawn_end2end_tests':
             if 'exclusive-device-type-preference' not in cmd:
