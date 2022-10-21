@@ -614,7 +614,8 @@ examples:
                 cmd = './' + cmd
 
         if target in ['angle_end2end_tests', 'angle_white_box_tests']:
-            if 'bot-mode' not in cmd:
+            if 'test-launcher-bot-mode' not in cmd:
+
                 cmd += ' --test-launcher-bot-mode'
 
         if target == 'dawn_end2end_tests':
