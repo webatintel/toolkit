@@ -117,17 +117,47 @@ class ChromeDrop(Program):
             self._execute(cmd)
 
         if 'dawn' in self.targets:
+            Util.chdir(self.dawn_dir)
+            self._execute('git checkout src/dawn/tests/DawnTest.cpp')
+
             cmd = '%s %s --sync --runhooks --root-dir %s' % (Util.PYTHON, Util.GNP_SCRIPT, self.dawn_dir)
             self._execute(cmd)
 
+            # Include Vulkan tests
+            valid = False
+            for line in fileinput.input('%s/src/dawn/tests/DawnTest.cpp' % self.dawn_dir, inplace=True):
+                match = re.search('Deselecting Windows Intel Vulkan adapter', line)
+                if match:
+                    valid = True
+                match = re.match('            selected &= false;', line)
+                if valid and match:
+                    line = '            //selected &= false;\n'
+                    valid = False
+                sys.stdout.write(line)
+            fileinput.close()
+
         if 'webgl' in self.targets:
+            Util.chdir('%s/third_party/webgl/src' % self.chrome_dir)
+            for folder in ['conformance', 'conformance2']:
+                self._execute('git checkout sdk/tests/%s/textures/00_test_list.txt' % folder)
+
             if self.target_os == Util.LINUX:
                 self._execute('%s %s/mesa/mesa.py --sync --root-dir %s' % (Util.PYTHON, ScriptRepo.ROOT_DIR, self.mesa_dir))
 
-            cmd = '%s %s --sync --runhooks --root-dir %s' % (Util.PYTHON, Util.GNP_SCRIPT, self.chrome_dir)
+            cmd = '%s %s --sync --sync-reset --runhooks --root-dir %s' % (Util.PYTHON, Util.GNP_SCRIPT, self.chrome_dir)
             if self.args.build_chrome_rev != 'latest':
                 cmd += ' --rev %s' % self.args.build_chrome_rev
             self._execute(cmd)
+
+            # Skip video cases
+            for folder in ['conformance', 'conformance2']:
+                valid = False
+                for line in fileinput.input('%s/third_party/webgl/src/sdk/tests/%s/textures/00_test_list.txt' % (self.chrome_dir, folder), inplace=True):
+                    match = re.match('video/00_test_list.txt', line)
+                    if match:
+                        line = '//' + line
+                    sys.stdout.write(line)
+                fileinput.close()
 
     def build(self):
         # build mesa
