@@ -105,7 +105,8 @@ examples:
             if i % self.args.rev_stride:
                 i += 1
                 continue
-            self._build_one(i, self._rev_to_hash(i))
+            if not self._build_one(i, self._rev_to_hash(i)) and min_rev == max_rev:
+                Util.error('Failed to build revision %s' % i)
             i += 1
 
     def upload(self):
@@ -170,8 +171,7 @@ examples:
             build_cmd += ' -Dbuildtype=debug'
         build_cmd += ' && ninja -j%s -C build/ install' % Util.CPU_COUNT
 
-        result = self._execute(build_cmd)
-        if result[0]:
+        if self._execute(build_cmd, exit_on_error=False)[0]:
             Util.ensure_nodir(rev_dir)
             return False
 
@@ -189,8 +189,7 @@ examples:
             build_cmd += ' -Dbuildtype=debug'
         build_cmd += ' && ninja -j%s -C build/ install' % Util.CPU_COUNT
 
-        result = self._execute(build_cmd)
-        if result[0]:
+        if self._execute(build_cmd, exit_on_error=False)[0]:
             Util.ensure_nodir(rev_dir)
             return False
 

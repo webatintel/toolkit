@@ -294,7 +294,7 @@ examples:
                 if self._execute(cmd, exit_on_error=False, dryrun=dryrun)[0]:
                     error_info = 'Project Mesa build failed'
                     self._send_email(subject=error_info)
-                    Util.error(error_info)
+                    Util.warning(error_info)
                 rev_name, _ = Util.set_mesa(Util.PROJECT_MESA_BACKUP_DIR, self.args.run_mesa_rev)
 
             else:
