@@ -532,6 +532,9 @@ examples:
         if verbose:
             cmd += ' -v'
 
+        if self.args.proxy:
+            Util.set_proxy(self.proxy_address, self.proxy_port)
+
         self._execute(cmd=cmd, exit_on_error=self.exit_on_error)
 
         if not Util.has_depot_tools_in_path() and os.path.exists(Util.PROJECT_DEPOT_TOOLS_DIR):
