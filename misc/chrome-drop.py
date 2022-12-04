@@ -66,7 +66,12 @@ class ChromeDrop(Program):
         parser.add_argument('--email', dest='email', help='email', action='store_true')
 
         parser.epilog = '''
+examples:
 {0} {1} --batch
+{0} {1} --batch --target angle
+{0} {1} --batch --target dawn
+{0} {1} --target angle --run --run-filter EXTBlendFuncExtendedDrawTest
+{0} {1} --target webgl --run --run-webgl-taret 2
 '''.format(Util.PYTHON, parser.prog)
 
         python_ver = Util.get_python_ver()
@@ -117,24 +122,8 @@ class ChromeDrop(Program):
             self._execute(cmd)
 
         if 'dawn' in self.targets:
-            Util.chdir(self.dawn_dir)
-            self._execute('git checkout src/dawn/tests/DawnTest.cpp')
-
             cmd = '%s %s --sync --runhooks --root-dir %s' % (Util.PYTHON, Util.GNP_SCRIPT, self.dawn_dir)
             self._execute(cmd)
-
-            # Include Vulkan tests
-            valid = False
-            for line in fileinput.input('%s/src/dawn/tests/DawnTest.cpp' % self.dawn_dir, inplace=True):
-                match = re.search('Deselecting Windows Intel Vulkan adapter', line)
-                if match:
-                    valid = True
-                match = re.match('            selected &= false;', line)
-                if valid and match:
-                    line = '            //selected &= false;\n'
-                    valid = False
-                sys.stdout.write(line)
-            fileinput.close()
 
         if 'webgl' in self.targets:
             Util.chdir('%s/third_party/webgl/src' % self.chrome_dir)
@@ -200,7 +189,7 @@ class ChromeDrop(Program):
         Util.append_file(self.exec_log, 'GPU device id%s%s' % (self.SEPARATOR, gpu_device_id))
 
         if 'angle' in self.targets:
-            cmd = '%s %s --run --run-target angle_e2e --run-rev latest --root-dir %s' % (Util.PYTHON, Util.GNP_SCRIPT, self.angle_dir)
+            cmd = '%s %s --run --run-target angle_e2e --run-rev latest --root-dir %s --no-exit-on-error' % (Util.PYTHON, Util.GNP_SCRIPT, self.angle_dir)
             run_args = ''
             if self.args.dryrun:
                 run_args = '--gtest_filter=*EGLAndroidFrameBufferTargetTest*'
@@ -211,7 +200,9 @@ class ChromeDrop(Program):
 
             if run_args:
                 cmd += ' --run-args="%s"' % run_args
-            self._execute(cmd, show_duration=True)
+            timer = Timer()
+            self._execute(cmd, exit_on_error=False)
+            Util.append_file(self.exec_log, 'ANGLE Run: %s' % timer.stop())
 
             rev_name, _ = Util.get_backup_dir('%s/%s' % (self.angle_dir, 'backup'), 'latest')
             output_file = '%s/backup/%s/out/Release/output.json' % (self.angle_dir, rev_name)
@@ -224,7 +215,7 @@ class ChromeDrop(Program):
             Util.append_file(self.exec_log, 'ANGLE Rev%s%s' % (self.SEPARATOR, rev_name))
 
         if 'dawn' in self.targets:
-            cmd = '%s %s --run --run-target dawn_e2e --run-rev latest --root-dir %s' % (Util.PYTHON, Util.GNP_SCRIPT, self.dawn_dir)
+            cmd = '%s %s --run --run-target dawn_e2e --run-rev latest --root-dir %s --no-exit-on-error' % (Util.PYTHON, Util.GNP_SCRIPT, self.dawn_dir)
             result_file = '%s/dawn.json' % self.result_dir
             run_args = '--gtest_output=json:%s' % result_file
             if self.run_filter != 'all':
@@ -233,13 +224,16 @@ class ChromeDrop(Program):
                 run_args += ' --gtest_filter=*BindGroupTests*'
             run_args += ' --enable-backend-validation=full'
             cmd += ' --run-args="%s"' % run_args
-            self._execute(cmd, show_duration=True)
+            timer = Timer()
+            self._execute(cmd, exit_on_error=False)
+            Util.append_file(self.exec_log, 'Dawn run: %s' % timer.stop())
 
             rev_name, _ = Util.get_backup_dir('%s/%s' % (self.dawn_dir, 'backup'), 'latest')
             Util.append_file(self.exec_log, 'Dawn Rev%s%s' % (self.SEPARATOR, rev_name))
 
         if 'webgl' in self.targets:
-            common_cmd = 'vpython3 content/test/gpu/run_gpu_integration_test.py webgl_conformance --disable-log-uploads'
+            common_cmd1 = 'vpython3 content/test/gpu/run_gpu_integration_test.py'
+            common_cmd2 = ' --disable-log-uploads --no-exit-on-error'
             if self.run_chrome_channel == 'build':
                 self.chrome_rev = self.run_chrome_rev
                 (chrome_rev_dir, self.chrome_rev) = Util.get_backup_dir(self.chrome_backup_dir, self.chrome_rev)
@@ -255,9 +249,9 @@ class ChromeDrop(Program):
                     else:
                         chrome = 'out/Default/chrome'
 
-                common_cmd += ' --browser=exact --browser-executable=%s' % chrome
+                common_cmd2 += ' --browser=exact --browser-executable=%s' % chrome
             else:
-                common_cmd += ' --browser=%s' % self.run_chrome_channel
+                common_cmd2 += ' --browser=%s' % self.run_chrome_channel
                 Util.chdir(self.chrome_dir)
                 self.chrome_rev = self.run_chrome_channel
                 if Util.HOST_OS == Util.DARWIN:
@@ -284,19 +278,19 @@ class ChromeDrop(Program):
                 return
 
             if self.run_filter != 'all':
-                common_cmd += ' --test-filter=*%s*' % self.run_filter
+                common_cmd2 += ' --test-filter=*%s*' % self.run_filter
             if self.args.dryrun:
-                #common_cmd += ' --test-filter=*copy-texture-image-same-texture*::*ext-texture-norm16*'
-                common_cmd += ' --test-filter=*conformance/attribs*'
+                #common_cmd2 += ' --test-filter=*copy-texture-image-same-texture*::*ext-texture-norm16*'
+                common_cmd2 += ' --test-filter=*conformance/attribs*'
 
             if Util.HOST_OS in self.SKIP_CASES:
                 skip_filter = self.SKIP_CASES[Util.HOST_OS]
                 for skip_tmp in skip_filter:
-                    common_cmd += ' --skip=%s' % skip_tmp
+                    common_cmd2 += ' --skip=%s' % skip_tmp
             if self.run_verbose:
-                common_cmd += ' --verbose'
+                common_cmd2 += ' --verbose'
 
-            common_cmd += ' --jobs=%s' % self.args.run_jobs
+            common_cmd2 += ' --jobs=%s' % self.args.run_jobs
 
             Util.ensure_dir(self.result_dir)
             datetime = Util.get_datetime()
@@ -323,7 +317,7 @@ class ChromeDrop(Program):
                 extra_browser_args = '--disable-backgrounding-occluded-windows'
                 if Util.HOST_OS == Util.LINUX and self.run_no_angle:
                     extra_browser_args += ',--use-gl=desktop'
-                cmd = common_cmd + ' --webgl-conformance-version=%s' % comb[COMB_INDEX_WEBGL]
+                cmd = common_cmd1 + ' webgl%s_conformance' % comb[COMB_INDEX_WEBGL].split('.')[0] + common_cmd2 + ' --webgl-conformance-version=%s' % comb[COMB_INDEX_WEBGL]
                 result_file = ''
                 if Util.HOST_OS == Util.LINUX:
                     result_file = '%s/webgl-%s.log' % (self.result_dir, comb[COMB_INDEX_WEBGL])
@@ -334,7 +328,9 @@ class ChromeDrop(Program):
                 if extra_browser_args:
                     cmd += ' --extra-browser-args="%s"' % extra_browser_args
                 cmd += ' --write-full-results-to %s' % result_file
+                timer = Timer()
                 self._execute(cmd, exit_on_error=False, show_duration=True)
+                Util.append_file(self.exec_log, 'WebGL %s %s run: %s' % (comb[COMB_INDEX_WEBGL], comb[COMB_INDEX_BACKEND], timer.stop()))
 
             rev_name, _ = Util.get_backup_dir('%s/%s' % (os.path.dirname(self.chrome_dir), 'backup'), 'latest')
             Util.append_file(self.exec_log, 'Chrome Rev%s%s' % (self.SEPARATOR, rev_name))
