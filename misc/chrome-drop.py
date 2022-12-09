@@ -222,7 +222,8 @@ examples:
                 run_args += ' --gtest_filter=*%s*' % self.run_filter
             if self.args.dryrun:
                 run_args += ' --gtest_filter=*BindGroupTests*'
-            run_args += ' --enable-backend-validation=full'
+            run_args += ' --enable-backend-validation=disabled'
+            run_args += ' --backend=d3d12'
             cmd += ' --run-args="%s"' % run_args
             timer = Timer()
             self._execute(cmd, exit_on_error=False)
@@ -233,7 +234,7 @@ examples:
 
         if 'webgl' in self.targets:
             common_cmd1 = 'vpython3 content/test/gpu/run_gpu_integration_test.py'
-            common_cmd2 = ' --disable-log-uploads --no-exit-on-error'
+            common_cmd2 = ' --disable-log-uploads'
             if self.run_chrome_channel == 'build':
                 self.chrome_rev = self.run_chrome_rev
                 (chrome_rev_dir, self.chrome_rev) = Util.get_backup_dir(self.chrome_backup_dir, self.chrome_rev)
