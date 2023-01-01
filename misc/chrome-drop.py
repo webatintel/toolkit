@@ -63,7 +63,7 @@ class ChromeDrop(Program):
         parser.add_argument('--dryrun', dest='dryrun', help='dryrun', action='store_true')
         parser.add_argument('--mesa-dir', dest='mesa_dir', help='mesa dir')
         parser.add_argument('--run-manual', dest='run_manual', help='run manual', action='store_true')
-        parser.add_argument('--email', dest='email', help='email', action='store_true')
+        parser.add_argument('--no-email', dest='no_email', help='no email', action='store_true')
 
         parser.epilog = '''
 examples:
@@ -71,7 +71,7 @@ examples:
 {0} {1} --batch --target angle
 {0} {1} --batch --target dawn
 {0} {1} --target angle --run --run-filter EXTBlendFuncExtendedDrawTest
-{0} {1} --target webgl --run --run-webgl-taret 2
+{0} {1} --target webgl --run --run-webgl-target 2
 '''.format(Util.PYTHON, parser.prog)
 
         python_ver = Util.get_python_ver()
@@ -374,7 +374,7 @@ examples:
         Util.append_file(report_file, summary)
         Util.append_file(report_file, details)
 
-        if self.args.batch or self.args.email:
+        if not self.args.no_email:
             subject = '[Chrome Drop] %s %s' % (Util.HOST_NAME, self.timestamp)
             Util.send_email(subject, summary + '\n' + details + '\n' + exec_log_content)
 
