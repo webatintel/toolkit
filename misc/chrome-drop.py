@@ -302,7 +302,6 @@ examples:
                 all_combs = [['2.0.1']]
             elif Util.HOST_OS == Util.WINDOWS:
                 all_combs = [
-                    ['1.0.3', 'd3d9'],
                     ['1.0.3', 'd3d11'],
                     ['2.0.1', 'd3d11'],
                 ]
