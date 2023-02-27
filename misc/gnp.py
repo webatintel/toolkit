@@ -39,6 +39,7 @@ class Gnp(Program):
         'webgpu': 'webgpu_blink_web_tests',
 
         'dawn_e2e': 'dawn_end2end_tests',
+        'webgpu_cts_tests': 'chrome/test:telemetry_gpu_integration_test',
     }
     BACKUP_TARGET_DICT = {
         'angle_e2e': 'angle_end2end_tests',
@@ -83,6 +84,7 @@ class Gnp(Program):
         parser.add_argument('--build-target', dest='build_target', help='build target')
         parser.add_argument('--build-verbose', dest='build_verbose', help='output verbose info. Find log at out/Release/.ninja_log', action='store_true')
         parser.add_argument('--backup', dest='backup', help='backup', action='store_true')
+        parser.add_argument('--backup-inplace', dest='backup_inplace', help='backup inplace', action='store_true')
         parser.add_argument('--backup-symbol', dest='backup_symbol', help='backup symbol', action='store_true')
         parser.add_argument('--backup-target', dest='backup_target', help='backup target')
         parser.add_argument('--upload', dest='upload', help='upload', action='store_true')
@@ -331,7 +333,7 @@ examples:
         Util.ensure_dir(self.backup_dir)
 
         Util.info('Begin to backup %s' % rev_dir)
-        if os.path.exists(backup_path):
+        if os.path.exists(backup_path) and not self.args.backup_inplace:
             Util.info('Backup folder "%s" alreadys exists' % backup_path)
             os.rename(backup_path, '%s-%s' % (backup_path, Util.get_datetime()))
 
@@ -398,9 +400,15 @@ examples:
                 'out/%s/../../testing/buildbot/chromium.dawn.json' % self.build_type_cap,
             ]
 
+        if self.args.backup_target == 'webgpu_cts_tests':
+            src_files += ['third_party/dawn/webgpu-cts/worker_test_globs.txt']
+
         src_file_count = len(src_files)
         for index, src_file in enumerate(src_files):
             dst_dir = '%s/%s' % (backup_path, src_file)
+            if os.path.exists(dst_dir):
+                Util.info(f'[{index + 1}/{src_file_count}] skip {dst_dir}')
+                continue
             Util.ensure_dir(os.path.dirname(dst_dir))
             if os.path.isdir(src_file):
                 dst_dir = os.path.dirname(dst_dir.rstrip('/'))

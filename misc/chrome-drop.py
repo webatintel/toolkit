@@ -1,4 +1,4 @@
-# pylint: disable=line-too-long, missing-function-docstring, missing-module-docstring, missing-class-docstring
+# pylint: disable=line-too-long, missing-function-docstring, missing-module-docstring, missing-class-docstring, wildcard-import, unused-wildcard-import, disable=wrong-import-position
 
 import os
 import re
@@ -28,7 +28,7 @@ else:
 sys.path.append(SCRIPT_DIR)
 sys.path.append(SCRIPT_DIR + '/..')
 
-from util.base import *  # pylint: disable=wildcard-import, unused-wildcard-import, wrong-import-position
+from util.base import *
 
 class ChromeDrop(Program):
     SKIP_CASES = {
@@ -49,6 +49,7 @@ class ChromeDrop(Program):
         parser.add_argument('--build-skip-chrome', dest='build_skip_chrome', help='build skip chrome', action='store_true')
         parser.add_argument('--build-skip-mesa', dest='build_skip_mesa', help='build skip mesa', action='store_true')
         parser.add_argument('--backup', dest='backup', help='backup', action='store_true')
+        parser.add_argument('--backup-inplace', dest='backup_inplace', help='backup inplace', action='store_true')
         parser.add_argument('--backup-skip-chrome', dest='backup_skip_chrome', help='backup skip chrome', action='store_true')
         parser.add_argument('--upload', dest='upload', help='upload', action='store_true')
         parser.add_argument('--run', dest='run', help='run', action='store_true')
@@ -137,9 +138,9 @@ examples:
     def _op(self, op):
         chrome_targets = []
         if 'webgl' in self.targets:
-            chrome_targets.append('webgl')
-        if 'webgpu' in self.targets:
-            chrome_targets.append('webgpu')
+            chrome_targets += ['webgl']
+        if 'webgpu' in self.targets and op in ['build', 'backup']:
+            chrome_targets += ['webgpu_cts_tests']
         chrome_target = ','.join(chrome_targets)
 
         cmds = []
@@ -186,9 +187,11 @@ examples:
 
             if ('webgl' in self.targets or 'webgpu' in self.targets) and not self.args.backup_skip_chrome:
                 cmd = f'{Util.PYTHON} {Util.GNP_SCRIPT} --backup --backup-target {chrome_target} --root-dir {self.chrome_dir}'
+                if self.args.backup_inplace:
+                    cmd += ' --backup-inplace'
                 if self.target_os == Util.CHROMEOS:
                     cmd += ' --target-os chromeos'
-                cmd.append(cmd)
+                cmds.append(cmd)
 
         elif op == 'upload':
             if 'angle' in self.targets:
@@ -201,7 +204,7 @@ examples:
                 cmd = f'{Util.PYTHON} {Util.GNP_SCRIPT} --upload --root-dir {self.chrome_dir}'
                 if self.target_os == Util.CHROMEOS:
                     cmd += ' --target-os chromeos'
-                cmd.append(cmd)
+                cmds.append(cmd)
 
         for cmd in cmds:
             self._execute(cmd, exit_on_error=False)
@@ -384,7 +387,6 @@ examples:
             cmd += ' --disable-log-uploads'
             if self.run_chrome_channel == 'build':
                 self.chrome_rev = self.run_chrome_rev
-                print(self.chrome_backup_dir, self.chrome_rev)
                 (chrome_rev_dir, self.chrome_rev) = Util.get_backup_dir(self.chrome_backup_dir, self.chrome_rev)
                 chrome_rev_dir = f'{self.chrome_backup_dir}/{chrome_rev_dir}'
                 # Locally update expectations.txt in webgpu_cts_tests
