@@ -390,7 +390,7 @@ examples:
                 (chrome_rev_dir, self.chrome_rev) = Util.get_backup_dir(self.chrome_backup_dir, self.chrome_rev)
                 chrome_rev_dir = f'{self.chrome_backup_dir}/{chrome_rev_dir}'
                 # Locally update expectations.txt in webgpu_cts_tests
-                self._update_webgpu_cts_expectations(chrome_rev_dir, gpu_device_id)
+                Util.update_webgpu_cts_expectations(chrome_rev_dir, gpu_device_id)
                 Util.chdir(chrome_rev_dir, verbose=True)
                 Util.info(f'Use Chrome at {chrome_rev_dir}')
 
@@ -425,7 +425,7 @@ examples:
             if self.run_filter != 'all':
                 cmd += f' --test-filter=*{self.run_filter}*'
             if self.args.dryrun:
-                cmd += ' --test-filter=*webgpu:api,operation,adapter,requestAdapter:requestAdapter:powerPreference*'
+                cmd += ' --test-filter=*webgpu:api,operation,render_pipeline,sample_mask:alpha_to_coverage_mask:rasterizationMask=1'
 
             if self.run_verbose:
                 cmd += ' --verbose'
@@ -511,47 +511,6 @@ examples:
             self.batch()
         if args.upload:
             self.upload()
-
-    def _update_webgpu_cts_expectations(self, project_root_dir, gpu_device_id):
-        expectation_file = f'{project_root_dir}/third_party/dawn/webgpu-cts/expectations.txt'
-
-        generation = Util.get_intel_gpu_generation(f'0x{gpu_device_id}')
-        if generation is None:
-            Util.warning(f'Failed to update {expectation_file} because of unknown generation')
-            return
-
-        old_gpu_tag = 'intel-gen-9'
-        new_gpu_tag = f'intel-gen-{generation}'
-        if old_gpu_tag == new_gpu_tag:
-            return
-
-        if not os.path.exists(expectation_file):
-            Util.warning(f'{expectation_file} does not exist')
-            return
-
-        tag_header_scope = False
-        has_new_gpu_tag = False
-        for line in fileinput.input(expectation_file, inplace=True):
-            # Skip the update if the new gpu tag already exists
-            if has_new_gpu_tag:
-                sys.stdout.write(line)
-                continue
-
-            if re.search(new_gpu_tag, line):
-                has_new_gpu_tag = True
-            elif re.search('BEGIN TAG HEADER', line):
-                tag_header_scope = True
-            elif re.search('END TAG HEADER', line):
-                tag_header_scope = False
-            elif re.search(old_gpu_tag, line):
-                if tag_header_scope:
-                    # Append the new gpu tag to tag header
-                    line = line.replace('\n', f' {new_gpu_tag}\n')
-                else:
-                    # Append expectation with the new gpu tag following the old one
-                    line += line.replace(old_gpu_tag, new_gpu_tag)
-            sys.stdout.write(line)
-        fileinput.close()
 
 if __name__ == '__main__':
     ChromeDrop()

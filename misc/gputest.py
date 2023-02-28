@@ -285,46 +285,6 @@ examples:
             self.projects = Util.diff_list(self.projects, del_projects)
         self._log_exec(all_timer.stop(), 'Total %s' % op.capitalize())
 
-    def _update_webgpu_cts_expectations(self, project_root_dir, gpu_device_id):
-        generation = Util.get_intel_gpu_generation('0x%s' % gpu_device_id)
-        if generation == None:
-            Util.warning('Failed to update %s because of unknown generation' % expectation_file)
-            return
-
-        old_gpu_tag = 'intel-gen-9'
-        new_gpu_tag = 'intel-gen-%s' % generation
-        if old_gpu_tag == new_gpu_tag:
-            return
-
-        expectation_file = '%s/%s' % (project_root_dir, 'third_party/dawn/webgpu-cts/expectations.txt')
-        if not os.path.exists(expectation_file):
-            Util.warning('%s does not exist' % expectation_file)
-            return
-
-        tag_header_scope = False
-        has_new_gpu_tag = False
-        for line in fileinput.input(expectation_file, inplace=True):
-            # Skip the update if the new gpu tag already exists
-            if has_new_gpu_tag:
-                sys.stdout.write(line)
-                continue
-
-            if re.search(new_gpu_tag, line):
-                has_new_gpu_tag = True
-            elif re.search('BEGIN TAG HEADER', line):
-                tag_header_scope = True
-            elif re.search('END TAG HEADER', line):
-                tag_header_scope = False
-            elif re.search(old_gpu_tag, line):
-                if tag_header_scope:
-                    # Append the new gpu tag to tag header
-                    line = line.replace('\n', ' %s\n' % new_gpu_tag)
-                else:
-                    # Append expectation with the new gpu tag following the old one
-                    line += '%s' % line.replace(old_gpu_tag, new_gpu_tag)
-            sys.stdout.write(line)
-        fileinput.close()
-
     def run(self):
         all_timer = Timer()
         args = self.args
@@ -394,7 +354,7 @@ examples:
 
             # Locally update expectations.txt in webgpu_cts_tests
             if virtual_name == 'webgpu_cts_tests' and 'intel' in gpu_name.lower():
-                self._update_webgpu_cts_expectations(project_run_info[project][PROJECT_RUN_INFO_INDEX_ROOT_DIR], gpu_device_id)
+                Util.update_webgpu_cts_expectations(project_run_info[project][PROJECT_RUN_INFO_INDEX_ROOT_DIR], gpu_device_id)
 
             real_name = self.os_targets[target_index][self.TARGET_INDEX_REAL_NAME]
             real_type = self.os_targets[target_index][self.TARGET_INDEX_REAL_TYPE]
