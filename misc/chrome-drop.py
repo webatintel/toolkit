@@ -138,8 +138,8 @@ examples:
     def _op(self, op):
         chrome_targets = []
         if 'webgl' in self.targets:
-            chrome_targets += ['webgl']
-        if 'webgpu' in self.targets and op in ['build', 'backup']:
+            chrome_targets += ['webgl_cts_tests']
+        if 'webgpu' in self.targets:
             chrome_targets += ['webgpu_cts_tests']
         chrome_target = ','.join(chrome_targets)
 

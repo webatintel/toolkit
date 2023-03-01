@@ -34,11 +34,10 @@ class Gnp(Program):
         'angle_e2e': 'angle_end2end_tests',
         'angle_perf': 'angle_perftests',
         'angle_unit': 'angle_unittests',
-
-        'webgl': 'telemetry_gpu_integration_test',
-        'webgpu': 'webgpu_blink_web_tests',
-
         'dawn_e2e': 'dawn_end2end_tests',
+
+        # For chrome drop
+        'webgl_cts_tests': 'chrome/test:telemetry_gpu_integration_test',
         'webgpu_cts_tests': 'chrome/test:telemetry_gpu_integration_test',
     }
     BACKUP_TARGET_DICT = {
@@ -51,10 +50,11 @@ class Gnp(Program):
         'gl_tests': '//gpu:gl_tests',
         'vulkan_tests': '//gpu/vulkan:vulkan_tests',
         'telemetry_gpu_integration_test': '//chrome/test:telemetry_gpu_integration_test',
-        'webgl': '//chrome/test:telemetry_gpu_integration_test',
-        'webgpu_cts_tests': '//chrome/test:telemetry_gpu_integration_test',
         'webgpu_blink_web_tests': '//:webgpu_blink_web_tests',
-        'webgpu': '//:webgpu_blink_web_tests',
+
+        # For chrome drop
+        'webgl_cts_tests': '//chrome/test:telemetry_gpu_integration_test',
+        'webgpu_cts_tests': '//chrome/test:telemetry_gpu_integration_test',
     }
     def __init__(self, parser):
         parser.add_argument('--project', dest='project', help='project')
@@ -400,19 +400,17 @@ examples:
                 'out/%s/../../testing/buildbot/chromium.dawn.json' % self.build_type_cap,
             ]
 
-        if self.args.backup_target == 'webgpu_cts_tests':
-            src_files += ['third_party/dawn/webgpu-cts/worker_test_globs.txt']
-
         src_file_count = len(src_files)
         for index, src_file in enumerate(src_files):
-            dst_dir = '%s/%s' % (backup_path, src_file)
-            if os.path.exists(dst_dir):
-                Util.info(f'[{index + 1}/{src_file_count}] skip {dst_dir}')
+            dst_file = '%s/%s' % (backup_path, src_file)
+            # dst_file can be subfolder of another dst_file, so only file can be skipped
+            if self.args.backup_inplace and os.path.isfile(dst_file):
+                Util.info(f'[{index + 1}/{src_file_count}] skip {dst_file}')
                 continue
-            Util.ensure_dir(os.path.dirname(dst_dir))
+            Util.ensure_dir(os.path.dirname(dst_file))
             if os.path.isdir(src_file):
-                dst_dir = os.path.dirname(dst_dir.rstrip('/'))
-            cmd = 'cp -rf %s %s' % (src_file, dst_dir)
+                dst_file = os.path.dirname(dst_file.rstrip('/'))
+            cmd = 'cp -rf %s %s' % (src_file, dst_file)
             Util.info('[%s/%s] %s' % (index + 1, src_file_count, cmd))
             self._execute(cmd, exit_on_error=False, show_cmd=False)
 
