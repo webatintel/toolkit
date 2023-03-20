@@ -296,7 +296,7 @@ examples:
                     else:
                         chrome = 'out/Default/chrome'
 
-                common_cmd2 += f' --browser=exact --browser-executable={chrome}'
+                common_cmd2 += f' --browser=release'
             else:
                 common_cmd2 += f' --browser={self.run_chrome_channel}'
                 Util.chdir(self.chrome_dir)
@@ -402,7 +402,7 @@ examples:
                     else:
                         chrome = 'out/Default/chrome'
 
-                cmd += f' --browser=exact --browser-executable={chrome}'
+                cmd += f' --browser=release'
             else:
                 cmd += f' --browser={self.run_chrome_channel}'
                 Util.chdir(self.chrome_dir)
