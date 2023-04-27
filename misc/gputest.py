@@ -354,7 +354,7 @@ examples:
 
             # Locally update expectations.txt in webgpu_cts_tests
             if virtual_name == 'webgpu_cts_tests' and 'intel' in gpu_name.lower():
-                Util.update_webgpu_cts_expectations(project_run_info[project][PROJECT_RUN_INFO_INDEX_ROOT_DIR], gpu_device_id)
+                Util.update_webgpu_cts_expectations(project_run_info[project][PROJECT_RUN_INFO_INDEX_ROOT_DIR])
 
             real_name = self.os_targets[target_index][self.TARGET_INDEX_REAL_NAME]
             real_type = self.os_targets[target_index][self.TARGET_INDEX_REAL_TYPE]
