@@ -115,7 +115,7 @@ examples:
             self.target_os = Util.HOST_OS
 
         if args.target == 'all':
-            self.targets = ['angle', 'dawn', 'webgl']
+            self.targets = ['angle', 'dawn', 'webgl', 'webgpu']
         else:
             self.targets = args.target.split(',')
 
@@ -467,9 +467,7 @@ examples:
             result = f'{os.path.splitext(result_file)[0]}: PASS_FAIL {len(pass_fail)}, FAIL_PASS {len(fail_pass)}, FAIL_FAIL {len(fail_fail)} PASS_PASS {len(pass_pass)}\n'
             summary += result
             if pass_fail:
-                result += '[PASS_FAIL]\n%s\n' % '\n'.join(pass_fail[:self.MAX_FAIL_IN_REPORT])
-            if fail_pass:
-                result += '[FAIL_PASS]\n%s\n' % '\n'.join(fail_pass[:self.MAX_FAIL_IN_REPORT])
+                result += '\n[PASS_FAIL]\n%s\n' % '\n'.join(pass_fail[:self.MAX_FAIL_IN_REPORT])
             details += result
 
         exec_log_content = open(self.exec_log, encoding='utf-8').read()
