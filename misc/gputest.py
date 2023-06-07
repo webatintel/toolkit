@@ -380,6 +380,11 @@ examples:
                     run_args.remove(run_arg)
                 elif run_arg == '--target=Release_x64':
                     run_args[i] = '--target=release'
+            if virtual_name == 'angle_end2end_tests' and not args.dryrun:
+                if Util.HOST_OS == Util.WINDOWS:
+                    run_args.append('--gtest_filter=*D3D11*:*Vulkan*')
+                elif Util.HOST_OS == Util.LINUX:
+                    run_args.append('--gtest_filter=*OpenGL*:*Vulkan*')
             if virtual_name in ['info_collection_tests', 'trace_test']:
                 _, _, gpu_device_id = Util.get_gpu_info()
                 if virtual_name == 'info_collection_tests' and gpu_device_id not in run_args:
