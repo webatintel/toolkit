@@ -336,6 +336,7 @@ examples:
         logged_projects = []
         for index, target_index in enumerate(self.target_indexes):
             project = self.os_targets[target_index][self.TARGET_INDEX_PROJECT]
+            project_run_root_dir = project_run_info[project][PROJECT_RUN_INFO_INDEX_ROOT_DIR]
             if project not in logged_projects:
                 logged_projects.append(project)
                 info = '%s Date%s%s' % (project.capitalize(), self.SEPARATOR, project_run_info[project][PROJECT_RUN_INFO_INDEX_DATE])
@@ -353,12 +354,15 @@ examples:
                 continue
 
             # Locally update expectations.txt in webgpu_cts_tests
-            if virtual_name == 'webgpu_cts_tests' and 'intel' in gpu_name.lower():
-                Util.update_webgpu_cts_expectations(project_run_info[project][PROJECT_RUN_INFO_INDEX_ROOT_DIR])
+            if virtual_name == 'webgpu_cts_tests':
+                Util.update_gpu_test_expectations(f'{project_run_root_dir}/third_party/dawn/webgpu-cts/expectations.txt')
+            # Locally update expectations.txt in trace_test
+            if virtual_name == 'trace_test':
+                Util.update_gpu_test_expectations(f'{project_run_root_dir}/content/test/gpu/gpu_tests/test_expectations/trace_test_expectations.txt')
 
             real_name = self.os_targets[target_index][self.TARGET_INDEX_REAL_NAME]
             real_type = self.os_targets[target_index][self.TARGET_INDEX_REAL_TYPE]
-            config_cmd = '%s %s --run --root-dir %s --run-target %s --run-rev out' % (Util.PYTHON, Util.GNP_SCRIPT, project_run_info[project][PROJECT_RUN_INFO_INDEX_ROOT_DIR], real_name)
+            config_cmd = '%s %s --run --root-dir %s --run-target %s --run-rev out' % (Util.PYTHON, Util.GNP_SCRIPT, project_run_root_dir, real_name)
             if Util.HOST_OS == Util.LINUX:
                 config_cmd += ' --run-mesa-rev %s' % self.args.run_mesa_rev
             run_args = self.os_targets[target_index][self.TARGET_INDEX_RUN_ARGS]
@@ -444,9 +448,9 @@ examples:
 
                 if real_type in ['gtest_angle', 'webgpu_blink_web_tests']:
                     if real_type == 'gtest_angle':
-                        output_file = '%s/out/%s/output%s' % (project_run_info[project][PROJECT_RUN_INFO_INDEX_ROOT_DIR], self.build_type_cap, self.RESULT_FILE_SUFFIX)
+                        output_file = '%s/out/%s/output%s' % (project_run_root_dir, self.build_type_cap, self.RESULT_FILE_SUFFIX)
                     elif real_type == 'webgpu_blink_web_tests':
-                        output_file = '%s/out/%s/layout-test-results/full_results%s' % (project_run_info[project][PROJECT_RUN_INFO_INDEX_ROOT_DIR], self.build_type_cap, self.RESULT_FILE_SUFFIX)
+                        output_file = '%s/out/%s/layout-test-results/full_results%s' % (project_run_root_dir, self.build_type_cap, self.RESULT_FILE_SUFFIX)
                     if os.path.exists(output_file):
                         shutil.move(output_file, result_file)
                     else:
