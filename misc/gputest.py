@@ -515,12 +515,19 @@ examples:
                 op = name[4:]
                 result_file = '%s/%s%s' % (self.result_dir, op, self.RESULT_FILE_SUFFIX)
                 pass_fail, fail_pass, fail_fail, pass_pass = self._parse_result(result_file)
+                # Count the pass_fail number to fail_fail in dawn_end2end_tests_runsuppressed, because the suppressed tests are expected fail.
+                # There may be regressions that will be calculated into fail_fail cases, but it doesn't matter, dawn_end2end_tests could cover
+                # the regressions and we won't miss them. In dawn_end2end_tests_runsuppressed we only care about the fail_pass cases.
+                if re.search('dawn_end2end_tests_runsuppressed', op):
+                    fail_fail.extend(pass_fail)
+                    pass_fail.clear()
+
                 regression_count += len(pass_fail)
                 time = fields[1]
                 pass_fail_info = '%s<p>%s' % (len(pass_fail), '<p>'.join(pass_fail[:self.MAX_FAIL_IN_REPORT]))
                 fail_pass_info = '%s<p>%s' % (len(fail_pass), '<p>'.join(fail_pass[:self.MAX_FAIL_IN_REPORT]))
                 fail_fail_info = len(fail_fail)
-                if re.match('run \d+-aquarium', name, re.I) and pass_pass:
+                if re.search('aquarium', op) and pass_pass:
                     pass_pass_info = '%s<p>%s' % (len(pass_pass), '<p>'.join(pass_pass[:self.MAX_FAIL_IN_REPORT]))
                 else:
                     pass_pass_info = len(pass_pass)
