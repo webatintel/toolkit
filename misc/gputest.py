@@ -79,7 +79,6 @@ class GPUTest(Program):
         'aquarium_dawn_vulkan': ['aquarium', '1'],
 
         'angle_end2end_tests': ['gtest_angle', 'EGLAndroidFrameBufferTargetTest'],
-        #'angle_perftests': ['gtest_angle', 'BindingsBenchmark'],
         'angle_white_box_tests': ['gtest_angle', 'VulkanDescriptorSetTest.AtomicCounterReadLimitedDescriptorPool'],
 
         'dawn_end2end_skip_validation_tests': ['gtest_chrome', 'BindGroupTests', '--adapter-vendor-id=0x8086'],
@@ -94,13 +93,7 @@ class GPUTest(Program):
         'info_collection_tests': ['telemetry_gpu_integration_test', 'InfoCollection_basic'],
         'trace_test': ['telemetry_gpu_integration_test', 'OverlayModeTraceTest_DirectComposition_Underlay_DXVA'],
         'webgl2_conformance_d3d11_passthrough_tests': ['telemetry_gpu_integration_test', 'conformance/attribs'],
-        'webgl2_conformance_gl_passthrough_tests': ['telemetry_gpu_integration_test', 'conformance/attribs'],
-        'webgl2_conformance_validating_tests': ['telemetry_gpu_integration_test', 'conformance/attribs'],   # d3d11
         'webgl_conformance_d3d11_passthrough_tests': ['telemetry_gpu_integration_test', 'conformance/attribs'],
-        'webgl_conformance_d3d9_passthrough_tests': ['telemetry_gpu_integration_test', 'conformance/attribs'],
-        'webgl_conformance_gl_passthrough_tests': ['telemetry_gpu_integration_test', 'conformance/attribs'],
-        'webgl_conformance_validating_tests': ['telemetry_gpu_integration_test', 'conformance/attribs'],
-        'webgl_conformance_vulkan_passthrough_tests': ['telemetry_gpu_integration_test', 'conformance/attribs'],
         'webgpu_cts_tests': ['telemetry_gpu_integration_test', 'webgpu:idl,constants,flags:*'],
         'webgpu_cts_with_validation_tests': ['telemetry_gpu_integration_test', 'webgpu:idl,constants,flags:*'],
 
