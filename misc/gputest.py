@@ -378,7 +378,7 @@ examples:
                     run_args[i] = '--target=release'
             if virtual_name == 'angle_end2end_tests' and not args.dryrun:
                 if Util.HOST_OS == Util.WINDOWS:
-                    run_args.append('--gtest_filter=*D3D11*:*Vulkan*')
+                    run_args.append('--gtest_filter=*D3D11*')
                 elif Util.HOST_OS == Util.LINUX:
                     run_args.append('--gtest_filter=*OpenGL*:*Vulkan*')
             if virtual_name in ['info_collection_tests', 'trace_test']:
