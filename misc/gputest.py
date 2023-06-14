@@ -87,7 +87,6 @@ class GPUTest(Program):
         'dawn_end2end_validation_layers_tests': ['gtest_chrome', 'BindGroupTests'],
         'dawn_end2end_wire_tests': ['gtest_chrome', 'BindGroupTests'],
         'dawn_perf_tests': ['gtest_chrome', 'BufferUploadPerf.Run/Vulkan_Intel', '--override-steps=1'],
-        'gl_tests_passthrough': ['gtest_chrome', 'SharedImageFactoryTest'],
         'vulkan_tests': ['gtest_chrome', 'BasicVulkanTest'],
 
         'info_collection_tests': ['telemetry_gpu_integration_test', 'InfoCollection_basic'],
