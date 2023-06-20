@@ -346,9 +346,10 @@ examples:
             if skip:
                 continue
 
-            # Locally update expectations.txt in webgpu_cts_tests
+            # Locally update expectations.txt and slow_tests.txt in webgpu_cts_tests
             if virtual_name == 'webgpu_cts_tests':
                 Util.update_gpu_test_expectations(f'{project_run_root_dir}/third_party/dawn/webgpu-cts/expectations.txt')
+                Util.update_gpu_test_expectations(f'{project_run_root_dir}/third_party/dawn/webgpu-cts/slow_tests.txt')
             # Locally update expectations.txt in trace_test
             if virtual_name == 'trace_test':
                 Util.update_gpu_test_expectations(f'{project_run_root_dir}/content/test/gpu/gpu_tests/test_expectations/trace_test_expectations.txt')
