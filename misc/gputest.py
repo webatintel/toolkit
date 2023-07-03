@@ -93,14 +93,12 @@ class GPUTest(Program):
         'trace_test': ['telemetry_gpu_integration_test', 'OverlayModeTraceTest_DirectComposition_Underlay_DXVA'],
         'webgl2_conformance_d3d11_passthrough_tests': ['telemetry_gpu_integration_test', 'conformance/attribs'],
         'webgl_conformance_d3d11_passthrough_tests': ['telemetry_gpu_integration_test', 'conformance/attribs'],
+        'webgl2_conformance_gl_passthrough_tests': ['telemetry_gpu_integration_test', 'conformance/attribs'],
+        'webgl_conformance_gl_passthrough_tests': ['telemetry_gpu_integration_test', 'conformance/attribs'],
         'webgpu_cts_tests': ['telemetry_gpu_integration_test', 'webgpu:idl,constants,flags:*'],
         'webgpu_cts_with_validation_tests': ['telemetry_gpu_integration_test', 'webgpu:idl,constants,flags:*'],
-
-        'webgpu_blink_web_tests': ['webgpu_blink_web_tests', 'wpt_internal/webgpu/cts.https.html?q=webgpu:api,operation,resource_init,texture_zero:uninitialized_texture_is_zero:*'],
-        # Virtual name on Linux
-        'webgpu_blink_web_tests_with_backend_validation': ['webgpu_blink_web_tests', 'wpt_internal/webgpu/cts.html?q=webgpu:api,operation,render_pass,storeOp:*'],
-        # Virtual name on Windows
-        'webgpu_blink_web_tests_with_partial_backend_validation': ['webgpu_blink_web_tests', 'wpt_internal/webgpu/cts.html?q=webgpu:api,operation,render_pass,storeOp:*'],
+        'webgpu_blink_web_tests': ['webgpu_blink_web_tests', 'wpt_internal/webgpu/adapter_single_use.https.html'],
+        'webgpu_blink_web_tests_with_backend_validation': ['webgpu_blink_web_tests', 'wpt_internal/webgpu/adapter_single_use.https.html'],
     }
 
     CONFIG_FILE = 'config.json'
