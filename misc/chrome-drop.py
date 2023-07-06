@@ -29,6 +29,7 @@ sys.path.append(SCRIPT_DIR)
 sys.path.append(SCRIPT_DIR + '/..')
 
 from util.base import *
+from expectationhelper import *
 
 class ChromeDrop(Program):
     SKIP_CASES = {
@@ -388,8 +389,7 @@ examples:
                 (chrome_rev_dir, self.chrome_rev) = Util.get_backup_dir(self.chrome_backup_dir, self.chrome_rev)
                 chrome_rev_dir = f'{self.chrome_backup_dir}/{chrome_rev_dir}'
                 # Locally update expectations.txt and slow_tests.txt in webgpu_cts_tests
-                Util.update_gpu_test_expectations(f'{chrome_rev_dir}/third_party/dawn/webgpu-cts/expectations.txt')
-                Util.update_gpu_test_expectations(f'{chrome_rev_dir}/third_party/dawn/webgpu-cts/slow_tests.txt')
+                ExpectationHelper.update_target('webgpu_cts_tests', chrome_rev_dir)
                 Util.chdir(chrome_rev_dir, verbose=True)
                 Util.info(f'Use Chrome at {chrome_rev_dir}')
 
