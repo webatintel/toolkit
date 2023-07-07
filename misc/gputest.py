@@ -30,6 +30,7 @@ sys.path.append(script_dir)
 sys.path.append(script_dir + '/..')
 
 from util.base import *  # pylint: disable=unused-wildcard-import
+from expectationhelper import *
 
 class GPUTest(Program):
     GPUTEST_FOLDER = 'gputest'
@@ -343,13 +344,9 @@ examples:
             if skip:
                 continue
 
-            # Locally update expectations.txt and slow_tests.txt in webgpu_cts_tests
-            if virtual_name == 'webgpu_cts_tests':
-                Util.update_gpu_test_expectations(f'{project_run_root_dir}/third_party/dawn/webgpu-cts/expectations.txt')
-                Util.update_gpu_test_expectations(f'{project_run_root_dir}/third_party/dawn/webgpu-cts/slow_tests.txt')
-            # Locally update expectations.txt in trace_test
-            if virtual_name == 'trace_test':
-                Util.update_gpu_test_expectations(f'{project_run_root_dir}/content/test/gpu/gpu_tests/test_expectations/trace_test_expectations.txt')
+            # Locally update expectation files for Intel GPUs
+            if virtual_name in ['trace_test', 'webgpu_cts_tests']:
+                ExpectationHelper.update_target(virtual_name, project_run_root_dir)
 
             real_name = self.os_targets[target_index][self.TARGET_INDEX_REAL_NAME]
             real_type = self.os_targets[target_index][self.TARGET_INDEX_REAL_TYPE]
