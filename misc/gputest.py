@@ -91,7 +91,7 @@ class GPUTest(Program):
         'vulkan_tests': ['gtest_chrome', 'BasicVulkanTest'],
 
         'info_collection_tests': ['telemetry_gpu_integration_test', 'InfoCollection_basic'],
-        'trace_test': ['telemetry_gpu_integration_test', 'OverlayModeTraceTest_DirectComposition_Underlay_DXVA'],
+        'trace_test': ['telemetry_gpu_integration_test', 'OverlayModeTraceTest_DirectComposition_Video_Disable_Overlays'],
         'webgl2_conformance_d3d11_passthrough_tests': ['telemetry_gpu_integration_test', 'conformance/attribs'],
         'webgl_conformance_d3d11_passthrough_tests': ['telemetry_gpu_integration_test', 'conformance/attribs'],
         'webgl2_conformance_gl_passthrough_tests': ['telemetry_gpu_integration_test', 'conformance/attribs'],
@@ -345,8 +345,8 @@ examples:
                 continue
 
             # Locally update expectation files for Intel GPUs
-            if virtual_name in ['trace_test', 'webgpu_cts_tests']:
-                ExpectationHelper.update_target(virtual_name, project_run_root_dir)
+            if virtual_name in ['angle_end2end_tests', 'trace_test', 'webgpu_cts_tests']:
+                ExpectationHelper.update(virtual_name, project_run_root_dir)
 
             real_name = self.os_targets[target_index][self.TARGET_INDEX_REAL_NAME]
             real_type = self.os_targets[target_index][self.TARGET_INDEX_REAL_TYPE]

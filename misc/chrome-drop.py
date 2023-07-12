@@ -236,6 +236,9 @@ examples:
         Util.append_file(self.exec_log, f'GPU device id{self.SEPARATOR}{gpu_device_id}')
 
         if 'angle' in self.targets:
+            rev_name, _ = Util.get_backup_dir(f'{self.angle_dir}/backup', 'latest')
+            # Locally update angle_end2end_tests_expectations.txt
+            ExpectationHelper.update('angle_end2end_tests', f'{self.angle_dir}/backup/{rev_name}')
             cmd = f'{Util.PYTHON} {Util.GNP_SCRIPT} --run --run-target angle_e2e --run-rev latest --root-dir {self.angle_dir} --no-exit-on-error'
             run_args = ''
             if self.args.dryrun:
@@ -251,7 +254,6 @@ examples:
             self._execute(cmd, exit_on_error=False)
             Util.append_file(self.exec_log, f'ANGLE Run: {timer.stop()}')
 
-            rev_name, _ = Util.get_backup_dir(f'{self.angle_dir}/backup', 'latest')
             output_file = f'{self.angle_dir}/backup/{rev_name}/out/Release/output.json'
             result_file = f'{self.result_dir}/angle.json'
             if os.path.exists(output_file):
@@ -389,7 +391,7 @@ examples:
                 (chrome_rev_dir, self.chrome_rev) = Util.get_backup_dir(self.chrome_backup_dir, self.chrome_rev)
                 chrome_rev_dir = f'{self.chrome_backup_dir}/{chrome_rev_dir}'
                 # Locally update expectations.txt and slow_tests.txt in webgpu_cts_tests
-                ExpectationHelper.update_target('webgpu_cts_tests', chrome_rev_dir)
+                ExpectationHelper.update('webgpu_cts_tests', chrome_rev_dir)
                 Util.chdir(chrome_rev_dir, verbose=True)
                 Util.info(f'Use Chrome at {chrome_rev_dir}')
 
