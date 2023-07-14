@@ -473,11 +473,13 @@ examples:
                 result += '\n[PASS_FAIL]\n%s\n' % '\n'.join(pass_fail[:self.MAX_FAIL_IN_REPORT])
             details += result
 
-        exec_log_content = open(self.exec_log, encoding='utf-8').read()
+
 
         Util.info(details)
         Util.info(summary)
-        Util.info(exec_log_content)
+        if os.path.exists(self.exec_log):
+            exec_log_content = open(self.exec_log, encoding='utf-8').read()
+            Util.info(exec_log_content)
 
         report_file = f'{self.result_dir}/report.txt'
         Util.ensure_nofile(report_file)
@@ -486,7 +488,10 @@ examples:
 
         if not self.args.no_email:
             subject = f'[Chrome Drop] {Util.HOST_NAME} {self.timestamp}'
-            Util.send_email(subject, summary + '\n' + details + '\n' + exec_log_content)
+            content = summary + '\n' + details + '\n'
+            if os.path.exists(self.exec_log):
+                content += exec_log_content
+            Util.send_email(subject, content)
 
     def batch(self):
         self.sync()
