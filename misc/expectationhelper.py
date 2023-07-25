@@ -17,9 +17,8 @@ class ExpectationHelper:
           'hsdes/18019513118 WIN INTEL D3D11 : SimpleStateChangeTest.UpdateTextureInUse/ES2_D3D11 = SKIP'
         ],
         'third_party/dawn/webgpu-cts/expectations.txt': [
-            'crbug.com/dawn/0000 [ intel win10 ] webgpu:shader,execution,expression,call,builtin,unpack4x8unorm:unpack:inputSource="storage_r" [ Failure ]',
-            'crbug.com/dawn/0000 [ intel win10 ] webgpu:shader,execution,expression,call,builtin,unpack4x8unorm:unpack:inputSource="storage_rw" [ Failure ]',
-            'crbug.com/dawn/0000 [ intel win10 ] webgpu:shader,execution,expression,call,builtin,unpack4x8unorm:unpack:inputSource="uniform" [ Failure ]'
+            'crbug.com/1301808 [ intel ubuntu ] webgpu:web_platform,canvas,configure:viewFormats:canvasType="onscreen";format="rgba16float";* [ Failure ]',
+            'crbug.com/1301808 [ intel ubuntu ] webgpu:web_platform,canvas,configure:viewFormats:canvasType="offscreen";format="rgba16float";* [ Failure ]'
         ],
     }
 
