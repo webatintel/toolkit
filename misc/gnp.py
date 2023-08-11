@@ -231,7 +231,7 @@ examples:
             if self.decimal_rev:
                 self._chromium_sync_decimal_rev()
         else:
-            self._execute('git pull', exit_on_error=self.exit_on_error)
+            self._execute('git pull --no-recurse-submodules', exit_on_error=self.exit_on_error)
             self._execute_gclient(cmd_type='sync')
 
     def runhooks(self):
@@ -562,7 +562,7 @@ examples:
         if tmp_hash:
             extra_cmd = '--revision src@' + tmp_hash
         else:
-            self._execute('git pull', exit_on_error=self.exit_on_error)
+            self._execute('git pull --no-recurse-submodules', exit_on_error=self.exit_on_error)
             extra_cmd = ''
 
         if not self.args.sync_src_only:
