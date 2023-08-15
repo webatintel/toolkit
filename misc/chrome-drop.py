@@ -60,6 +60,7 @@ class ChromeDrop(Program):
         parser.add_argument('--run-mesa-rev', dest='run_mesa_rev', help='mesa revision', default='latest')
         parser.add_argument('--run-filter', dest='run_filter', help='WebGL CTS suite to run against', default='all')  # For smoke run, we may use conformance/attribs
         parser.add_argument('--run-verbose', dest='run_verbose', help='verbose mode of run', action='store_true')
+        parser.add_argument('--run-dawn-target', dest='run_dawn_target', help='run dawn target, split by comma, like "0,1". 0 for d3d12 and 1 for vulkan', default='all')
         parser.add_argument('--run-webgl-target', dest='run_webgl_target', help='run webgl target, split by comma, like "0,2"', default='all')
         parser.add_argument('--run-no-angle', dest='run_no_angle', help='run without angle', action='store_true')
         parser.add_argument('--run-jobs', dest='run_jobs', help='run jobs', default=1)
@@ -108,6 +109,7 @@ examples:
         self.run_mesa_rev = args.run_mesa_rev
         self.run_filter = args.run_filter
         self.run_verbose = args.run_verbose
+        self.run_dawn_target = args.run_dawn_target
         self.run_webgl_target = args.run_webgl_target
         self.run_no_angle = args.run_no_angle
 
@@ -264,19 +266,28 @@ examples:
             Util.append_file(self.exec_log, f'ANGLE Rev{self.SEPARATOR}{rev_name}')
 
         if 'dawn' in self.targets:
-            cmd = f'{Util.PYTHON} {Util.GNP_SCRIPT} --run --run-target dawn_e2e --run-rev latest --root-dir {self.dawn_dir} --no-exit-on-error'
-            result_file = f'{self.result_dir}/dawn.json'
-            run_args = f'--gtest_output=json:{result_file}'
-            if self.run_filter != 'all':
-                run_args += f' --gtest_filter=*{self.run_filter}*'
-            if self.args.dryrun:
-                run_args += ' --gtest_filter=*BindGroupTests*'
-            run_args += ' --enable-backend-validation=disabled'
-            run_args += ' --backend=d3d12'
-            cmd += f' --run-args="{run_args}"'
-            timer = Timer()
-            self._execute(cmd, exit_on_error=False)
-            Util.append_file(self.exec_log, f'Dawn run: {timer.stop()}')
+            all_backends = ['d3d12', 'vulkan']
+            test_backends = []
+            if self.run_dawn_target == 'all':
+                test_backends = all_backends
+            else:
+                for i in self.run_dawn_target.split(','):
+                    test_backends.append(all_backends[int(i)])
+
+            for backend in test_backends:
+                cmd = f'{Util.PYTHON} {Util.GNP_SCRIPT} --run --run-target dawn_e2e --run-rev latest --root-dir {self.dawn_dir} --no-exit-on-error'
+                result_file = f'{self.result_dir}/dawn-{backend}.json'
+                run_args = f'--gtest_output=json:{result_file}'
+                if self.run_filter != 'all':
+                    run_args += f' --gtest_filter=*{self.run_filter}*'
+                if self.args.dryrun:
+                    run_args += ' --gtest_filter=*BindGroupTests*'
+                run_args += ' --enable-backend-validation=disabled'
+                run_args += f' --backend={backend}'
+                cmd += f' --run-args="{run_args}"'
+                timer = Timer()
+                self._execute(cmd, exit_on_error=False)
+                Util.append_file(self.exec_log, f'Dawn-{backend} run: {timer.stop()}')
 
             rev_name, _ = Util.get_backup_dir(f'{self.dawn_dir}/backup', 'latest')
             Util.append_file(self.exec_log, f'Dawn Rev{self.SEPARATOR}{rev_name}')
@@ -470,7 +481,7 @@ examples:
             result = f'{os.path.splitext(result_file)[0]}: PASS_FAIL {len(pass_fail)}, FAIL_PASS {len(fail_pass)}, FAIL_FAIL {len(fail_fail)} PASS_PASS {len(pass_pass)}\n'
             summary += result
             if pass_fail:
-                result += '\n[PASS_FAIL]\n%s\n' % '\n'.join(pass_fail[:self.MAX_FAIL_IN_REPORT])
+                result += '\n[PASS_FAIL]\n%s\n\n' % '\n'.join(pass_fail[:self.MAX_FAIL_IN_REPORT])
             details += result
 
 
