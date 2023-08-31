@@ -97,8 +97,9 @@ examples:
         if args.mesa_dir:
             self.mesa_dir = args.mesa_dir
         else:
-            self.mesa_dir = f'{root_dir}/mesa'
-        self.mesa_backup_dir = r'{self.mesa_dir}/backup'
+            self.mesa_dir = f'{Util.PROJECT_DIR}/mesa'
+
+        self.mesa_backup_dir = f'{self.mesa_dir}/backup'
         self.mesa_build_dir = f'{self.mesa_dir}/build'
         self.result_dir = f'{root_dir}/result/{self.timestamp}'
 
@@ -247,8 +248,10 @@ examples:
                 run_args = '--gtest_filter=*EGLAndroidFrameBufferTargetTest*'
             elif self.run_filter != 'all':
                 run_args = f'--gtest_filter=*{self.run_filter}*'
-            else:
+            elif Util.HOST_OS == 'windows':
                 run_args = '--gtest_filter=*D3D11*'
+            else:
+                run_args = ''
 
             if run_args:
                 cmd += f' --run-args="{run_args}"'
@@ -266,7 +269,10 @@ examples:
             Util.append_file(self.exec_log, f'ANGLE Rev{self.SEPARATOR}{rev_name}')
 
         if 'dawn' in self.targets:
-            all_backends = ['d3d12', 'vulkan']
+            if Util.HOST_OS == 'windows':
+                all_backends = ['d3d12', 'vulkan']
+            elif Util.HOST_OS == 'linux':
+                all_backends = ['vulkan']
             test_backends = []
             if self.run_dawn_target == 'all':
                 test_backends = all_backends
