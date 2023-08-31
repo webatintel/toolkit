@@ -22,9 +22,8 @@ class Mesa(Program):
         parser.epilog='''
 examples:
 {0} {1} --sync --build
-{0} {1} --build --build-system autotools --rev-stride 50 --build-novulkan --rev 96700-96900
-{0} {1} --build --dir-install 20200810-126997-f7e7cf637e1 --build-replace
-{0} {1} --build --dir-install 20200810-126997-f7e7cf637e1 --build-replace # if build fails
+{0} {1} --build --rev-stride 50 --rev 96700-96900
+{0} {1} --build --build-force
 {0} {1} --hashtorev e58a10af640ba58b6001f5c5ad750b782547da76
 {0} {1} --revtohash 1
 '''.format(Util.PYTHON, parser.prog)
@@ -35,7 +34,6 @@ examples:
         parser.add_argument('--build', dest='build', help='build', action='store_true')
         parser.add_argument('--build-type', dest='build_type', help='build type', default='release')
         parser.add_argument('--build-force', dest='build_force', help='no reset of source code', action='store_true')
-        parser.add_argument('--build-novulkan', dest='build_novulkan', help='build novulkan', action='store_true')
         parser.add_argument('--upload', dest='upload', help='upload', action='store_true')
         parser.add_argument('--run', dest='run', help='run')
         parser.add_argument('--type', dest='type', help='type', default='iris')
@@ -81,8 +79,13 @@ examples:
     def build(self):
         self._init_hash()
 
+        print(Util.HOST_OS_RELEASE)
         if Util.HOST_OS == 'linux' and Util.HOST_OS_RELEASE == 'ubuntu':
-            Util.ensure_pkg('meson libomxil-bellagio-dev libpciaccess-dev x11proto-dri3-dev x11proto-present-dev xutils-dev python-mako x11proto-gl-dev x11proto-dri2-dev libxcb-dri3-dev libxcb-present-dev libxshmfence-dev libx11-xcb-dev libxcb-glx0-dev libxcb-dri2-0-dev libxxf86vm-dev python3-mako glslang-tools')
+            Util.ensure_pkg('meson python3-mako glslang-tools libomxil-bellagio-dev libpciaccess-dev')
+            # x11
+            Util.ensure_pkg('libx11-xcb-dev libxext-dev libxfixes-dev libxcb-shm0-dev libxrandr-dev xutils-dev libxcb-dri3-dev libxcb-present-dev libxshmfence-dev libxcb-glx0-dev libxcb-dri2-0-dev libxxf86vm-dev')
+            # wayland
+            Util.ensure_pkg('libwayland-dev wayland-protocols libwayland-egl-backend-dev')
 
         if re.search('-', str(self.rev)):
             tmp_revs = self.rev.split('-')
@@ -164,7 +167,7 @@ examples:
         Util.chdir('%s/%s' % (self.root_dir, self.drm_dir))
         Util.ensure_nodir('build')
         Util.ensure_dir('build')
-        build_cmd = 'meson build/ -Dprefix=%s --auto-features=disabled -Dintel=enabled -Dvmwgfx=disabled -Dradeon=disabled -Damdgpu=disabled -Dnouveau=disabled' % rev_dir
+        build_cmd = 'meson setup build/ -Dprefix=%s --auto-features=disabled -Dintel=enabled -Dvmwgfx=disabled -Dradeon=disabled -Damdgpu=disabled -Dnouveau=disabled' % rev_dir
         if self.build_type == 'release':
             build_cmd += ' -Dbuildtype=release'
         elif self.build_type == 'debug':
@@ -180,9 +183,7 @@ examples:
         Util.ensure_nodir('build')
         Util.ensure_dir('build')
         self._execute('echo "#define MESA_GIT_SHA1 \\\"git-%s\\\"" >src/mesa/main/git_sha1.h' % hash)
-        build_cmd = 'PKG_CONFIG_PATH=%s/lib/x86_64-linux-gnu/pkgconfig meson build/ -Dprefix=%s -Dvulkan-drivers=intel -Dgles1=enabled -Dgles2=enabled -Dshared-glapi=enabled -Dplatforms=x11 -Dgbm=enabled -Ddri3=enabled -Dgallium-drivers=iris' % (rev_dir, rev_dir)
-        if not self.args.build_novulkan:
-            build_cmd += ' -Dvulkan-drivers=intel'
+        build_cmd = 'PKG_CONFIG_PATH=%s/lib/x86_64-linux-gnu/pkgconfig meson setup build/ -Dprefix=%s -Dvulkan-drivers=intel -Dgles1=enabled -Dgles2=enabled -Dshared-glapi=enabled -Dgbm=enabled -Ddri3=enabled -Dgallium-drivers=iris -Dplatforms=x11,wayland' % (rev_dir, rev_dir)
         if self.build_type == 'release':
             build_cmd += ' -Dbuildtype=release'
         elif self.build_type == 'debug':
