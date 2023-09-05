@@ -395,7 +395,7 @@ examples:
                 cmd += f' --write-full-results-to {result_file}'
                 timer = Timer()
                 self._execute(cmd, exit_on_error=False, show_duration=True)
-                Util.append_file(self.exec_log, f'WebGL {comb[COMB_INDEX_WEBGL]} {comb[COMB_INDEX_BACKEND]} run: {timer.stop()}')
+                Util.append_file(self.exec_log, f'WebGL {comb[COMB_INDEX_WEBGL]} run: {timer.stop()}')
 
             rev_name, _ = Util.get_backup_dir(f'{os.path.dirname(self.chrome_dir)}/backup', 'latest')
             Util.append_file(self.exec_log, f'Chrome Rev{self.SEPARATOR}{rev_name}')
