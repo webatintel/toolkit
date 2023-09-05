@@ -67,7 +67,7 @@ examples:
         if Util.HOST_OS == Util.WINDOWS:
             build_cmd = 'build.bat'
         else:
-            build_cmd = 'build.sh'
+            build_cmd = './build.sh'
         Util.execute(f'{build_cmd} --config Release --build_wasm --enable_wasm_simd --use_jsep --target onnxruntime_webassembly --skip_tests --parallel')
 
         Util.chdir(f'{root_dir}/js', verbose=True)
