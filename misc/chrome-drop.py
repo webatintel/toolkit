@@ -29,7 +29,7 @@ sys.path.append(SCRIPT_DIR)
 sys.path.append(SCRIPT_DIR + '/..')
 
 from util.base import *
-from expectationhelper import *
+from misc.testhelper import *
 
 class ChromeDrop(Program):
     SKIP_CASES = {
@@ -241,7 +241,7 @@ examples:
         if 'angle' in self.targets:
             rev_name, _ = Util.get_backup_dir(f'{self.angle_dir}/backup', 'latest')
             # Locally update angle_end2end_tests_expectations.txt
-            ExpectationHelper.update('angle_end2end_tests', f'{self.angle_dir}/backup/{rev_name}')
+            TestExpectation.update('angle_end2end_tests', f'{self.angle_dir}/backup/{rev_name}')
             cmd = f'{Util.PYTHON} {Util.GNP_SCRIPT} --run --run-target angle_e2e --run-rev latest --root-dir {self.angle_dir} --no-exit-on-error'
             run_args = ''
             if self.args.dryrun:
@@ -269,9 +269,10 @@ examples:
             Util.append_file(self.exec_log, f'ANGLE Rev{self.SEPARATOR}{rev_name}')
 
         if 'dawn' in self.targets:
-            if Util.HOST_OS == 'windows':
+            all_backends = []
+            if Util.HOST_OS == Util.WINDOWS:
                 all_backends = ['d3d12', 'vulkan']
-            elif Util.HOST_OS == 'linux':
+            elif Util.HOST_OS == Util.LINUX:
                 all_backends = ['vulkan']
             test_backends = []
             if self.run_dawn_target == 'all':
@@ -408,7 +409,7 @@ examples:
                 (chrome_rev_dir, self.chrome_rev) = Util.get_backup_dir(self.chrome_backup_dir, self.chrome_rev)
                 chrome_rev_dir = f'{self.chrome_backup_dir}/{chrome_rev_dir}'
                 # Locally update expectations.txt and slow_tests.txt in webgpu_cts_tests
-                ExpectationHelper.update('webgpu_cts_tests', chrome_rev_dir)
+                TestExpectation.update('webgpu_cts_tests', chrome_rev_dir)
                 Util.chdir(chrome_rev_dir, verbose=True)
                 Util.info(f'Use Chrome at {chrome_rev_dir}')
 
@@ -443,7 +444,7 @@ examples:
             if self.run_filter != 'all':
                 cmd += f' --test-filter=*{self.run_filter}*'
             if self.args.dryrun:
-                cmd += ' --test-filter=*webgpu:api,operation,render_pipeline,sample_mask:alpha_to_coverage_mask:rasterizationMask=1'
+                cmd += ' --test-filter=*webgpu:api,operation,render_pipeline,pipeline_output_targets:color,attachments:*'
 
             if self.run_verbose:
                 cmd += ' --verbose'
@@ -482,15 +483,13 @@ examples:
             else:
                 continue
 
-            pass_fail, fail_pass, fail_fail, pass_pass = Util.get_test_result(f'{self.result_dir}/{result_file}', test_type)
-            regression_count += len(pass_fail)
-            result = f'{os.path.splitext(result_file)[0]}: PASS_FAIL {len(pass_fail)}, FAIL_PASS {len(fail_pass)}, FAIL_FAIL {len(fail_fail)} PASS_PASS {len(pass_pass)}\n'
-            summary += result
-            if pass_fail:
-                result += '\n[PASS_FAIL]\n%s\n\n' % '\n'.join(pass_fail[:self.MAX_FAIL_IN_REPORT])
-            details += result
-
-
+            result = TestResult(f'{self.result_dir}/{result_file}', test_type)
+            regression_count += len(result.pass_fail)
+            result_str = f'{os.path.splitext(result_file)[0]}: PASS_FAIL {len(result.pass_fail)}, FAIL_PASS {len(result.fail_pass)}, FAIL_FAIL {len(result.fail_fail)} PASS_PASS {len(result.pass_pass)}\n'
+            summary += result_str
+            if result.pass_fail:
+                result_str += '\n[PASS_FAIL]\n%s\n\n' % '\n'.join(result.pass_fail[:self.MAX_FAIL_IN_REPORT])
+            details += result_str
 
         Util.info(details)
         Util.info(summary)
