@@ -66,10 +66,14 @@ examples:
         Util.chdir(root_dir, verbose=True)
         if Util.HOST_OS == Util.WINDOWS:
             build_cmd = 'build.bat'
+            os_dir = '{os_dir}'
         else:
             build_cmd = './build.sh'
+            os_dir = 'Linux'
 
         config = 'Release'
+
+
         Util.execute(f'{build_cmd} --config {config} --build_wasm --enable_wasm_simd --use_jsep --use_webnn --target onnxruntime_webassembly --skip_tests --parallel')
 
         Util.chdir(f'{root_dir}/js', verbose=True)
@@ -85,8 +89,8 @@ examples:
         Util.execute('npm run pull:wasm')
 
         Util.chdir(f'{root_dir}/js/web', verbose=True)
-        Util.copy_file(f'{root_dir}/build/Windows/{config}', 'ort-wasm-simd.js', f'{root_dir}/js/web/lib/wasm/binding', 'ort-wasm-simd.jsep.js')
-        Util.copy_file(f'{root_dir}/build/Windows/{config}', 'ort-wasm-simd.wasm', f'{root_dir}/js/web/dist', 'ort-wasm-simd.jsep.wasm')
+        Util.copy_file(f'{root_dir}/build/{os_dir}/{config}', 'ort-wasm-simd.js', f'{root_dir}/js/web/lib/wasm/binding', 'ort-wasm-simd.jsep.js')
+        Util.copy_file(f'{root_dir}/build/{os_dir}/{config}', 'ort-wasm-simd.wasm', f'{root_dir}/js/web/dist', 'ort-wasm-simd.jsep.wasm')
         Util.execute('npm run build')
 
     def _handle_ops(self):
