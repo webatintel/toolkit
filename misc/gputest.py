@@ -30,7 +30,7 @@ sys.path.append(script_dir)
 sys.path.append(script_dir + '/..')
 
 from util.base import *  # pylint: disable=unused-wildcard-import
-from expectationhelper import *
+from misc.testhelper import *
 
 class GPUTest(Program):
     GPUTEST_FOLDER = 'gputest'
@@ -346,7 +346,7 @@ examples:
 
             # Locally update expectation files for Intel GPUs
             if virtual_name in ['angle_end2end_tests', 'trace_test', 'webgpu_cts_tests']:
-                ExpectationHelper.update(virtual_name, project_run_root_dir)
+                TestExpectation.update(virtual_name, project_run_root_dir)
 
             real_name = self.os_targets[target_index][self.TARGET_INDEX_REAL_NAME]
             real_type = self.os_targets[target_index][self.TARGET_INDEX_REAL_TYPE]
@@ -508,25 +508,34 @@ examples:
                 has_details = True
                 op = name[4:]
                 result_file = '%s/%s%s' % (self.result_dir, op, self.RESULT_FILE_SUFFIX)
-                pass_fail, fail_pass, fail_fail, pass_pass = self._parse_result(result_file)
+                result = self._parse_result(result_file)
                 # Count the pass_fail number to fail_fail in dawn_end2end_tests_runsuppressed, because the suppressed tests are expected fail.
                 # There may be regressions that will be calculated into fail_fail cases, but it doesn't matter, dawn_end2end_tests could cover
                 # the regressions and we won't miss them. In dawn_end2end_tests_runsuppressed we only care about the fail_pass cases.
                 if re.search('dawn_end2end_tests_runsuppressed', op):
-                    fail_fail.extend(pass_fail)
-                    pass_fail.clear()
+                    result.fail_fail.extend(result.pass_fail)
+                    result.pass_fail.clear()
+                # Move known issues from pass_fail to fail_fail for dawn end2end tests except dawn_end2end_tests_runsuppressed
+                elif re.search('dawn_end2end_tests', op):
+                    expectations = TestExpectation.LOCAL_EXPECTATIONS.get(op.split('-')[1])
+                    if expectations:
+                        for test in reversed(result.pass_fail):
+                            expectation = f'[ {Util.HOST_OS} ] {test}'
+                            if expectation in expectations:
+                                result.fail_fail.append(test)
+                                result.pass_fail.remove(test)
 
-                regression_count += len(pass_fail)
+                regression_count += len(result.pass_fail)
                 time = fields[1]
-                pass_fail_info = '%s<p>%s' % (len(pass_fail), '<p>'.join(pass_fail[:self.MAX_FAIL_IN_REPORT]))
-                fail_pass_info = '%s<p>%s' % (len(fail_pass), '<p>'.join(fail_pass[:self.MAX_FAIL_IN_REPORT]))
-                fail_fail_info = len(fail_fail)
-                if re.search('aquarium', op) and pass_pass:
-                    pass_pass_info = '%s<p>%s' % (len(pass_pass), '<p>'.join(pass_pass[:self.MAX_FAIL_IN_REPORT]))
+                pass_fail_info = '%s<p>%s' % (len(result.pass_fail), '<p>'.join(result.pass_fail[:self.MAX_FAIL_IN_REPORT]))
+                fail_pass_info = '%s<p>%s' % (len(result.fail_pass), '<p>'.join(result.fail_pass[:self.MAX_FAIL_IN_REPORT]))
+                fail_fail_info = len(result.fail_fail)
+                if re.search('aquarium', op) and result.pass_pass:
+                    pass_pass_info = '%s<p>%s' % (len(result.pass_pass), '<p>'.join(result.pass_pass[:self.MAX_FAIL_IN_REPORT]))
                 else:
-                    pass_pass_info = len(pass_pass)
+                    pass_pass_info = len(result.pass_pass)
 
-                if pass_fail:
+                if result.pass_fail:
                     color = 'red'
                 else:
                     color = 'green'
@@ -722,17 +731,13 @@ examples:
 
     def _parse_result(self, result_file, verbose=False):
         file_name = os.path.basename(result_file)
-        op = file_name.replace(self.RESULT_FILE_SUFFIX, '')
         match = re.search(self.RESULT_FILE_PATTERN, file_name)
         virtual_name = match.group(1)
 
         real_type = self.VIRTUAL_NAME_INFO[virtual_name][self.VIRTUAL_NAME_INFO_INDEX_REAL_TYPE]
 
         if real_type == 'aquarium':
-            pass_pass = []
-            pass_fail = []
-            fail_pass = []
-            fail_fail = []
+            result = TestResult()
             lines = open(result_file).readlines()
             for line in lines:
                 match = re.match('Avg FPS: (.*)', line)
@@ -745,19 +750,13 @@ examples:
                         base_fps = self.AQUARIUM_BASE[Util.HOST_OS][backend]
 
                     if run_fps < base_fps:
-                        pass_fail.append('%s -> %s' % (base_fps, run_fps))
+                        result.pass_fail.append('%s -> %s' % (base_fps, run_fps))
                     else:
-                        pass_pass.append('%s -> %s' % (base_fps, run_fps))
+                        result.pass_pass.append('%s -> %s' % (base_fps, run_fps))
                     break
-
+            return result
         else:
-            if real_type in ['gtest_chrome', 'webgpu_blink_web_tests']:
-                type = real_type
-            elif real_type in ['gtest_angle', 'telemetry_gpu_integration_test']:
-                type = 'gtest_angle'
-            pass_fail, fail_pass, fail_fail, pass_pass = Util.get_test_result(result_file, type)
-
-        return pass_fail, fail_pass, fail_fail, pass_pass
+            return TestResult(result_file, real_type)
 
     def _send_email(self, subject, content=''):
         if self.args.email:
