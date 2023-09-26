@@ -248,7 +248,7 @@ examples:
                 run_args = '--gtest_filter=*EGLAndroidFrameBufferTargetTest*'
             elif self.run_filter != 'all':
                 run_args = f'--gtest_filter=*{self.run_filter}*'
-            elif Util.HOST_OS == 'windows':
+            elif Util.HOST_OS == Util.WINDOWS:
                 run_args = '--gtest_filter=*D3D11*'
             else:
                 run_args = ''
