@@ -345,8 +345,7 @@ examples:
                 continue
 
             # Locally update expectation files for Intel GPUs
-            if virtual_name in ['angle_end2end_tests', 'trace_test', 'webgpu_cts_tests']:
-                TestExpectation.update(virtual_name, project_run_root_dir)
+            TestExpectation.update(virtual_name, project_run_root_dir)
 
             real_name = self.os_targets[target_index][self.TARGET_INDEX_REAL_NAME]
             real_type = self.os_targets[target_index][self.TARGET_INDEX_REAL_TYPE]
@@ -509,15 +508,18 @@ examples:
                 op = name[4:]
                 result_file = '%s/%s%s' % (self.result_dir, op, self.RESULT_FILE_SUFFIX)
                 result = self._parse_result(result_file)
+                # Get virtual target name from the op string (12-shard0-webgpu_cts_tests for example)
+                last_dash = op.rfind('-')
+                virtual_name = op[last_dash + 1:]
                 # Count the pass_fail number to fail_fail in dawn_end2end_tests_runsuppressed, because the suppressed tests are expected fail.
                 # There may be regressions that will be calculated into fail_fail cases, but it doesn't matter, dawn_end2end_tests could cover
                 # the regressions and we won't miss them. In dawn_end2end_tests_runsuppressed we only care about the fail_pass cases.
-                if re.search('dawn_end2end_tests_runsuppressed', op):
+                if virtual_name == 'dawn_end2end_tests_runsuppressed':
                     result.fail_fail.extend(result.pass_fail)
                     result.pass_fail.clear()
-                # Move known issues from pass_fail to fail_fail for dawn end2end tests except dawn_end2end_tests_runsuppressed
-                elif re.search('dawn_end2end_tests', op):
-                    expectations = TestExpectation.LOCAL_EXPECTATIONS.get(op.split('-')[1])
+                # Move expected failures from pass_fail to fail_fail except dawn_end2end_tests_runsuppressed
+                else:
+                    expectations = TestExpectation.LOCAL_EXPECTATIONS.get(virtual_name)
                     if expectations:
                         for test in reversed(result.pass_fail):
                             expectation = f'[ {Util.HOST_OS} ] {test}'
