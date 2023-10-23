@@ -99,14 +99,14 @@ examples:
         Util.execute('npm run pull:wasm', show_cmd=True)
 
         Util.chdir(f'{root_dir}/js/web', verbose=True)
-        file_name = 'ort-wasm-'
+        file_name = 'ort-wasm'
         if not self.args.disable_wasm_simd:
             file_name += '-simd'
         if not self.args.disable_wasm_threads:
             file_name += '-threaded'
         file_name += '.jsep'
-        Util.copy_file(f'{root_dir}/build/{os_dir}/{build_type}', 'ort-wasm-simd.js', f'{root_dir}/js/web/lib/wasm/binding', f'{file_name}.js')
-        Util.copy_file(f'{root_dir}/build/{os_dir}/{build_type}', 'ort-wasm-simd.wasm', f'{root_dir}/js/web/dist', f'{file_name}.wasm')
+        Util.copy_file(f'{root_dir}/build/{os_dir}/{build_type}', f'{file_name}.js', f'{root_dir}/js/web/lib/wasm/binding', f'{file_name}.js')
+        Util.copy_file(f'{root_dir}/build/{os_dir}/{build_type}', f'{file_name}.wasm', f'{root_dir}/js/web/dist', f'{file_name}.wasm')
         Util.execute('npm run build', show_cmd=True)
 
     def _handle_ops(self):
