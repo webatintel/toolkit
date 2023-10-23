@@ -49,9 +49,10 @@ class Ort(Program):
         parser.add_argument('--sync', dest='sync', help='sync', action='store_true')
         parser.add_argument('--build', dest='build', help='build', action='store_true')
         parser.add_argument('--build-type', dest='build_type', help='build type, can be Debug, MinSizeRel, Release or RelWithDebInfo', default='Release')
-        parser.add_argument('--enable-webnn', dest='enable_webnn', help='enable webnn', action='store_true')
+
         parser.add_argument('--disable-wasm-simd', dest='disable_wasm_simd', help='disable wasm simd', action='store_true')
-        parser.add_argument('--disable-wasm-threads', dest='disable_wasm_threads', help='disable wasm threads', action='store_true')
+        parser.add_argument('--enable-wasm-threads', dest='enable_wasm_threads', help='enable wasm threads', action='store_true')
+        parser.add_argument('--enable-webnn', dest='enable_webnn', help='enable webnn', action='store_true')
 
         parser.epilog = '''
 examples:
@@ -76,11 +77,17 @@ examples:
             os_dir = 'Linux'
 
         build_type = self.args.build_type
+        disable_wasm_simd = self.args.disable_wasm_simd
+
+        if self.args.enable_wasm_threads or Util.HOST_NAME in ['wp-27']:
+            enable_wasm_threads = True
+        else:
+            enable_wasm_threads = False
 
         cmd = f'{build_cmd} --config {build_type} --build_wasm --use_jsep --target onnxruntime_webassembly --skip_tests --parallel --enable_lto'
-        if not self.args.disable_wasm_simd:
+        if not disable_wasm_simd:
             cmd += ' --enable_wasm_simd'
-        if not self.args.disable_wasm_threads:
+        if enable_wasm_threads:
             cmd += ' --enable_wasm_threads'
         if self.args.enable_webnn:
             cmd += ' --use_webnn'
@@ -100,9 +107,9 @@ examples:
 
         Util.chdir(f'{root_dir}/js/web', verbose=True)
         file_name = 'ort-wasm'
-        if not self.args.disable_wasm_simd:
+        if not disable_wasm_simd:
             file_name += '-simd'
-        if not self.args.disable_wasm_threads:
+        if enable_wasm_threads:
             file_name += '-threaded'
         Util.copy_file(f'{root_dir}/build/{os_dir}/{build_type}', f'{file_name}.js', f'{root_dir}/js/web/lib/wasm/binding', f'{file_name}.jsep.js')
         Util.copy_file(f'{root_dir}/build/{os_dir}/{build_type}', f'{file_name}.wasm', f'{root_dir}/js/web/dist', f'{file_name}.jsep.wasm')
