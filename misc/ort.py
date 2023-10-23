@@ -48,10 +48,14 @@ class Ort(Program):
 
         parser.add_argument('--sync', dest='sync', help='sync', action='store_true')
         parser.add_argument('--build', dest='build', help='build', action='store_true')
+        parser.add_argument('--build-type', dest='build_type', help='build type, can be Debug, MinSizeRel, Release or RelWithDebInfo', default='Release')
+        parser.add_argument('--enable-webnn', dest='enable_webnn', help='enable webnn', action='store_true')
+        parser.add_argument('--disable-wasm-simd', dest='disable_wasm_simd', help='disable wasm simd', action='store_true')
+        parser.add_argument('--disable-wasm-threads', dest='disable_wasm_threads', help='disable wasm threads', action='store_true')
 
         parser.epilog = '''
 examples:
-{0} {1} --sync --build
+{0} {1} --build
 '''.format(Util.PYTHON, parser.prog)
 
         super().__init__(parser)
@@ -66,32 +70,44 @@ examples:
         Util.chdir(root_dir, verbose=True)
         if Util.HOST_OS == Util.WINDOWS:
             build_cmd = 'build.bat'
-            os_dir = '{os_dir}'
+            os_dir = 'Windows'
         else:
             build_cmd = './build.sh'
             os_dir = 'Linux'
 
-        config = 'Release'
+        build_type = self.args.build_type
 
-
-        Util.execute(f'{build_cmd} --config {config} --build_wasm --enable_wasm_simd --use_jsep --use_webnn --target onnxruntime_webassembly --skip_tests --parallel')
+        cmd = f'{build_cmd} --config {build_type} --build_wasm --use_jsep --target onnxruntime_webassembly --skip_tests --parallel --enable_lto'
+        if not self.args.disable_wasm_simd:
+            cmd += ' --enable_wasm_simd'
+        if not self.args.disable_wasm_threads:
+            cmd += ' --enable_wasm_threads'
+        if self.args.enable_webnn:
+            cmd += ' --use_webnn'
+        Util.execute(cmd, show_cmd=True, show_duration=True)
 
         Util.chdir(f'{root_dir}/js', verbose=True)
-        Util.execute('npm ci')
+        Util.execute('npm ci', show_cmd=True)
 
         Util.chdir(f'{root_dir}/js/common', verbose=True)
-        Util.execute('npm ci')
+        Util.execute('npm ci', show_cmd=True)
 
 
         Util.chdir(f'{root_dir}/js/web', verbose=True)
-        Util.execute('npx cross-env ELECTRON_GET_USE_PROXY=true GLOBAL_AGENT_HTTPS_PROXY=http://proxy-us.intel.com:914 npm install -D electron')
-        Util.execute('npm ci')
-        Util.execute('npm run pull:wasm')
+        Util.execute('npx cross-env ELECTRON_GET_USE_PROXY=true GLOBAL_AGENT_HTTPS_PROXY=http://proxy-us.intel.com:914 npm install -D electron', show_cmd=True)
+        Util.execute('npm ci', show_cmd=True)
+        Util.execute('npm run pull:wasm', show_cmd=True)
 
         Util.chdir(f'{root_dir}/js/web', verbose=True)
-        Util.copy_file(f'{root_dir}/build/{os_dir}/{config}', 'ort-wasm-simd.js', f'{root_dir}/js/web/lib/wasm/binding', 'ort-wasm-simd.jsep.js')
-        Util.copy_file(f'{root_dir}/build/{os_dir}/{config}', 'ort-wasm-simd.wasm', f'{root_dir}/js/web/dist', 'ort-wasm-simd.jsep.wasm')
-        Util.execute('npm run build')
+        file_name = 'ort-wasm-'
+        if not self.args.disable_wasm_simd:
+            file_name += '-simd'
+        if not self.args.disable_wasm_threads:
+            file_name += '-threaded'
+        file_name += '.jsep'
+        Util.copy_file(f'{root_dir}/build/{os_dir}/{build_type}', 'ort-wasm-simd.js', f'{root_dir}/js/web/lib/wasm/binding', f'{file_name}.js')
+        Util.copy_file(f'{root_dir}/build/{os_dir}/{build_type}', 'ort-wasm-simd.wasm', f'{root_dir}/js/web/dist', f'{file_name}.wasm')
+        Util.execute('npm run build', show_cmd=True)
 
     def _handle_ops(self):
         args = self.args
