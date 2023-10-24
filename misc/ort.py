@@ -48,7 +48,7 @@ class Ort(Program):
 
         parser.add_argument('--sync', dest='sync', help='sync', action='store_true')
         parser.add_argument('--build', dest='build', help='build', action='store_true')
-        parser.add_argument('--build-type', dest='build_type', help='build type, can be Debug, MinSizeRel, Release or RelWithDebInfo', default='Release')
+        parser.add_argument('--build-type', dest='build_type', help='build type, can be Debug, MinSizeRel, Release or RelWithDebInfo', default='MinSizeRel')
 
         parser.add_argument('--disable-wasm-simd', dest='disable_wasm_simd', help='disable wasm simd', action='store_true')
         parser.add_argument('--enable-wasm-threads', dest='enable_wasm_threads', help='enable wasm threads', action='store_true')
@@ -84,7 +84,7 @@ examples:
         else:
             enable_wasm_threads = False
 
-        cmd = f'{build_cmd} --config {build_type} --build_wasm --use_jsep --target onnxruntime_webassembly --skip_tests --parallel --enable_lto'
+        cmd = f'{build_cmd} --config {build_type} --build_wasm --use_jsep --target onnxruntime_webassembly --skip_tests --parallel --enable_lto --disable_exceptions'
         if not disable_wasm_simd:
             cmd += ' --enable_wasm_simd'
         if enable_wasm_threads:
