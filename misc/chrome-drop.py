@@ -159,11 +159,6 @@ examples:
                 cmds.append(f'{Util.PYTHON} {Util.GNP_SCRIPT} --sync --runhooks --root-dir {self.dawn_dir}')
 
             if 'webgl' in self.targets or 'webgpu' in self.targets:
-                if 'webgl' in self.targets:
-                    Util.chdir(f'{self.chrome_dir}/third_party/webgl/src')
-                    for folder in ['conformance', 'conformance2']:
-                        self._execute(f'git checkout sdk/tests/{folder}/textures/00_test_list.txt')
-
                 cmd = f'{Util.PYTHON} {Util.GNP_SCRIPT} --sync --sync-reset --runhooks --root-dir {self.chrome_dir}'
                 if self.args.build_chrome_rev != 'latest':
                     cmd += f' --rev {self.args.build_chrome_rev}'
@@ -212,17 +207,6 @@ examples:
 
         for cmd in cmds:
             self._execute(cmd, exit_on_error=False)
-
-        if op == 'sync' and 'webgl' in self.targets:
-            # Skip video cases
-            if 'webgl' in self.targets:
-                for folder in ['conformance', 'conformance2']:
-                    for line in fileinput.input(f'{self.chrome_dir}/third_party/webgl/src/sdk/tests/{folder}/textures/00_test_list.txt', inplace=True):
-                        matched = re.match('video/00_test_list.txt', line)
-                        if matched:
-                            line = '//' + line
-                        sys.stdout.write(line)
-                    fileinput.close()
 
     def run(self):
         if self.target_os == Util.CHROMEOS:
