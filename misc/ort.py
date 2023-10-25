@@ -78,11 +78,7 @@ examples:
 
         build_type = self.args.build_type
         disable_wasm_simd = self.args.disable_wasm_simd
-
-        if self.args.enable_wasm_threads or Util.HOST_NAME in ['wp-27']:
-            enable_wasm_threads = True
-        else:
-            enable_wasm_threads = False
+        enable_wasm_threads = self.args.enable_wasm_threads
 
         cmd = f'{build_cmd} --config {build_type} --build_wasm --use_jsep --target onnxruntime_webassembly --skip_tests --parallel --enable_lto --disable_exceptions'
         if not disable_wasm_simd:
