@@ -66,6 +66,7 @@ examples:
         pass
 
     def build(self):
+        timer = Timer()
         root_dir = self.root_dir
 
         Util.chdir(root_dir, verbose=True)
@@ -78,7 +79,10 @@ examples:
 
         build_type = self.args.build_type
         disable_wasm_simd = self.args.disable_wasm_simd
-        enable_wasm_threads = self.args.enable_wasm_threads
+        if self.args.enable_wasm_threads or Util.HOST_NAME in ['wp-27']:
+            enable_wasm_threads = True
+        else:
+            enable_wasm_threads = False
 
         cmd = f'{build_cmd} --config {build_type} --build_wasm --use_jsep --target onnxruntime_webassembly --skip_tests --parallel --enable_lto --disable_exceptions'
         if not disable_wasm_simd:
@@ -110,6 +114,8 @@ examples:
         Util.copy_file(f'{root_dir}/build/{os_dir}/{build_type}', f'{file_name}.js', f'{root_dir}/js/web/lib/wasm/binding', f'{file_name}.jsep.js')
         Util.copy_file(f'{root_dir}/build/{os_dir}/{build_type}', f'{file_name}.wasm', f'{root_dir}/js/web/dist', f'{file_name}.jsep.wasm')
         Util.execute('npm run build', show_cmd=True)
+
+        Util.info(f'{timer.stop()} was spent to build')
 
     def _handle_ops(self):
         args = self.args
