@@ -49,6 +49,8 @@ class Ort(Program):
         parser.add_argument('--sync', dest='sync', help='sync', action='store_true')
         parser.add_argument('--build', dest='build', help='build', action='store_true')
         parser.add_argument('--build-type', dest='build_type', help='build type, can be Debug, MinSizeRel, Release or RelWithDebInfo', default='MinSizeRel')
+        parser.add_argument('--build-skip-wasm', dest='build_skip_wasm', help='build skip wasm', action='store_true')
+        parser.add_argument('--lint', dest='lint', help='lint', action='store_true')
 
         parser.add_argument('--disable-wasm-simd', dest='disable_wasm_simd', help='disable wasm simd', action='store_true')
         parser.add_argument('--enable-wasm-threads', dest='enable_wasm_threads', help='enable wasm threads', action='store_true')
@@ -84,14 +86,15 @@ examples:
         else:
             enable_wasm_threads = False
 
-        cmd = f'{build_cmd} --config {build_type} --build_wasm --use_jsep --target onnxruntime_webassembly --skip_tests --parallel --enable_lto --disable_exceptions'
-        if not disable_wasm_simd:
-            cmd += ' --enable_wasm_simd'
-        if enable_wasm_threads:
-            cmd += ' --enable_wasm_threads'
-        if self.args.enable_webnn:
-            cmd += ' --use_webnn'
-        Util.execute(cmd, show_cmd=True, show_duration=True)
+        if not self.args.build_skip_wasm:
+            cmd = f'{build_cmd} --config {build_type} --build_wasm --use_jsep --target onnxruntime_webassembly --skip_tests --parallel --enable_lto --disable_exceptions'
+            if not disable_wasm_simd:
+                cmd += ' --enable_wasm_simd'
+            if enable_wasm_threads:
+                cmd += ' --enable_wasm_threads'
+            if self.args.enable_webnn:
+                cmd += ' --use_webnn'
+            Util.execute(cmd, show_cmd=True, show_duration=True)
 
         Util.chdir(f'{root_dir}/js', verbose=True)
         Util.execute('npm ci', show_cmd=True)
@@ -101,7 +104,7 @@ examples:
 
 
         Util.chdir(f'{root_dir}/js/web', verbose=True)
-        Util.execute('npx cross-env ELECTRON_GET_USE_PROXY=true GLOBAL_AGENT_HTTPS_PROXY=http://proxy-us.intel.com:914 npm install -D electron', show_cmd=True)
+        #Util.execute('npx cross-env ELECTRON_GET_USE_PROXY=true GLOBAL_AGENT_HTTPS_PROXY=http://proxy-us.intel.com:914 npm install -D electron', show_cmd=True)
         Util.execute('npm ci', show_cmd=True)
         Util.execute('npm run pull:wasm', show_cmd=True)
 
@@ -117,11 +120,17 @@ examples:
 
         Util.info(f'{timer.stop()} was spent to build')
 
+    def lint(self):
+        Util.chdir(f'{self.root_dir}/js', verbose=True)
+        Util.execute('npm run lint', show_cmd=True)
+
     def _handle_ops(self):
         args = self.args
         if args.sync:
             self.sync()
         if args.build:
             self.build()
+        if args.lint:
+            self.lint()
 if __name__ == '__main__':
     Ort()
