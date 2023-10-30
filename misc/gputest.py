@@ -258,7 +258,7 @@ examples:
             root_dir = self.PROJECT_INFO[project][self.PROJECT_INFO_INDEX_ROOT_DIR]
 
             if op == 'build':
-                cmd = '%s %s --root-dir %s --no-component-build --makefile --build --build-target %s' % (Util.PYTHON, Util.GNP_SCRIPT, root_dir, ','.join(project_targets[project]))
+                cmd = '%s %s --root-dir %s --disable-component-build --makefile --build --build-target %s' % (Util.PYTHON, Util.GNP_SCRIPT, root_dir, ','.join(project_targets[project]))
             elif op == 'backup':
                 cmd = '%s %s --root-dir %s --backup --backup-target %s' % (Util.PYTHON, Util.GNP_SCRIPT, root_dir, ','.join(project_targets[project]))
             elif op == 'upload':

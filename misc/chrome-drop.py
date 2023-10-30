@@ -175,7 +175,7 @@ examples:
                 cmds.append(f'{Util.PYTHON} {Util.GNP_SCRIPT} --makefile --build --build-target dawn_e2e --root-dir {self.dawn_dir}')
 
             if ('webgl' in self.targets or 'webgpu' in self.targets) and self.run_chrome_channel == 'build' and not self.args.build_skip_chrome:
-                cmds.append(f'{Util.PYTHON} {Util.GNP_SCRIPT} --no-component-build --makefile --symbol-level 0 --build --build-target {chrome_target} --root-dir {self.chrome_dir}')
+                cmds.append(f'{Util.PYTHON} {Util.GNP_SCRIPT} --disable-component-build --makefile --symbol-level 0 --build --build-target {chrome_target} --root-dir {self.chrome_dir}')
 
         elif op == 'backup':
             if 'angle' in self.targets:
@@ -226,7 +226,7 @@ examples:
             rev_name, _ = Util.get_backup_dir(f'{self.angle_dir}/backup', 'latest')
             # Locally update angle_end2end_tests_expectations.txt
             TestExpectation.update('angle_end2end_tests', f'{self.angle_dir}/backup/{rev_name}')
-            cmd = f'{Util.PYTHON} {Util.GNP_SCRIPT} --run --run-target angle_e2e --run-rev latest --root-dir {self.angle_dir} --no-exit-on-error'
+            cmd = f'{Util.PYTHON} {Util.GNP_SCRIPT} --run --run-target angle_e2e --run-rev latest --root-dir {self.angle_dir} --disable-exit-on-error'
             run_args = ''
             if self.args.dryrun:
                 run_args = '--gtest_filter=*EGLAndroidFrameBufferTargetTest*'
@@ -266,7 +266,7 @@ examples:
                     test_backends.append(all_backends[int(i)])
 
             for backend in test_backends:
-                cmd = f'{Util.PYTHON} {Util.GNP_SCRIPT} --run --run-target dawn_e2e --run-rev latest --root-dir {self.dawn_dir} --no-exit-on-error'
+                cmd = f'{Util.PYTHON} {Util.GNP_SCRIPT} --run --run-target dawn_e2e --run-rev latest --root-dir {self.dawn_dir} --disable-exit-on-error'
                 result_file = f'{self.result_dir}/dawn-{backend}.json'
                 run_args = f'--gtest_output=json:{result_file}'
                 if self.run_filter != 'all':

@@ -60,9 +60,8 @@ class Gnp(Program):
         parser.add_argument('--project', dest='project', help='project')
         parser.add_argument('--dcheck', dest='dcheck', help='dcheck', action='store_true')
         parser.add_argument('--is-debug', dest='is_debug', help='is debug', action='store_true')
-        parser.add_argument('--no-component-build', dest='no_component_build', help='no component build', action='store_true')
+
         parser.add_argument('--is-official-build', dest='is_official_build', help='is official build', action='store_true')
-        parser.add_argument('--no-warning-as-error', dest='no_warning_as_error', help='not treat warning as error', action='store_true')
         parser.add_argument('--vulkan-only', dest='vulkan_only', help='gn args with vulkan only', action='store_true')
 
         parser.add_argument('--special-out-dir', dest='special_out_dir', help='special out dir', action='store_true')
@@ -71,7 +70,10 @@ class Gnp(Program):
         parser.add_argument('--symbol-level', dest='symbol_level', help='symbol level', type=int, default=-1)
         parser.add_argument('--batch', dest='batch', help='batch', action='store_true')
         parser.add_argument('--download', dest='download', help='download', action='store_true')
-        parser.add_argument('--no-exit-on-error', dest='no_exit_on_error', help='no exit on error', action='store_true')
+
+        parser.add_argument('--disable-component-build', dest='disable_component_build', help='disable component build', action='store_true')
+        parser.add_argument('--disable-warning-as-error', dest='disable_warning_as_error', help='disable warning as error', action='store_true')
+        parser.add_argument('--disable-exit-on-error', dest='disable_exit_on_error', help='disable exit on error', action='store_true')
 
         parser.add_argument('--sync', dest='sync', help='sync', action='store_true')
         parser.add_argument('--sync-reset', dest='sync_reset', help='do a reset before syncing', action='store_true')
@@ -101,7 +103,8 @@ class Gnp(Program):
 examples:
 {0} {1} --sync --runhooks --makefile --build --backup --build --run --download
 {0} {1} --backup --root-dir d:\workspace\chrome
-{0} {1} --no-component-build --symbol-level 2 --build --build-target chrome,chromedriver --backup --backup-target chrome,chromedriver --backup-symbol # debug
+{0} {1} --disable-component-build --symbol-level 2 --build --build-target chrome,chromedriver --backup --backup-target chrome,chromedriver --backup-symbol # debug
+{0} {1} --target-os android --disable-component-build --sync --runhooks --build # android
 '''.format(Util.PYTHON, parser.prog)
 
         python_ver = Util.get_python_ver()
@@ -146,7 +149,7 @@ examples:
                 args.symbol_level = 0
 
         if self.args.special_out_dir:
-            out_dir = Util.cal_relative_out_dir(self.target_arch, self.target_os, args.symbol_level, args.no_component_build, args.dcheck)
+            out_dir = Util.cal_relative_out_dir(self.target_arch, self.target_os, args.symbol_level, args.disable_component_build, args.dcheck)
         else:
             out_dir = 'out'
         # capitalize() is required by WebGPU CTS
@@ -165,7 +168,7 @@ examples:
             default_target = ''
         self.default_target = default_target
 
-        if args.no_exit_on_error:
+        if args.disable_exit_on_error:
             self.exit_on_error = False
         else:
             self.exit_on_error = True
@@ -254,12 +257,12 @@ examples:
             else:
                 gn_args += ' dcheck_always_on=false'
 
-            if self.args.no_component_build:
+            if self.args.disable_component_build:
                 gn_args += ' is_component_build=false'
             else:
                 gn_args += ' is_component_build=true'
 
-            if args.no_warning_as_error:
+            if args.disable_warning_as_error:
                 gn_args += ' treat_warnings_as_errors=false'
             else:
                 gn_args += ' treat_warnings_as_errors=true'
