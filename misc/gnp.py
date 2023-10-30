@@ -155,7 +155,10 @@ examples:
         if self.project == 'angle':
             default_target = 'angle_e2e'
         elif self.project == 'chromium':
-            default_target = 'chrome'
+            if self.args.target_os == 'android':
+                default_target = 'chrome_public_apk'
+            else:
+                default_target = 'chrome'
         elif self.project == 'dawn':
             default_target = 'dawn_e2e'
         else:
@@ -269,7 +272,7 @@ examples:
                 gn_args += ' blink_symbol_level=0'
 
             # for windows, it has to use "" instead of ''
-            if self.target_os == Util.WINDOWS:
+            if Util.HOST_OS == Util.WINDOWS:
                 gn_args += ' ffmpeg_branding=\\\"Chrome\\\"'
             else:
                 gn_args += ' ffmpeg_branding="Chrome"'
@@ -285,6 +288,12 @@ examples:
             elif self.project == 'dawn':
                 gn_args += ' dawn_enable_d3d12=false dawn_enable_metal=false dawn_enable_null=false dawn_enable_opengles=false'
 
+        if self.args.target_os == 'android':
+            if Util.HOST_OS == Util.WINDOWS:
+                gn_args += ' target_os=\\\"android\\\" target_cpu=\\\"x64\\\"'
+            else:
+                gn_args += ' target_os="android" target_cpu="x64"'
+
         quotation = Util.get_quotation()
         cmd = 'gn --args=%s%s%s' % (quotation, gn_args, quotation)
         if args.makefile_vs:
@@ -296,7 +305,7 @@ examples:
 
     def build(self):
         build_target = self.args.build_target
-        if self.args.build_target:
+        if build_target:
             targets = build_target.split(',')
         else:
             targets = [self.default_target]
