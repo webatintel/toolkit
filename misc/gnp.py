@@ -114,6 +114,7 @@ examples:
             super(Gnp, self).__init__(parser)
         args = self.args
 
+        Util.prepend_path(Util.PROJECT_DEPOT_TOOLS_DIR)
         Util.prepend_path('%s:%s/python-bin' % (Util.PROJECT_DEPOT_TOOLS_DIR, Util.PROJECT_DEPOT_TOOLS_DIR))
 
         if args.project:
