@@ -53,8 +53,8 @@ class Ort(Program):
         parser.add_argument('--lint', dest='lint', help='lint', action='store_true')
 
         parser.add_argument('--disable-wasm-simd', dest='disable_wasm_simd', help='disable wasm simd', action='store_true')
-        parser.add_argument('--disable-webnn', dest='disable_webnn', help='disable webnn', action='store_true')
         parser.add_argument('--enable-wasm-threads', dest='enable_wasm_threads', help='enable wasm threads', action='store_true')
+        parser.add_argument('--enable-webnn', dest='enable_webnn', help='enable webnn', action='store_true')
 
         parser.epilog = '''
 examples:
@@ -92,7 +92,7 @@ examples:
                 cmd += ' --enable_wasm_simd'
             if enable_wasm_threads:
                 cmd += ' --enable_wasm_threads'
-            if not self.args.disable_webnn:
+            if self.args.enable_webnn:
                 cmd += ' --use_webnn'
             Util.execute(cmd, show_cmd=True, show_duration=True)
 
