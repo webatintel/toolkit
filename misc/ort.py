@@ -54,6 +54,7 @@ class Ort(Program):
 
         parser.add_argument('--disable-wasm-simd', dest='disable_wasm_simd', help='disable wasm simd', action='store_true')
         parser.add_argument('--enable-wasm-threads', dest='enable_wasm_threads', help='enable wasm threads', action='store_true')
+        parser.add_argument('--disable-wasm-threads', dest='disable_wasm_threads', help='disable wasm threads', action='store_true')
         parser.add_argument('--enable-webnn', dest='enable_webnn', help='enable webnn', action='store_true')
 
         parser.epilog = '''
@@ -81,7 +82,11 @@ examples:
 
         build_type = self.args.build_type
         disable_wasm_simd = self.args.disable_wasm_simd
-        if self.args.enable_wasm_threads or Util.HOST_NAME in ['wp-27']:
+        if self.args.enable_wasm_threads:
+            enable_wasm_threads = True
+        elif self.args.disable_wasm_threads:
+            enable_wasm_threads = False
+        elif Util.HOST_NAME in ['wp-27']:
             enable_wasm_threads = True
         else:
             enable_wasm_threads = False
