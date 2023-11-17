@@ -55,6 +55,7 @@ class Ort(Program):
         parser.add_argument('--disable-wasm-simd', dest='disable_wasm_simd', help='disable wasm simd', action='store_true')
         parser.add_argument('--enable-wasm-threads', dest='enable_wasm_threads', help='enable wasm threads', action='store_true')
         parser.add_argument('--disable-wasm-threads', dest='disable_wasm_threads', help='disable wasm threads', action='store_true')
+        parser.add_argument('--disable-webgpu', dest='disable_webgpu', help='disable webgpu', action='store_true')
         parser.add_argument('--disable-webnn', dest='disable_webnn', help='disable webnn', action='store_true')
 
         parser.epilog = '''
@@ -92,11 +93,13 @@ examples:
             enable_wasm_threads = False
 
         if not self.args.build_skip_wasm:
-            cmd = f'{build_cmd} --config {build_type} --build_wasm --use_jsep --target onnxruntime_webassembly --skip_tests --parallel --enable_lto --disable_exceptions'
+            cmd = f'{build_cmd} --config {build_type} --build_wasm --target onnxruntime_webassembly --skip_tests --parallel --enable_lto --disable_exceptions'
             if not disable_wasm_simd:
                 cmd += ' --enable_wasm_simd'
             if enable_wasm_threads:
                 cmd += ' --enable_wasm_threads'
+            if not self.args.disable_webgpu:
+                cmd += ' --use_jsep'
             if not self.args.disable_webnn:
                 cmd += ' --use_webnn'
             Util.execute(cmd, show_cmd=True, show_duration=True)
