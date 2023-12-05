@@ -114,7 +114,7 @@ examples:
         Util.chdir(f'{root_dir}/js/web', verbose=True)
         #Util.execute('npx cross-env ELECTRON_GET_USE_PROXY=true GLOBAL_AGENT_HTTPS_PROXY=http://proxy-us.intel.com:914 npm install -D electron', show_cmd=True)
         Util.execute('npm ci', show_cmd=True)
-        Util.execute('npm run pull:wasm', show_cmd=True)
+        Util.execute('npm run pull:wasm', show_cmd=True, exit_on_error=False)
 
         Util.chdir(f'{root_dir}/js/web', verbose=True)
         file_name = 'ort-wasm'
