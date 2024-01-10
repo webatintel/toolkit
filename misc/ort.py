@@ -50,6 +50,7 @@ class Ort(Program):
         parser.add_argument('--build', dest='build', help='build', action='store_true')
         parser.add_argument('--build-type', dest='build_type', help='build type, can be Debug, MinSizeRel, Release or RelWithDebInfo', default='MinSizeRel')
         parser.add_argument('--build-skip-wasm', dest='build_skip_wasm', help='build skip wasm', action='store_true')
+        parser.add_argument('--build-skip-pull-wasm', dest='build_skip_pull_wasm', help='build skip pull wasm', action='store_true')
         parser.add_argument('--lint', dest='lint', help='lint', action='store_true')
 
         parser.add_argument('--disable-wasm-simd', dest='disable_wasm_simd', help='disable wasm simd', action='store_true')
@@ -114,7 +115,8 @@ examples:
         Util.chdir(f'{root_dir}/js/web', verbose=True)
         #Util.execute('npx cross-env ELECTRON_GET_USE_PROXY=true GLOBAL_AGENT_HTTPS_PROXY=http://proxy-us.intel.com:914 npm install -D electron', show_cmd=True)
         Util.execute('npm ci', show_cmd=True)
-        Util.execute('npm run pull:wasm', show_cmd=True, exit_on_error=False)
+        if not self.args.build_skip_pull_wasm:
+          Util.execute('npm run pull:wasm', show_cmd=True, exit_on_error=False)
 
         Util.chdir(f'{root_dir}/js/web', verbose=True)
         file_name = 'ort-wasm'
@@ -122,8 +124,8 @@ examples:
             file_name += '-simd'
         if enable_wasm_threads:
             file_name += '-threaded'
-        Util.copy_file(f'{root_dir}/build/{os_dir}/{build_type}', f'{file_name}.js', f'{root_dir}/js/web/lib/wasm/binding', f'{file_name}.jsep.js')
-        Util.copy_file(f'{root_dir}/build/{os_dir}/{build_type}', f'{file_name}.wasm', f'{root_dir}/js/web/dist', f'{file_name}.jsep.wasm')
+        Util.copy_file(f'{root_dir}/build/{os_dir}/{build_type}', f'{file_name}.js', f'{root_dir}/js/web/lib/wasm/binding', f'{file_name}.jsep.js', need_bk=False)
+        Util.copy_file(f'{root_dir}/build/{os_dir}/{build_type}', f'{file_name}.wasm', f'{root_dir}/js/web/dist', f'{file_name}.jsep.wasm', need_bk=False)
         Util.execute('npm run build', show_cmd=True)
 
         Util.info(f'{timer.stop()} was spent to build')
