@@ -56,8 +56,8 @@ class Ort(Program):
         parser.add_argument('--disable-wasm-simd', dest='disable_wasm_simd', help='disable wasm simd', action='store_true')
         parser.add_argument('--enable-wasm-threads', dest='enable_wasm_threads', help='enable wasm threads', action='store_true')
         parser.add_argument('--disable-wasm-threads', dest='disable_wasm_threads', help='disable wasm threads', action='store_true')
-        parser.add_argument('--disable-webgpu', dest='disable_webgpu', help='disable webgpu', action='store_true')
-        parser.add_argument('--disable-webnn', dest='disable_webnn', help='disable webnn', action='store_true')
+        parser.add_argument('--enable-webgpu', dest='enable_webgpu', help='enable webgpu', action='store_true')
+        parser.add_argument('--enable-webnn', dest='enable_webnn', help='enable webnn', action='store_true')
 
         parser.epilog = '''
 examples:
@@ -93,17 +93,23 @@ examples:
         else:
             enable_wasm_threads = False
 
+        if self.args.enable_webnn:
+          enable_wasm_threads = False
+
         if not self.args.build_skip_wasm:
-            cmd = f'{build_cmd} --config {build_type} --build_wasm --target onnxruntime_webassembly --skip_tests --parallel --enable_lto --disable_exceptions'
-            if not disable_wasm_simd:
-                cmd += ' --enable_wasm_simd'
-            if enable_wasm_threads:
-                cmd += ' --enable_wasm_threads'
-            if not self.args.disable_webgpu:
-                cmd += ' --use_jsep'
-            if not self.args.disable_webnn:
-                cmd += ' --use_webnn'
-            Util.execute(cmd, show_cmd=True, show_duration=True)
+          cmd = f'{build_cmd} --config {build_type} --build_wasm --target onnxruntime_webassembly --skip_tests --parallel --enable_lto --disable_exceptions'
+          if not disable_wasm_simd:
+            cmd += ' --enable_wasm_simd'
+          if enable_wasm_threads:
+            cmd += ' --enable_wasm_threads'
+
+          if self.args.enable_webgpu:
+            webgpu_cmd = f'{cmd} --use_jsep'
+            Util.execute(webgpu_cmd, show_cmd=True, show_duration=True)
+
+          if self.args.enable_webnn:
+            webnn_cmd = f'{cmd} --use_webnn'
+            Util.execute(webnn_cmd, show_cmd=True, show_duration=True)
 
         Util.chdir(f'{root_dir}/js', verbose=True)
         Util.execute('npm ci', show_cmd=True)
@@ -124,8 +130,16 @@ examples:
             file_name += '-simd'
         if enable_wasm_threads:
             file_name += '-threaded'
-        Util.copy_file(f'{root_dir}/build/{os_dir}/{build_type}', f'{file_name}.js', f'{root_dir}/js/web/lib/wasm/binding', f'{file_name}.jsep.js', need_bk=False)
-        Util.copy_file(f'{root_dir}/build/{os_dir}/{build_type}', f'{file_name}.wasm', f'{root_dir}/js/web/dist', f'{file_name}.jsep.wasm', need_bk=False)
+
+        if self.args.enable_webgpu:
+          Util.copy_file(f'{root_dir}/build/{os_dir}/{build_type}', f'{file_name}.js', f'{root_dir}/js/web/lib/wasm/binding', f'{file_name}.jsep.js', need_bk=False, show_cmd=True)
+          Util.copy_file(f'{root_dir}/build/{os_dir}/{build_type}', f'{file_name}.wasm', f'{root_dir}/js/web/dist', f'{file_name}.jsep.wasm', need_bk=False, show_cmd=True)
+
+        if self.args.enable_webnn:
+          Util.copy_file(f'{root_dir}/build/{os_dir}/{build_type}', f'{file_name}.js', f'{root_dir}/js/web/lib/wasm/binding', f'{file_name}.js', need_bk=False, show_cmd=True)
+          Util.copy_file(f'{root_dir}/build/{os_dir}/{build_type}', f'{file_name}.wasm', f'{root_dir}/js/web/dist', f'{file_name}.wasm', need_bk=False, show_cmd=True)
+          #Util.copy_file(f'{root_dir}/build/{os_dir}/{build_type}', f'{file_name}.worker.js', f'{root_dir}/js/web/lib/wasm/binding', f'{file_name}.worker.js', need_bk=False, show_cmd=True)
+
         Util.execute('npm run build', show_cmd=True)
 
         Util.info(f'{timer.stop()} was spent to build')
