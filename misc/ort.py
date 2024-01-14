@@ -3,8 +3,6 @@ git clone --recursive https://github.com/Microsoft/onnxruntime
 install cmake, node.js, python, ninja
 
 [usage]
-set PYTHON=C:/Users/ygu5/AppData/Local/Programs/Python/Python311
-set PATH=%PYTHON%;%PYTHON%/Scripts;%PATH%
 python ort.py --build
 
 [reference]
@@ -66,29 +64,28 @@ class Ort(Program):
             action="store_true",
         )
         parser.add_argument(
+            "--build-skip-ci",
+            dest="build_skip_ci",
+            help="build skip ci",
+            action="store_true",
+        )
+        parser.add_argument(
             "--build-skip-pull-wasm",
             dest="build_skip_pull_wasm",
             help="build skip pull wasm",
             action="store_true",
         )
         parser.add_argument("--lint", dest="lint", help="lint", action="store_true")
-
         parser.add_argument(
-            "--disable-wasm-simd",
-            dest="disable_wasm_simd",
-            help="disable wasm simd",
+            "--enable-wasm-simd",
+            dest="enable_wasm_simd",
+            help="enable wasm simd",
             action="store_true",
         )
         parser.add_argument(
             "--enable-wasm-threads",
             dest="enable_wasm_threads",
             help="enable wasm threads",
-            action="store_true",
-        )
-        parser.add_argument(
-            "--disable-wasm-threads",
-            dest="disable_wasm_threads",
-            help="disable wasm threads",
             action="store_true",
         )
         parser.add_argument(
@@ -130,32 +127,39 @@ examples:
             os_dir = "Linux"
 
         build_type = self.args.build_type
-        disable_wasm_simd = self.args.disable_wasm_simd
-        if self.args.enable_wasm_threads:
-            enable_wasm_threads = True
-        elif self.args.disable_wasm_threads:
-            enable_wasm_threads = False
-        elif Util.HOST_NAME in ["wp-27"] and not self.args.enable_webnn:
-            enable_wasm_threads = True
-        else:
-            enable_wasm_threads = False
+        enable_wasm_simd = self.args.enable_wasm_simd
+        enable_wasm_threads = self.args.enable_wasm_threads
+        webgpu_build_dir = f"build-webgpu/{os_dir}"
+        webnn_build_dir = f"build-webnn/{os_dir}"
+
+        webnn_targets = [
+            [],
+            ["simd"],
+            # ["threads"],
+            # ["simd", "threads"],
+        ]
 
         if not self.args.build_skip_wasm:
             cmd = f"{build_cmd} --config {build_type} --build_wasm --skip_tests --parallel --skip_submodule_sync --disable_wasm_exception_catching"
-            if not disable_wasm_simd:
-                cmd += " --enable_wasm_simd"
-            if enable_wasm_threads:
-                cmd += " --enable_wasm_threads"
 
             if self.args.enable_webgpu:
-                webgpu_cmd = f"{cmd} --use_jsep --target onnxruntime_webassembly"
+                webgpu_cmd = f"{cmd} --use_jsep --target onnxruntime_webassembly --build_dir={webgpu_build_dir}"
+                if enable_wasm_simd:
+                    webgpu_cmd += " --enable_wasm_simd"
+                if enable_wasm_threads:
+                    webgpu_cmd += " --enable_wasm_threads"
                 Util.execute(webgpu_cmd, show_cmd=True, show_duration=True)
 
             if self.args.enable_webnn:
-                webnn_cmd = f"{cmd} --use_webnn"
-                Util.execute(webnn_cmd, show_cmd=True, show_duration=True)
+                for webnn_target in webnn_targets:
+                    webnn_cmd = f"{cmd} --use_webnn --build_dir={webnn_build_dir}"
+                    if "simd" in webnn_target:
+                        webnn_cmd += " --enable_wasm_simd"
+                    if "threads" in webnn_target:
+                        webnn_cmd += " --enable_wasm_threads"
+                    Util.execute(webnn_cmd, show_cmd=True, show_duration=True)
 
-        if self.args.enable_webgpu:
+        if not self.args.build_skip_ci:
             Util.chdir(f"{root_dir}/js", verbose=True)
             Util.execute("npm ci", show_cmd=True)
 
@@ -163,52 +167,67 @@ examples:
             Util.execute("npm ci", show_cmd=True)
 
             Util.chdir(f"{root_dir}/js/web", verbose=True)
-            # Util.execute('npx cross-env ELECTRON_GET_USE_PROXY=true GLOBAL_AGENT_HTTPS_PROXY=http://proxy-us.intel.com:914 npm install -D electron', show_cmd=True)
             Util.execute("npm ci", show_cmd=True)
-            if not self.args.build_skip_pull_wasm:
-                Util.execute("npm run pull:wasm", show_cmd=True, exit_on_error=False)
 
-        file_name = "ort-wasm"
-        if not disable_wasm_simd:
-            file_name += "-simd"
-        if enable_wasm_threads:
-            file_name += "-threaded"
+        if not self.args.build_skip_pull_wasm:
+            Util.chdir(f"{root_dir}/js/web", verbose=True)
+            Util.execute("npm run pull:wasm", show_cmd=True, exit_on_error=False)
 
         if self.args.enable_webgpu:
+            webgpu_file_name = "ort-wasm"
+            if enable_wasm_simd:
+                webgpu_file_name += "-simd"
+            if enable_wasm_threads:
+                webgpu_file_name += "-threaded"
             Util.copy_file(
-                f"{root_dir}/build/{os_dir}/{build_type}",
-                f"{file_name}.js",
+                f"{root_dir}/{webgpu_build_dir}/{build_type}",
+                f"{webgpu_file_name}.js",
                 f"{root_dir}/js/web/lib/wasm/binding",
-                f"{file_name}.jsep.js",
+                f"{webgpu_file_name}.jsep.js",
                 need_bk=False,
                 show_cmd=True,
             )
             Util.copy_file(
-                f"{root_dir}/build/{os_dir}/{build_type}",
-                f"{file_name}.wasm",
+                f"{root_dir}/{webgpu_build_dir}/{build_type}",
+                f"{webgpu_file_name}.wasm",
                 f"{root_dir}/js/web/dist",
-                f"{file_name}.jsep.wasm",
+                f"{webgpu_file_name}.jsep.wasm",
                 need_bk=False,
                 show_cmd=True,
             )
 
         if self.args.enable_webnn:
-            Util.copy_file(
-                f"{root_dir}/build/{os_dir}/{build_type}",
-                f"{file_name}.js",
-                f"{root_dir}/js/web/lib/wasm/binding",
-                f"{file_name}.js",
-                need_bk=False,
-                show_cmd=True,
-            )
-            Util.copy_file(
-                f"{root_dir}/build/{os_dir}/{build_type}",
-                f"{file_name}.wasm",
-                f"{root_dir}/js/web/dist",
-                f"{file_name}.wasm",
-                need_bk=False,
-                show_cmd=True,
-            )
+            for webnn_target in webnn_targets:
+                webnn_file_name = "ort-wasm"
+                if "simd" in webnn_target:
+                    webnn_file_name += "-simd"
+                if "threads" in webnn_target:
+                    webnn_file_name += "-threaded"
+                Util.copy_file(
+                    f"{root_dir}/{webnn_build_dir}/{build_type}",
+                    f"{webnn_file_name}.js",
+                    f"{root_dir}/js/web/lib/wasm/binding",
+                    f"{webnn_file_name}.js",
+                    need_bk=False,
+                    show_cmd=True,
+                )
+                Util.copy_file(
+                    f"{root_dir}/{webnn_build_dir}/{build_type}",
+                    f"{webnn_file_name}.wasm",
+                    f"{root_dir}/js/web/dist",
+                    f"{webnn_file_name}.wasm",
+                    need_bk=False,
+                    show_cmd=True,
+                )
+                if webnn_file_name.endswith("threaded"):
+                    Util.copy_file(
+                        f"{root_dir}/{webnn_build_dir}/{build_type}",
+                        f"{webnn_file_name}.worker.js",
+                        f"{root_dir}/js/web/lib/wasm/binding",
+                        f"{webnn_file_name}.worker.js",
+                        need_bk=False,
+                        show_cmd=True,
+                    )
 
         Util.chdir(f"{root_dir}/js/web", verbose=True)
         Util.execute("npm run build", show_cmd=True)
