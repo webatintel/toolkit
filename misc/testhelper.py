@@ -24,10 +24,6 @@ class TestExpectation:
           '0000 WIN : ProgramBinariesAcrossPlatforms.CreateAndReloadBinary/ES2_D3D11_to_ES2_D3D9 = SKIP',
           '0000 WIN : ProgramBinariesAcrossPlatforms.CreateAndReloadBinary/ES2_D3D9_to_ES2_D3D11 = SKIP',
         ],
-        'content/test/gpu/gpu_tests/test_expectations/info_collection_expectations.txt': [
-          # Windows failures related to RDP or lock screen.
-          '[ win ] InfoCollection_direct_composition [ Failure ]'
-        ],
         'content/test/gpu/gpu_tests/test_expectations/trace_test_expectations.txt': [
           # https://github.com/webatintel/webconformance/issues/24
           '[ win intel ] OverlayModeTraceTest_DirectComposition_Video_MP4_FourColors_Rot_180 [ Failure ]',
@@ -189,7 +185,7 @@ class TestExpectation:
                     else:
                         line = f'{update_comment}\n' + line
 
-                if target in ['trace_test', 'webgpu_cts_tests']:
+                if target in ['info_collection_tests', 'trace_test', 'webgpu_cts_tests']:
                     if tag_header_scope:
                         if re.search('END TAG HEADER', line):
                             tag_header_scope = False
