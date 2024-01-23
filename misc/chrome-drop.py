@@ -390,6 +390,8 @@ examples:
         if 'webgpu' in self.targets:
             cmd = 'vpython3 content/test/gpu/run_gpu_integration_test.py webgpu_cts --passthrough --stable-jobs'
             cmd += ' --disable-log-uploads'
+            if Util.HOST_OS == Util.WINDOWS:
+                cmd += ' --use-dxc'
             if self.run_chrome_channel == 'build':
                 self.chrome_rev = self.run_chrome_rev
                 (chrome_rev_dir, self.chrome_rev) = Util.get_backup_dir(self.chrome_backup_dir, self.chrome_rev)
