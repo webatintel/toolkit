@@ -299,10 +299,13 @@ examples:
 
             Util.append_file(self.exec_log, 'Mesa Revision%s%s' % (self.SEPARATOR, rev_name))
 
-        gpu_name, gpu_driver, gpu_device_id = Util.get_gpu_info()
-        Util.append_file(self.exec_log, 'GPU name%s%s' % (self.SEPARATOR, gpu_name))
-        Util.append_file(self.exec_log, 'GPU driver%s%s' % (self.SEPARATOR, gpu_driver))
-        Util.append_file(self.exec_log, 'GPU device id%s%s' % (self.SEPARATOR, gpu_device_id))
+        gpu_name, gpu_driver_date, gpu_driver_ver, gpu_device_id = Util.get_gpu_info()
+        Util.append_file(self.exec_log, f'GPU name{self.SEPARATOR}{gpu_name}')
+        Util.append_file(self.exec_log, f'GPU driver date{self.SEPARATOR}{gpu_driver_date}')
+        Util.append_file(self.exec_log, f'GPU driver version{self.SEPARATOR}{gpu_driver_ver}')
+        Util.append_file(self.exec_log, f'GPU device id{self.SEPARATOR}{gpu_device_id}')
+        os_ver = Util.get_os_info()
+        Util.append_file(self.exec_log, f'OS version{self.SEPARATOR}{os_ver}')
 
         PROJECT_RUN_INFO_INDEX_ROOT_DIR = 0
         PROJECT_RUN_INFO_INDEX_DATE = 1
@@ -377,7 +380,7 @@ examples:
                 elif Util.HOST_OS == Util.LINUX:
                     run_args.append('--gtest_filter=*OpenGL*:*Vulkan*')
             if virtual_name in ['info_collection_tests', 'trace_test']:
-                _, _, gpu_device_id = Util.get_gpu_info()
+                _, _, _, gpu_device_id = Util.get_gpu_info()
                 if virtual_name == 'info_collection_tests' and gpu_device_id not in run_args:
                     run_args += ['--expected-device-id', gpu_device_id]
                 run_args += ['--extra-intel-device-id-with-overlays', gpu_device_id]

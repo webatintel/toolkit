@@ -219,10 +219,13 @@ examples:
         if Util.HOST_OS == Util.LINUX:
             self.run_mesa_rev = Util.set_mesa(self.mesa_backup_dir, self.run_mesa_rev)
 
-        gpu_name, gpu_driver, gpu_device_id = Util.get_gpu_info()
+        gpu_name, gpu_driver_date, gpu_driver_ver, gpu_device_id = Util.get_gpu_info()
         Util.append_file(self.exec_log, f'GPU name{self.SEPARATOR}{gpu_name}')
-        Util.append_file(self.exec_log, f'GPU driver{self.SEPARATOR}{gpu_driver}')
+        Util.append_file(self.exec_log, f'GPU driver date{self.SEPARATOR}{gpu_driver_date}')
+        Util.append_file(self.exec_log, f'GPU driver version{self.SEPARATOR}{gpu_driver_ver}')
         Util.append_file(self.exec_log, f'GPU device id{self.SEPARATOR}{gpu_device_id}')
+        os_ver = Util.get_os_info()
+        Util.append_file(self.exec_log, f'OS version{self.SEPARATOR}{os_ver}')
 
         if 'angle' in self.targets:
             rev_name, _ = Util.get_backup_dir(f'{self.angle_dir}/backup', 'latest')
