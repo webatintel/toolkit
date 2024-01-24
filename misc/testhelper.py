@@ -81,15 +81,15 @@ class TestExpectation:
             'crbug.com/0000 [ intel webgpu-adapter-default ] webgpu:api,operation,resource_init,texture_zero:uninitialized_texture_is_zero:dimension="2d";readMethod="CopyToBuffer";format="stencil8" [ Failure ]',
             'crbug.com/0000 [ intel webgpu-adapter-default ] webgpu:api,operation,resource_init,texture_zero:uninitialized_texture_is_zero:dimension="2d";readMethod="StencilTest";format="stencil8" [ Failure ]',
             # Untriaged failures
-            'crbug.com/0000 [ intel webgpu-dxc-enabled win10 ] webgpu:shader,execution,expression,binary,f16_remainder:* [ Failure ]',
-            'crbug.com/0000 [ intel webgpu-dxc-enabled win10 ] webgpu:shader,execution,expression,binary,i32_arithmetic:addition_vector_scalar_compound:inputSource="const";* [ Failure ]',
-            'crbug.com/0000 [ intel webgpu-dxc-enabled win10 ] webgpu:shader,execution,expression,binary,i32_arithmetic:multiplication_scalar_vector:inputSource="const";* [ Failure ]',
-            'crbug.com/0000 [ intel webgpu-dxc-enabled win10 ] webgpu:shader,execution,expression,binary,i32_arithmetic:subtraction_vector_scalar_compound:inputSource="const";* [ Failure ]',
-            'crbug.com/0000 [ intel webgpu-dxc-enabled win10 ] webgpu:shader,execution,memory_model,barrier:workgroup_barrier_load_store:* [ Failure ]',
-            'crbug.com/0000 [ intel webgpu-dxc-enabled win10 ] webgpu:shader,execution,memory_model,barrier:workgroup_barrier_load_store:accessValueType="f16";memType="non_atomic_storage";accessPair="rw" [ Failure ]',
-            'crbug.com/0000 [ intel webgpu-dxc-enabled win10 ] webgpu:shader,execution,memory_model,barrier:workgroup_barrier_load_store:accessValueType="u32";memType="non_atomic_storage";accessPair="rw" [ Failure ]',
-            'crbug.com/0000 [ intel webgpu-dxc-enabled win10 ] webgpu:shader,execution,memory_model,barrier:workgroup_barrier_store_load:accessValueType="f16";memType="non_atomic_storage";accessPair="wr" [ Failure ]',
-            'crbug.com/0000 [ intel webgpu-dxc-enabled win10 ] webgpu:shader,execution,memory_model,barrier:workgroup_barrier_store_load:accessValueType="u32";memType="non_atomic_storage";accessPair="wr" [ Failure ]',
+            'crbug.com/0000 [ intel webgpu-dxc-enabled win ] webgpu:shader,execution,expression,binary,f16_remainder:* [ Failure ]',
+            'crbug.com/0000 [ intel webgpu-dxc-enabled win ] webgpu:shader,execution,expression,binary,i32_arithmetic:addition_vector_scalar_compound:inputSource="const";* [ Failure ]',
+            'crbug.com/0000 [ intel webgpu-dxc-enabled win ] webgpu:shader,execution,expression,binary,i32_arithmetic:multiplication_scalar_vector:inputSource="const";* [ Failure ]',
+            'crbug.com/0000 [ intel webgpu-dxc-enabled win ] webgpu:shader,execution,expression,binary,i32_arithmetic:subtraction_vector_scalar_compound:inputSource="const";* [ Failure ]',
+            'crbug.com/0000 [ intel webgpu-dxc-enabled win ] webgpu:shader,execution,memory_model,barrier:workgroup_barrier_load_store:* [ Failure ]',
+            'crbug.com/0000 [ intel webgpu-dxc-enabled win ] webgpu:shader,execution,memory_model,barrier:workgroup_barrier_load_store:accessValueType="f16";memType="non_atomic_storage";accessPair="rw" [ Failure ]',
+            'crbug.com/0000 [ intel webgpu-dxc-enabled win ] webgpu:shader,execution,memory_model,barrier:workgroup_barrier_load_store:accessValueType="u32";memType="non_atomic_storage";accessPair="rw" [ Failure ]',
+            'crbug.com/0000 [ intel webgpu-dxc-enabled win ] webgpu:shader,execution,memory_model,barrier:workgroup_barrier_store_load:accessValueType="f16";memType="non_atomic_storage";accessPair="wr" [ Failure ]',
+            'crbug.com/0000 [ intel webgpu-dxc-enabled win ] webgpu:shader,execution,memory_model,barrier:workgroup_barrier_store_load:accessValueType="u32";memType="non_atomic_storage";accessPair="wr" [ Failure ]',
         ],
         # There is no expectation file for dawn_end2end_tests. The expectations will be used to suppress the dawn e2e failures in test report.
         # Example: '[ Util.HOST_OS ] ComputeStorageBufferBarrierTests.UniformToStorageAddPingPong/D3D11_Intel_R_Arc_TM_A770_Graphics'
@@ -148,21 +148,26 @@ class TestExpectation:
             return line
 
         gpu_tags = gpu_tags_match.group()
+        new_gpu_tags = gpu_tags
+        if gpu_tags.find('win10') != -1:
+            # Replace 'win10' with 'win' in the gpu tags
+            new_gpu_tags = new_gpu_tags.replace('win10', 'win')
+
         if TestExpectation.intel_tag_pattern.search(gpu_tags):
             # Replace 'intel*' with 'intel' in the gpu tags
-            updated_gpu_tags = TestExpectation.intel_tag_pattern.sub('intel', gpu_tags)
+            new_gpu_tags = TestExpectation.intel_tag_pattern.sub('intel', new_gpu_tags)
 
-            updated_line = line if updated_gpu_tags == gpu_tags else line.replace(gpu_tags, updated_gpu_tags)
+        new_line = line if new_gpu_tags == gpu_tags else line.replace(gpu_tags, new_gpu_tags)
 
-            # If the updated line already exists, just comment the line,
-            # otherwise comment the line and append the updated line.
-            # For the line already with 'intel' tag, keep as is if there is no duplicate line.
-            if updated_line in intel_expectations:
-                line = '# ' + line
-            else:
-                if updated_gpu_tags != gpu_tags:
-                    line =  '# ' + line + updated_line
-                intel_expectations.append(updated_line)
+        # If the updated line already exists, just comment the line,
+        # otherwise comment the line and append the updated line.
+        # For the line already with 'intel' tag, keep as is if there is no duplicate line.
+        if new_line in intel_expectations:
+            line = '# ' + line
+        else:
+            if new_gpu_tags != gpu_tags:
+                line =  '# ' + line + new_line
+            intel_expectations.append(new_line)
         return line
 
 
