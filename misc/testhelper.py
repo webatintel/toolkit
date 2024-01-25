@@ -69,7 +69,8 @@ class TestExpectation:
             # Tracking at https://github.com/webatintel/webconformance/issues/26
             'crbug.com/0000 [ intel webgpu-adapter-default ] webgpu:web_platform,external_texture,video:importExternalTexture,compute:videoName="four-colors-h264-bt601-rotate-270.mp4";* [ Failure ]',
             'crbug.com/0000 [ intel webgpu-adapter-default ] webgpu:web_platform,external_texture,video:importExternalTexture,compute:videoName="four-colors-h264-bt601-rotate-90.mp4";* [ Failure ]',
-            'crbug.com/0000 [ intel webgpu-adapter-default ] webgpu:web_platform,external_texture,video:importExternalTexture,sample:* [ Failure ]',
+            # disabled this due to conflict with a existing rule
+            #'crbug.com/0000 [ intel webgpu-adapter-default ] webgpu:web_platform,external_texture,video:importExternalTexture,sample:* [ Failure ]',
             'crbug.com/0000 [ intel webgpu-adapter-default ] webgpu:web_platform,external_texture,video:importExternalTexture,sampleWithVideoFrameWithVisibleRectParam:* [ Failure ]',
             # https://github.com/webatintel/webconformance/issues/27
             'crbug.com/0000 [ intel webgpu-adapter-default ] webgpu:api,operation,command_buffer,copyTextureToTexture:copy_depth_stencil:format="stencil8" [ Failure ]',
