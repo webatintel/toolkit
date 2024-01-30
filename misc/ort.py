@@ -129,35 +129,19 @@ examples:
         build_type = self.args.build_type
         enable_wasm_simd = self.args.enable_wasm_simd
         enable_wasm_threads = self.args.enable_wasm_threads
-        webgpu_build_dir = f"build-webgpu/{os_dir}"
-        webnn_build_dir = f"build-webnn/{os_dir}"
-
-        webnn_targets = [
-            [],
-            ["simd"],
-            # ["threads"],
-            # ["simd", "threads"],
-        ]
+        build_dir = f"build/{os_dir}"
 
         if not self.args.build_skip_wasm:
-            cmd = f"{build_cmd} --config {build_type} --build_wasm --skip_tests --parallel --skip_submodule_sync --disable_wasm_exception_catching"
-
-            if self.args.enable_webgpu:
-                webgpu_cmd = f"{cmd} --use_jsep --target onnxruntime_webassembly --build_dir={webgpu_build_dir}"
-                if enable_wasm_simd:
-                    webgpu_cmd += " --enable_wasm_simd"
-                if enable_wasm_threads:
-                    webgpu_cmd += " --enable_wasm_threads"
-                Util.execute(webgpu_cmd, show_cmd=True, show_duration=True)
+            cmd = f"{build_cmd} --config {build_type} --build_dir={build_dir} --build_wasm --skip_tests --parallel \
+                --skip_submodule_sync --disable_wasm_exception_catching --use_jsep --target onnxruntime_webassembly"
 
             if self.args.enable_webnn:
-                for webnn_target in webnn_targets:
-                    webnn_cmd = f"{cmd} --use_webnn --build_dir={webnn_build_dir}"
-                    if "simd" in webnn_target:
-                        webnn_cmd += " --enable_wasm_simd"
-                    if "threads" in webnn_target:
-                        webnn_cmd += " --enable_wasm_threads"
-                    Util.execute(webnn_cmd, show_cmd=True, show_duration=True)
+                cmd += " --use_webnn"
+            if enable_wasm_simd:
+                cmd += " --enable_wasm_simd"
+            if enable_wasm_threads:
+                cmd += " --enable_wasm_threads"
+            Util.execute(cmd, show_cmd=True, show_duration=True)
 
         if not self.args.build_skip_ci:
             Util.chdir(f"{root_dir}/js", verbose=True)
@@ -173,61 +157,28 @@ examples:
             Util.chdir(f"{root_dir}/js/web", verbose=True)
             Util.execute("npm run pull:wasm", show_cmd=True, exit_on_error=False)
 
-        if self.args.enable_webgpu:
-            webgpu_file_name = "ort-wasm"
+        if self.args.enable_webgpu or self.args.enable_webnn:
+            file_name = "ort-wasm"
             if enable_wasm_simd:
-                webgpu_file_name += "-simd"
+                file_name += "-simd"
             if enable_wasm_threads:
-                webgpu_file_name += "-threaded"
+                file_name += "-threaded"
             Util.copy_file(
-                f"{root_dir}/{webgpu_build_dir}/{build_type}",
-                f"{webgpu_file_name}.js",
+                f"{root_dir}/{build_dir}/{build_type}",
+                f"{file_name}.js",
                 f"{root_dir}/js/web/lib/wasm/binding",
-                f"{webgpu_file_name}.jsep.js",
+                f"{file_name}.jsep.js",
                 need_bk=False,
                 show_cmd=True,
             )
             Util.copy_file(
-                f"{root_dir}/{webgpu_build_dir}/{build_type}",
-                f"{webgpu_file_name}.wasm",
+                f"{root_dir}/{build_dir}/{build_type}",
+                f"{file_name}.wasm",
                 f"{root_dir}/js/web/dist",
-                f"{webgpu_file_name}.jsep.wasm",
+                f"{file_name}.jsep.wasm",
                 need_bk=False,
                 show_cmd=True,
             )
-
-        if self.args.enable_webnn:
-            for webnn_target in webnn_targets:
-                webnn_file_name = "ort-wasm"
-                if "simd" in webnn_target:
-                    webnn_file_name += "-simd"
-                if "threads" in webnn_target:
-                    webnn_file_name += "-threaded"
-                Util.copy_file(
-                    f"{root_dir}/{webnn_build_dir}/{build_type}",
-                    f"{webnn_file_name}.js",
-                    f"{root_dir}/js/web/lib/wasm/binding",
-                    f"{webnn_file_name}.js",
-                    need_bk=False,
-                    show_cmd=True,
-                )
-                Util.copy_file(
-                    f"{root_dir}/{webnn_build_dir}/{build_type}",
-                    f"{webnn_file_name}.wasm",
-                    f"{root_dir}/js/web/dist",
-                    f"{webnn_file_name}.wasm",
-                    need_bk=False,
-                    show_cmd=True,
-                )
-                if webnn_file_name.endswith("threaded"):
-                    Util.copy_file(
-                        f"{root_dir}/{webnn_build_dir}/{build_type}",
-                        f"{webnn_file_name}.worker.js",
-                        f"{root_dir}/js/web/lib/wasm/binding",
-                        f"{webnn_file_name}.worker.js",
-                        need_bk=False,
-                        show_cmd=True,
-                    )
 
         Util.chdir(f"{root_dir}/js/web", verbose=True)
         Util.execute("npm run build", show_cmd=True)
