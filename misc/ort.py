@@ -88,18 +88,6 @@ class Ort(Program):
             help="enable wasm threads",
             action="store_true",
         )
-        parser.add_argument(
-            "--enable-webgpu",
-            dest="enable_webgpu",
-            help="enable webgpu",
-            action="store_true",
-        )
-        parser.add_argument(
-            "--enable-webnn",
-            dest="enable_webnn",
-            help="enable webnn",
-            action="store_true",
-        )
 
         parser.epilog = """
 examples:
@@ -132,11 +120,7 @@ examples:
         build_dir = f"build/{os_dir}"
 
         if not self.args.build_skip_wasm:
-            cmd = f"{build_cmd} --config {build_type} --build_dir={build_dir} --build_wasm --skip_tests --parallel \
-                --skip_submodule_sync --disable_wasm_exception_catching --use_jsep --target onnxruntime_webassembly"
-
-            if self.args.enable_webnn:
-                cmd += " --use_webnn"
+            cmd = f"{build_cmd} --config {build_type} --build_wasm --skip_tests --parallel --skip_submodule_sync --disable_wasm_exception_catching --use_jsep --use_webnn --target onnxruntime_webassembly"
             if enable_wasm_simd:
                 cmd += " --enable_wasm_simd"
             if enable_wasm_threads:
@@ -157,28 +141,27 @@ examples:
             Util.chdir(f"{root_dir}/js/web", verbose=True)
             Util.execute("npm run pull:wasm", show_cmd=True, exit_on_error=False)
 
-        if self.args.enable_webgpu or self.args.enable_webnn:
-            file_name = "ort-wasm"
-            if enable_wasm_simd:
-                file_name += "-simd"
-            if enable_wasm_threads:
-                file_name += "-threaded"
-            Util.copy_file(
-                f"{root_dir}/{build_dir}/{build_type}",
-                f"{file_name}.js",
-                f"{root_dir}/js/web/lib/wasm/binding",
-                f"{file_name}.jsep.js",
-                need_bk=False,
-                show_cmd=True,
-            )
-            Util.copy_file(
-                f"{root_dir}/{build_dir}/{build_type}",
-                f"{file_name}.wasm",
-                f"{root_dir}/js/web/dist",
-                f"{file_name}.jsep.wasm",
-                need_bk=False,
-                show_cmd=True,
-            )
+        file_name = "ort-wasm"
+        if enable_wasm_simd:
+            file_name += "-simd"
+        if enable_wasm_threads:
+            file_name += "-threaded"
+        Util.copy_file(
+            f"{root_dir}/{build_dir}/{build_type}",
+            f"{file_name}.js",
+            f"{root_dir}/js/web/lib/wasm/binding",
+            f"{file_name}.jsep.js",
+            need_bk=False,
+            show_cmd=True,
+        )
+        Util.copy_file(
+            f"{root_dir}/{build_dir}/{build_type}",
+            f"{file_name}.wasm",
+            f"{root_dir}/js/web/dist",
+            f"{file_name}.jsep.wasm",
+            need_bk=False,
+            show_cmd=True,
+        )
 
         Util.chdir(f"{root_dir}/js/web", verbose=True)
         Util.execute("npm run build", show_cmd=True)
