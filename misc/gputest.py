@@ -383,7 +383,40 @@ examples:
                 _, _, _, gpu_device_id = Util.get_gpu_info()
                 if virtual_name == 'info_collection_tests' and gpu_device_id not in run_args:
                     run_args += ['--expected-device-id', gpu_device_id]
-                run_args += ['--extra-intel-device-id-with-overlays', gpu_device_id]
+                # All hardware support overlay config for Intel devices
+                # Json format: https://source.chromium.org/chromium/chromium/src/+/main:content/test/gpu/gpu_tests/overlay_support.py;l=476
+                overlay_config_json = f'{project_run_root_dir}/out/{self.build_type_cap}/{gpu_device_id}.json'
+                if not os.path.exists(overlay_config_json):
+                    overlay_config_json_content = {
+                        "0x8086": {
+                            f"0x{gpu_device_id}": [
+                                {
+                                    "function": "WithDirectComposition"
+                                },
+                                {
+                                    "function": "WithHardwareNV12Support"
+                                },
+                                {
+                                    "function": "WithHardwareYUY2Support"
+                                },
+                                {
+                                    "function": "WithHardwareBGRA8Support"
+                                },
+                                {
+                                    "function": "WithZeroCopyConfig",
+                                    "args": {
+                                        "supports_scaled_video": False,
+                                        "supported_codecs": [
+                                            "H264", "VP9"
+                                        ]
+                                    }
+                                }
+                            ],
+                        },
+                    }
+                    with open(overlay_config_json, 'w', encoding='utf-8') as outfile:
+                        json.dump(overlay_config_json_content, outfile)
+                run_args += ['--extra-overlay-config-json', overlay_config_json]
 
             config_args = ''
             if run_args:
