@@ -369,6 +369,11 @@ examples:
                     test_combs.append(all_combs[int(i)])
 
             for comb in test_combs:
+                # Locally update related conformance_expectations.txt
+                if comb[0] == '1.0.3':
+                    TestExpectation.update('webgl_cts_tests', chrome_rev_dir)
+                elif comb[0] == '2.0.1':
+                    TestExpectation.update('webgl2_cts_tests', chrome_rev_dir)
                 extra_browser_args = '--disable-backgrounding-occluded-windows'
                 if Util.HOST_OS == Util.LINUX and self.run_no_angle:
                     extra_browser_args += ',--use-gl=desktop'
@@ -393,8 +398,6 @@ examples:
         if 'webgpu' in self.targets:
             cmd = 'vpython3 content/test/gpu/run_gpu_integration_test.py webgpu_cts --passthrough --stable-jobs'
             cmd += ' --disable-log-uploads'
-            if Util.HOST_OS == Util.WINDOWS:
-                cmd += ' --use-dxc'
             if self.run_chrome_channel == 'build':
                 self.chrome_rev = self.run_chrome_rev
                 (chrome_rev_dir, self.chrome_rev) = Util.get_backup_dir(self.chrome_backup_dir, self.chrome_rev)

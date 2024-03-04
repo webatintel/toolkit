@@ -5,6 +5,8 @@ class TestExpectation:
         'angle_end2end_tests': ['src/tests/angle_end2end_tests_expectations.txt'],
         'info_collection_tests': ['content/test/gpu/gpu_tests/test_expectations/info_collection_expectations.txt'],
         'trace_test': ['content/test/gpu/gpu_tests/test_expectations/trace_test_expectations.txt'],
+        'webgl_cts_tests': ['content/test/gpu/gpu_tests/test_expectations/webgl_conformance_expectations.txt'],
+        'webgl2_cts_tests': ['content/test/gpu/gpu_tests/test_expectations/webgl2_conformance_expectations.txt'],
         'webgpu_cts_tests': [
             'third_party/dawn/webgpu-cts/expectations.txt',
             'third_party/dawn/webgpu-cts/slow_tests.txt'
@@ -62,6 +64,9 @@ class TestExpectation:
           '[ win intel ] VideoPathTraceTest_DirectComposition_Video_VP9_NV12 [ Failure ]',
           '[ win intel ] VideoPathTraceTest_DirectComposition_Video_VP9_VP_SCALING [ Failure ]',
           '[ win intel ] VideoPathTraceTest_DirectComposition_Video_VP9_YUY2 [ Failure ]',
+        ],
+        'content/test/gpu/gpu_tests/test_expectations/webgl2_conformance_expectations.txt': [
+          'crbug.com/1131224 [ angle-d3d11 desktop no-asan oop-c passthrough release win11 intel ] conformance2/rendering/framebuffer-mismatched-attachment-targets.html [ Failure ]',
         ],
         'third_party/dawn/webgpu-cts/expectations.txt': [
             'crbug.com/1301808 [ intel ubuntu ] webgpu:web_platform,canvas,configure:viewFormats:canvasType="onscreen";format="rgba16float";* [ Failure ]',
