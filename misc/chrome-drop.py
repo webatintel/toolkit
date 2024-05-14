@@ -61,6 +61,7 @@ class ChromeDrop(Program):
         parser.add_argument('--run-filter', dest='run_filter', help='WebGL CTS suite to run against', default='all')  # For smoke run, we may use conformance/attribs
         parser.add_argument('--run-verbose', dest='run_verbose', help='verbose mode of run', action='store_true')
         parser.add_argument('--run-dawn-target', dest='run_dawn_target', help='run dawn target, split by comma, like "0,1". 0 for d3d12 and 1 for vulkan', default='all')
+        parser.add_argument('--run-dawn-validation', dest='run_dawn_validation', help='run dawn validation, can be disabled, partial or full', default='disabled')
         parser.add_argument('--run-webgl-target', dest='run_webgl_target', help='run webgl target, split by comma, like "0,2"', default='all')
         parser.add_argument('--run-no-angle', dest='run_no_angle', help='run without angle', action='store_true')
         parser.add_argument('--run-jobs', dest='run_jobs', help='run jobs', default=1)
@@ -278,7 +279,7 @@ examples:
                     run_args += f' --gtest_filter=*{self.run_filter}*'
                 if self.args.dryrun:
                     run_args += ' --gtest_filter=*BindGroupTests*'
-                run_args += ' --enable-backend-validation=disabled'
+                run_args += f' --enable-backend-validation={self.args.run_dawn_validation}'
                 run_args += f' --backend={backend}'
                 cmd += f' --run-args="{run_args}"'
                 timer = Timer()
