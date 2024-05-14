@@ -110,12 +110,12 @@ class TestExpectation:
             'crbug.com/0000 [ intel win ] webgpu:shader,execution,memory_layout:write_layout:case="mat4x4h_align8";aspace="workgroup" [ Failure ]',
             'crbug.com/0000 [ intel win ] webgpu:shader,execution,memory_layout:write_layout:case="mat4x4h_size";aspace="workgroup" [ Failure ]',
             # LNL driver issue: https://hsdes.intel.com/appstore/article/#/16021498104
-            'crbug.com/0000 [ intel win ] webgpu:shader,execution,memory_model,weak:2_plus_2_write:memType="atomic_workgroup" [ Failure ]',
-            'crbug.com/0000 [ intel win ] webgpu:shader,execution,memory_model,weak:load_buffer:memType="atomic_workgroup" [ Failure ]',
-            'crbug.com/0000 [ intel win ] webgpu:shader,execution,memory_model,weak:read:memType="atomic_workgroup" [ Failure ]',
+            #'crbug.com/0000 [ intel win ] webgpu:shader,execution,memory_model,weak:2_plus_2_write:memType="atomic_workgroup" [ Failure ]',
+            #'crbug.com/0000 [ intel win ] webgpu:shader,execution,memory_model,weak:load_buffer:memType="atomic_workgroup" [ Failure ]',
+            #'crbug.com/0000 [ intel win ] webgpu:shader,execution,memory_model,weak:read:memType="atomic_workgroup" [ Failure ]',
             # LNL failures may be related to https://hsdes.intel.com/appstore/article/#/15012265233
-            'crbug.com/0000 [ intel win ] webgpu:api,operation,command_buffer,copyTextureToTexture:copy_depth_stencil:format="depth24plus-stencil8" [ Failure ]',
-            'crbug.com/0000 [ intel win ] webgpu:api,operation,command_buffer,copyTextureToTexture:copy_depth_stencil:format="depth32float-stencil8" [ Failure ]',
+            #'crbug.com/0000 [ intel win ] webgpu:api,operation,command_buffer,copyTextureToTexture:copy_depth_stencil:format="depth24plus-stencil8" [ Failure ]',
+            #'crbug.com/0000 [ intel win ] webgpu:api,operation,command_buffer,copyTextureToTexture:copy_depth_stencil:format="depth32float-stencil8" [ Failure ]',
             # Untriaged failures
             'crbug.com/0000 [ intel win ] webgpu:shader,execution,memory_model,barrier:workgroup_barrier_load_store:* [ Failure ]',
             'crbug.com/0000 [ intel win ] webgpu:shader,execution,memory_model,barrier:workgroup_barrier_load_store:accessValueType="f16";memType="non_atomic_storage";accessPair="rw" [ Failure ]',
