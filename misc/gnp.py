@@ -618,7 +618,7 @@ examples:
                 # Workaround for content shell crash on Windows when building webgpu_blink_web_tests with is_official_build which is configured in makefile().
                 #cmd += ' --additional-driver-flag=--disable-gpu-sandbox'
         else:
-            cmd = '%s%s' % (target, Util.EXEC_SUFFIX)
+            cmd = '%s/%s%s' % (os.getcwd(), target, Util.EXEC_SUFFIX)
         if Util.HOST_OS == Util.WINDOWS:
             cmd = Util.format_slash(cmd)
         if self.args.run_disabled:
