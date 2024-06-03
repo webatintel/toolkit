@@ -4,7 +4,7 @@ import subprocess
 import sys
 lines = subprocess.Popen('dir %s' % __file__, shell=True, stdout=subprocess.PIPE).stdout.readlines()
 for line in lines:
-    match = re.search('\[(.*)\]', line.decode('utf-8'))
+    match = re.search('\\[(.*)\\]', line.decode('utf-8'))
     if match:
         script_dir = os.path.dirname(match.group(1)).replace('\\', '/')
         break
