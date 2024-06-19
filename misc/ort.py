@@ -114,6 +114,9 @@ examples:
             build_cmd = "./build.sh"
             os_dir = "Linux"
 
+        if Util.HOST_NAME == "wp-27":
+            self.args.enable_wasm_simd = True
+            self.args.enable_wasm_threads = True
         build_type = self.args.build_type
         enable_wasm_simd = self.args.enable_wasm_simd
         enable_wasm_threads = self.args.enable_wasm_threads
@@ -148,15 +151,15 @@ examples:
             file_name += "-threaded"
         Util.copy_file(
             f"{root_dir}/{build_dir}/{build_type}",
-            f"{file_name}.js",
-            f"{root_dir}/js/web/lib/wasm/binding",
-            f"{file_name}.jsep.js",
+            f"{file_name}.jsep.mjs",
+            f"{root_dir}/js/web/dist",
+            f"{file_name}.jsep.mjs",
             need_bk=False,
             show_cmd=True,
         )
         Util.copy_file(
             f"{root_dir}/{build_dir}/{build_type}",
-            f"{file_name}.wasm",
+            f"{file_name}.jsep.wasm",
             f"{root_dir}/js/web/dist",
             f"{file_name}.jsep.wasm",
             need_bk=False,
