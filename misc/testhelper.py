@@ -109,6 +109,10 @@ class TestExpectation:
             'crbug.com/0000 [ intel win ] webgpu:shader,execution,memory_layout:write_layout:case="mat4x4f_size";aspace="workgroup" [ Failure ]',
             'crbug.com/0000 [ intel win ] webgpu:shader,execution,memory_layout:write_layout:case="mat4x4h_align8";aspace="workgroup" [ Failure ]',
             'crbug.com/0000 [ intel win ] webgpu:shader,execution,memory_layout:write_layout:case="mat4x4h_size";aspace="workgroup" [ Failure ]',
+            # https://issues.chromium.org/issues/42240657
+            # This expectation exists in webgpu-cts/expectations.txt, but only for Intel Gen9 GPUs where graphite is disabled.
+            # On Intel Gen12 GPUs, graphite is enabled, we need another expectation with graphite-enabled for the failure.
+            'crbug.com/dawn/1706 [ graphite-enabled intel win ] webgpu:api,operation,command_buffer,queries,occlusionQuery:occlusion_query,depth:writeMask=0;* [ Failure ]',
             # LNL driver issue: https://hsdes.intel.com/appstore/article/#/16021498104
             #'crbug.com/0000 [ intel win ] webgpu:shader,execution,memory_model,weak:2_plus_2_write:memType="atomic_workgroup" [ Failure ]',
             #'crbug.com/0000 [ intel win ] webgpu:shader,execution,memory_model,weak:load_buffer:memType="atomic_workgroup" [ Failure ]',
@@ -168,7 +172,36 @@ class TestExpectation:
         ],
     }
 
-    # Match intel tag in the gpu tags, such as '[ webgpu-adapter-default intel ]',
+
+    # The format of raw expectations data read from the expectation file is
+    # 'crbug.com/0000 [ intel-0x9bc5 win ] test/subcase [ Failure ]'
+    expectation_pattern_str = r'(\[ .+? \]) ' # The tags field
+    expectation_pattern_str += r'(\S+) '  # The test name field
+    expectation_pattern = re.compile(expectation_pattern_str)
+
+    # OS tags for duplication checking.
+    linux_pattern_str = r' linux|ubuntu '
+    win_pattern_str = r' win|win10 '
+    linux_pattern = re.compile(linux_pattern_str)
+    win_pattern = re.compile(win_pattern_str)
+
+    # WebGPU adapter tags for duplication checking.
+    webgpu_adapter_pattern_str = r' (webgpu-adapter-default|webgpu-adapter-swiftshader) '
+    webgpu_adapter_pattern = re.compile(webgpu_adapter_pattern_str)
+
+    # WebGPU DXC tags for duplication checking.
+    webgpu_dxc_pattern_str = r' (webgpu-dxc-enabled|webgpu-dxc-disabled|webgpu-dxc-default) '
+    webgpu_dxc_pattern = re.compile(webgpu_dxc_pattern_str)
+
+    # Graphite tags for duplication checking.
+    graphite_pattern_str = r' (graphite-enabled|graphite-disabled) '
+    graphite_pattern = re.compile(graphite_pattern_str)
+
+    # Other vendor tags which we don't need to update them.
+    other_vendors_pattern_str = r' amd|apple|arm|google|nvidia|qualcomm\S* '
+    other_vendors_pattern = re.compile(other_vendors_pattern_str)
+
+    # Match intel tag in the tags, such as '[ webgpu-adapter-default intel ]',
     # '[ intel-gen-9 win10 ]' and '[ intel-0x9bc5 ]'.
     intel_tag_pattern = re.compile(r'intel\S*')
 
@@ -178,32 +211,61 @@ class TestExpectation:
         if line.startswith('#'):
             return line
 
-        # Get first matching tags, which may be gpu tags or may not.
-        gpu_tags_match = re.search(r'\[.*?\]', line)
-        if not gpu_tags_match:
+        # Search tags and test name fields.
+        match = TestExpectation.expectation_pattern.search(line)
+
+        # Skip the expectation without any tags
+        if not match:
             return line
 
-        gpu_tags = gpu_tags_match.group()
-        new_gpu_tags = gpu_tags
-        if gpu_tags.find('win10') != -1:
-            # Replace 'win10' with 'win' in the gpu tags
-            new_gpu_tags = new_gpu_tags.replace('win10', 'win')
+        tags, test_name = match.groups()
 
-        if TestExpectation.intel_tag_pattern.search(gpu_tags):
-            # Replace 'intel*' with 'intel' in the gpu tags
-            new_gpu_tags = TestExpectation.intel_tag_pattern.sub('intel', new_gpu_tags)
+        # Skip the expectations of other vendors and mac platform.
+        if TestExpectation.other_vendors_pattern.search(tags) or 'mac' in tags:
+            return line
 
-        new_line = line if new_gpu_tags == gpu_tags else line.replace(gpu_tags, new_gpu_tags)
+        # Default to None if there is no OS tag or the expectation is neither on Linux nor Windows.
+        test_os = None
+        new_tags = tags
+        if TestExpectation.win_pattern.search(tags):
+            test_os = 'win'
+            # Replace 'win10' with 'win' in the tags
+            new_tags = new_tags.replace('win10', 'win')
+        elif TestExpectation.linux_pattern.search(tags):
+            test_os = 'linux'
 
-        # If the updated line already exists, just comment the line,
+        webgpu_adapter = 'webgpu-adapter-default'
+        adapter_match = TestExpectation.webgpu_adapter_pattern.search(tags)
+        if adapter_match:
+            webgpu_adapter = adapter_match.group(1)
+
+        webgpu_dxc = 'webgpu-dxc-default'
+        dxc_match = TestExpectation.webgpu_dxc_pattern.search(tags)
+        if dxc_match:
+            webgpu_dxc = dxc_match.group(1)
+
+        graphite= 'graphite-enabled'
+        graphite_match = TestExpectation.graphite_pattern.search(tags)
+        if graphite_match:
+            graphite = graphite_match.group(1)
+
+        if TestExpectation.intel_tag_pattern.search(tags):
+            # Replace 'intel*' with 'intel' in the tags
+            new_tags = TestExpectation.intel_tag_pattern.sub('intel', new_tags)
+
+        # No update is needed, return the original content.
+        if new_tags == tags:
+            return line
+
+        # If the updated test case already exists, just comment the line,
         # otherwise comment the line and append the updated line.
-        # For the line already with 'intel' tag, keep as is if there is no duplicate line.
-        if new_line in intel_expectations:
+        check_test = f'{test_os},{webgpu_adapter},{webgpu_dxc},{graphite},{test_name}'
+        if check_test in intel_expectations:
             line = '# ' + line
         else:
-            if new_gpu_tags != gpu_tags:
-                line =  '# ' + line + new_line
-            intel_expectations.append(new_line)
+            new_line = line.replace(tags, new_tags)
+            line =  '# ' + line + new_line
+            intel_expectations.append(check_test)
         return line
 
 
