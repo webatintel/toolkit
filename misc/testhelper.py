@@ -1,5 +1,6 @@
 from util.base import *
 
+
 class TestExpectation:
     EXPECTATION_FILES = {
         'angle_end2end_tests': ['src/tests/angle_end2end_tests_expectations.txt'],
@@ -9,64 +10,64 @@ class TestExpectation:
         'webgl2_cts_tests': ['content/test/gpu/gpu_tests/test_expectations/webgl2_conformance_expectations.txt'],
         'webgpu_cts_tests': [
             'third_party/dawn/webgpu-cts/expectations.txt',
-            'third_party/dawn/webgpu-cts/slow_tests.txt'
+            'third_party/dawn/webgpu-cts/slow_tests.txt',
         ],
     }
 
     # These expected failures are not in expectation files, which will be maintained locally and appended to expectation files or updated in test results.
     LOCAL_EXPECTATIONS = {
         'src/tests/angle_end2end_tests_expectations.txt': [
-          'hsdes/18019513118 WIN INTEL D3D11 : SimpleStateChangeTest.DrawWithTextureTexSubImageThenDrawAgain/ES2_D3D11 = SKIP',
-          'hsdes/18019513118 WIN INTEL D3D11 : SimpleStateChangeTest.UpdateTextureInUse/ES2_D3D11 = SKIP',
-          # Windows RDP failures because Microsoft basic render is got.
-          '0000 WIN D3D11 : EGLDisplaySelectionTestDeviceId.DeviceId/* = SKIP',
-          '0000 WIN D3D11 : EGLDisplaySelectionTestDeviceId.DeviceIdConcurrently/* = SKIP',
-          # Windows failures related to lock screen.
-          '0000 WIN : GPUTestConfigTest.GPUTestConfigConditions_D3D11/ES2_D3D9 = SKIP',
-          '0000 WIN : ProgramBinariesAcrossPlatforms.CreateAndReloadBinary/ES2_D3D11_to_ES2_D3D9 = SKIP',
-          '0000 WIN : ProgramBinariesAcrossPlatforms.CreateAndReloadBinary/ES2_D3D9_to_ES2_D3D11 = SKIP',
+            'hsdes/18019513118 WIN INTEL D3D11 : SimpleStateChangeTest.DrawWithTextureTexSubImageThenDrawAgain/ES2_D3D11 = SKIP',
+            'hsdes/18019513118 WIN INTEL D3D11 : SimpleStateChangeTest.UpdateTextureInUse/ES2_D3D11 = SKIP',
+            # Windows RDP failures because Microsoft basic render is got.
+            '0000 WIN D3D11 : EGLDisplaySelectionTestDeviceId.DeviceId/* = SKIP',
+            '0000 WIN D3D11 : EGLDisplaySelectionTestDeviceId.DeviceIdConcurrently/* = SKIP',
+            # Windows failures related to lock screen.
+            '0000 WIN : GPUTestConfigTest.GPUTestConfigConditions_D3D11/ES2_D3D9 = SKIP',
+            '0000 WIN : ProgramBinariesAcrossPlatforms.CreateAndReloadBinary/ES2_D3D11_to_ES2_D3D9 = SKIP',
+            '0000 WIN : ProgramBinariesAcrossPlatforms.CreateAndReloadBinary/ES2_D3D9_to_ES2_D3D11 = SKIP',
         ],
         'content/test/gpu/gpu_tests/test_expectations/trace_test_expectations.txt': [
-          # https://github.com/webatintel/webconformance/issues/24
-          '[ win intel ] OverlayModeTraceTest_DirectComposition_Video_MP4_FourColors_Rot_180 [ Failure ]',
-          # Windows failures related to RDP or lock screen.
-          '[ win intel ] OverlayModeTraceTest_DirectComposition_Underlay [ Failure ]',
-          '[ win intel ] OverlayModeTraceTest_DirectComposition_Underlay_Fullsize [ Failure ]',
-          '[ win intel ] OverlayModeTraceTest_DirectComposition_Video_MP4 [ Failure ]',
-          '[ win intel ] OverlayModeTraceTest_DirectComposition_Video_MP4_BGRA [ Failure ]',
-          '[ win intel ] OverlayModeTraceTest_DirectComposition_Video_MP4_FourColors_Aspect_4x3 [ Failure ]',
-          '[ win intel ] OverlayModeTraceTest_DirectComposition_Video_MP4_FourColors_Rot_270 [ Failure ]',
-          '[ win intel ] OverlayModeTraceTest_DirectComposition_Video_MP4_FourColors_Rot_90 [ Failure ]',
-          '[ win intel ] OverlayModeTraceTest_DirectComposition_Video_MP4_Fullsize [ Failure ]',
-          '[ win intel ] OverlayModeTraceTest_DirectComposition_Video_MP4_NV12 [ Failure ]',
-          '[ win intel ] OverlayModeTraceTest_DirectComposition_Video_MP4_Rounded_Corner [ Failure ]',
-          '[ win intel ] OverlayModeTraceTest_DirectComposition_Video_MP4_VP_SCALING [ Failure ]',
-          '[ win intel ] OverlayModeTraceTest_DirectComposition_Video_MP4_YUY2 [ Failure ]',
-          '[ win intel ] OverlayModeTraceTest_DirectComposition_Video_SW_Decode [ Failure ]',
-          '[ win intel ] OverlayModeTraceTest_DirectComposition_Video_VP9 [ Failure ]',
-          '[ win intel ] OverlayModeTraceTest_DirectComposition_Video_VP9_BGRA [ Failure ]',
-          '[ win intel ] OverlayModeTraceTest_DirectComposition_Video_VP9_Fullsize [ Failure ]',
-          '[ win intel ] OverlayModeTraceTest_DirectComposition_Video_VP9_NV12 [ Failure ]',
-          '[ win intel ] OverlayModeTraceTest_DirectComposition_Video_VP9_VP_SCALING [ Failure ]',
-          '[ win intel ] OverlayModeTraceTest_DirectComposition_Video_VP9_YUY2 [ Failure ]',
-          '[ win intel ] VideoPathTraceTest_DirectComposition_Underlay [ Failure ]',
-          '[ win intel ] VideoPathTraceTest_DirectComposition_Video_MP4 [ Failure ]',
-          '[ win intel ] VideoPathTraceTest_DirectComposition_Video_MP4_FourColors_Aspect_4x3 [ Failure ]',
-          '[ win intel ] VideoPathTraceTest_DirectComposition_Video_MP4_FourColors_Rot_180 [ Failure ]',
-          '[ win intel ] VideoPathTraceTest_DirectComposition_Video_MP4_FourColors_Rot_270 [ Failure ]',
-          '[ win intel ] VideoPathTraceTest_DirectComposition_Video_MP4_FourColors_Rot_90 [ Failure ]',
-          '[ win intel ] VideoPathTraceTest_DirectComposition_Video_MP4_NV12 [ Failure ]',
-          '[ win intel ] VideoPathTraceTest_DirectComposition_Video_MP4_Rounded_Corner [ Failure ]',
-          '[ win intel ] VideoPathTraceTest_DirectComposition_Video_MP4_VP_SCALING [ Failure ]',
-          '[ win intel ] VideoPathTraceTest_DirectComposition_Video_MP4_YUY2 [ Failure ]',
-          '[ win intel ] VideoPathTraceTest_DirectComposition_Video_SW_Decode [ Failure ]',
-          '[ win intel ] VideoPathTraceTest_DirectComposition_Video_VP9 [ Failure ]',
-          '[ win intel ] VideoPathTraceTest_DirectComposition_Video_VP9_NV12 [ Failure ]',
-          '[ win intel ] VideoPathTraceTest_DirectComposition_Video_VP9_VP_SCALING [ Failure ]',
-          '[ win intel ] VideoPathTraceTest_DirectComposition_Video_VP9_YUY2 [ Failure ]',
+            # https://github.com/webatintel/webconformance/issues/24
+            '[ win intel ] OverlayModeTraceTest_DirectComposition_Video_MP4_FourColors_Rot_180 [ Failure ]',
+            # Windows failures related to RDP or lock screen.
+            '[ win intel ] OverlayModeTraceTest_DirectComposition_Underlay [ Failure ]',
+            '[ win intel ] OverlayModeTraceTest_DirectComposition_Underlay_Fullsize [ Failure ]',
+            '[ win intel ] OverlayModeTraceTest_DirectComposition_Video_MP4 [ Failure ]',
+            '[ win intel ] OverlayModeTraceTest_DirectComposition_Video_MP4_BGRA [ Failure ]',
+            '[ win intel ] OverlayModeTraceTest_DirectComposition_Video_MP4_FourColors_Aspect_4x3 [ Failure ]',
+            '[ win intel ] OverlayModeTraceTest_DirectComposition_Video_MP4_FourColors_Rot_270 [ Failure ]',
+            '[ win intel ] OverlayModeTraceTest_DirectComposition_Video_MP4_FourColors_Rot_90 [ Failure ]',
+            '[ win intel ] OverlayModeTraceTest_DirectComposition_Video_MP4_Fullsize [ Failure ]',
+            '[ win intel ] OverlayModeTraceTest_DirectComposition_Video_MP4_NV12 [ Failure ]',
+            '[ win intel ] OverlayModeTraceTest_DirectComposition_Video_MP4_Rounded_Corner [ Failure ]',
+            '[ win intel ] OverlayModeTraceTest_DirectComposition_Video_MP4_VP_SCALING [ Failure ]',
+            '[ win intel ] OverlayModeTraceTest_DirectComposition_Video_MP4_YUY2 [ Failure ]',
+            '[ win intel ] OverlayModeTraceTest_DirectComposition_Video_SW_Decode [ Failure ]',
+            '[ win intel ] OverlayModeTraceTest_DirectComposition_Video_VP9 [ Failure ]',
+            '[ win intel ] OverlayModeTraceTest_DirectComposition_Video_VP9_BGRA [ Failure ]',
+            '[ win intel ] OverlayModeTraceTest_DirectComposition_Video_VP9_Fullsize [ Failure ]',
+            '[ win intel ] OverlayModeTraceTest_DirectComposition_Video_VP9_NV12 [ Failure ]',
+            '[ win intel ] OverlayModeTraceTest_DirectComposition_Video_VP9_VP_SCALING [ Failure ]',
+            '[ win intel ] OverlayModeTraceTest_DirectComposition_Video_VP9_YUY2 [ Failure ]',
+            '[ win intel ] VideoPathTraceTest_DirectComposition_Underlay [ Failure ]',
+            '[ win intel ] VideoPathTraceTest_DirectComposition_Video_MP4 [ Failure ]',
+            '[ win intel ] VideoPathTraceTest_DirectComposition_Video_MP4_FourColors_Aspect_4x3 [ Failure ]',
+            '[ win intel ] VideoPathTraceTest_DirectComposition_Video_MP4_FourColors_Rot_180 [ Failure ]',
+            '[ win intel ] VideoPathTraceTest_DirectComposition_Video_MP4_FourColors_Rot_270 [ Failure ]',
+            '[ win intel ] VideoPathTraceTest_DirectComposition_Video_MP4_FourColors_Rot_90 [ Failure ]',
+            '[ win intel ] VideoPathTraceTest_DirectComposition_Video_MP4_NV12 [ Failure ]',
+            '[ win intel ] VideoPathTraceTest_DirectComposition_Video_MP4_Rounded_Corner [ Failure ]',
+            '[ win intel ] VideoPathTraceTest_DirectComposition_Video_MP4_VP_SCALING [ Failure ]',
+            '[ win intel ] VideoPathTraceTest_DirectComposition_Video_MP4_YUY2 [ Failure ]',
+            '[ win intel ] VideoPathTraceTest_DirectComposition_Video_SW_Decode [ Failure ]',
+            '[ win intel ] VideoPathTraceTest_DirectComposition_Video_VP9 [ Failure ]',
+            '[ win intel ] VideoPathTraceTest_DirectComposition_Video_VP9_NV12 [ Failure ]',
+            '[ win intel ] VideoPathTraceTest_DirectComposition_Video_VP9_VP_SCALING [ Failure ]',
+            '[ win intel ] VideoPathTraceTest_DirectComposition_Video_VP9_YUY2 [ Failure ]',
         ],
         'content/test/gpu/gpu_tests/test_expectations/webgl2_conformance_expectations.txt': [
-          'crbug.com/1131224 [ angle-d3d11 desktop no-asan oop-c passthrough release win11 intel ] conformance2/rendering/framebuffer-mismatched-attachment-targets.html [ Failure ]',
+            'crbug.com/1131224 [ angle-d3d11 desktop no-asan oop-c passthrough release win11 intel ] conformance2/rendering/framebuffer-mismatched-attachment-targets.html [ Failure ]',
         ],
         'third_party/dawn/webgpu-cts/expectations.txt': [
             'crbug.com/1301808 [ intel ubuntu ] webgpu:web_platform,canvas,configure:viewFormats:canvasType="onscreen";format="rgba16float";* [ Failure ]',
@@ -202,10 +203,9 @@ class TestExpectation:
             line = '# ' + line
         else:
             if new_gpu_tags != gpu_tags:
-                line =  '# ' + line + new_line
+                line = '# ' + line + new_line
             intel_expectations.append(new_line)
         return line
-
 
     @staticmethod
     def update(target, root_dir):
@@ -270,6 +270,7 @@ class TestExpectation:
                     f.write(f'\n{line_comment} Locally maintained expectation items\n')
                     f.write(expectations_str)
                     f.close()
+
 
 class TestResult:
     def __init__(self, result_file=None, real_type=None):
