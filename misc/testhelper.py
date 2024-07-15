@@ -194,7 +194,12 @@ class TestExpectation:
             # Replace 'intel*' with 'intel' in the gpu tags
             new_gpu_tags = TestExpectation.intel_tag_pattern.sub('intel', new_gpu_tags)
 
-        new_line = line if new_gpu_tags == gpu_tags else line.replace(gpu_tags, new_gpu_tags)
+        if new_gpu_tags != gpu_tags:
+            new_gpu_tags = new_gpu_tags.replace('dawn-backend-validation ', '').replace(
+                'dawn-no-backend-validation ', ''
+            )
+
+        new_line = line.replace(gpu_tags, new_gpu_tags)
 
         # If the updated line already exists, just comment the line,
         # otherwise comment the line and append the updated line.
