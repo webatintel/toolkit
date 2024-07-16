@@ -179,15 +179,17 @@ class TestExpectation:
 
         # Do special changes
         # We try to remove some tags to make the rules more general
-        changes = {
-            'crbug.com/dawn/0000 [ dawn-backend-validation intel-0x4680 ubuntu webgpu-adapter-default webgpu-no-worker ] webgpu:web_platform,copyToTexture,video:copy_from_video:videoName="four-colors-h264-bt601.mp4";sourceType="VideoFrame";srcDoFlipYDuringCopy=true;dstColorSpace="display-p3" [ RetryOnFailure ]': 'crbug.com/dawn/0000 [ intel-0x4680 ubuntu webgpu-adapter-default ] webgpu:web_platform,copyToTexture,video:copy_from_video:videoName="four-colors-h264-bt601.mp4";sourceType="VideoFrame";srcDoFlipYDuringCopy=true;dstColorSpace="display-p3" [ RetryOnFailure ]',
-            'crbug.com/dawn/0000 [ dawn-backend-validation intel-0x4680 ubuntu webgpu-adapter-default webgpu-no-worker ] webgpu:web_platform,copyToTexture,video:copy_from_video:videoName="four-colors-h264-bt601.mp4";sourceType="VideoFrame";srcDoFlipYDuringCopy=true;dstColorSpace="srgb" [ Failure ]': 'crbug.com/dawn/0000 [ intel-0x4680 ubuntu webgpu-adapter-default ] webgpu:web_platform,copyToTexture,video:copy_from_video:videoName="four-colors-h264-bt601.mp4";sourceType="VideoFrame";srcDoFlipYDuringCopy=true;dstColorSpace="srgb" [ Failure ]',
-            'crbug.com/dawn/0000 [ dawn-backend-validation intel-0x4680 ubuntu webgpu-adapter-default webgpu-no-worker ] webgpu:web_platform,copyToTexture,video:copy_from_video:videoName="four-colors-vp9-bt601-rotate-180.mp4";sourceType="VideoFrame";srcDoFlipYDuringCopy=false;dstColorSpace="display-p3" [ RetryOnFailure ]': 'crbug.com/dawn/0000 [ intel-0x4680 ubuntu webgpu-adapter-default ] webgpu:web_platform,copyToTexture,video:copy_from_video:videoName="four-colors-vp9-bt601-rotate-180.mp4";sourceType="VideoFrame";srcDoFlipYDuringCopy=false;dstColorSpace="display-p3" [ RetryOnFailure ]',
-            'crbug.com/dawn/1879 [ dawn-backend-validation intel-0x9bc5 ubuntu webgpu-adapter-default ] webgpu:api,operation,command_buffer,copyTextureToTexture:color_textures,compressed,non_array:* [ Failure ]': 'crbug.com/dawn/1879 [ dawn-backend-validation intel-0x9bc5 ubuntu ] webgpu:api,operation,command_buffer,copyTextureToTexture:color_textures,compressed,non_array:* [ Failure ]',
-        }
-        for origin in changes:
-            if new_line.startswith(origin):
-                new_line = new_line.replace(origin, changes[origin])
+        cases = [
+            'webgpu:api,operation,command_buffer,copyTextureToTexture:color_textures,compressed,non_array:*',
+            'webgpu:web_platform,copyToTexture,video:copy_from_video:videoName="four-colors-h264-bt601.mp4";sourceType="VideoFrame";srcDoFlipYDuringCopy=true;dstColorSpace="display-p3"',
+            'webgpu:web_platform,copyToTexture,video:copy_from_video:videoName="four-colors-h264-bt601.mp4";sourceType="VideoFrame";srcDoFlipYDuringCopy=true;dstColorSpace="srgb"',
+            'webgpu:web_platform,copyToTexture,video:copy_from_video:videoName="four-colors-vp9-bt601-rotate-180.mp4";sourceType="VideoFrame";srcDoFlipYDuringCopy=false;dstColorSpace="display-p3"',
+            'webgpu:web_platform,copyToTexture,video:copy_from_video:videoName="four-colors-vp9-bt601-vflip.mp4";sourceType="VideoFrame";srcDoFlipYDuringCopy=true;dstColorSpace="srgb"',
+        ]
+        for case in cases:
+            if re.search(case, line):
+                for tag in ['dawn-backend-validation', 'webgpu-adapter-default', 'webgpu-no-worker']:
+                    new_line = new_line.replace(f'{tag} ', '')
                 break
 
         # Do general changes
