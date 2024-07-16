@@ -6,7 +6,9 @@ import sys
 
 HOST_OS = sys.platform
 if HOST_OS == 'win32':
-    lines = subprocess.Popen('dir %s' % __file__.replace('/', '\\'), shell=True, stdout=subprocess.PIPE).stdout.readlines()
+    lines = subprocess.Popen(
+        'dir %s' % __file__.replace('/', '\\'), shell=True, stdout=subprocess.PIPE
+    ).stdout.readlines()
     for line in lines:
         match = re.search(r'\[(.*)\]', line.decode('utf-8'))
         if match:
@@ -27,7 +29,8 @@ else:
 sys.path.append(script_dir)
 sys.path.append(script_dir + '/..')
 
-from util.base import * # pylint: disable=unused-wildcard-import
+from util.base import *  # pylint: disable=unused-wildcard-import
+
 
 class Gnp(Program):
     BUILD_TARGET_DICT = {
@@ -35,7 +38,6 @@ class Gnp(Program):
         'angle_perf': 'angle_perftests',
         'angle_unit': 'angle_unittests',
         'dawn_e2e': 'dawn_end2end_tests',
-
         # For chrome drop
         'webgl_cts_tests': 'chrome/test:telemetry_gpu_integration_test',
         'webgpu_cts_tests': 'chrome/test:telemetry_gpu_integration_test',
@@ -51,17 +53,19 @@ class Gnp(Program):
         'vulkan_tests': '//gpu/vulkan:vulkan_tests',
         'telemetry_gpu_integration_test': '//chrome/test:telemetry_gpu_integration_test',
         'webgpu_blink_web_tests': '//:webgpu_blink_web_tests',
-
         # For chrome drop
         'webgl_cts_tests': '//chrome/test:telemetry_gpu_integration_test',
         'webgpu_cts_tests': '//chrome/test:telemetry_gpu_integration_test',
     }
+
     def __init__(self, parser):
         parser.add_argument('--project', dest='project', help='project')
         parser.add_argument('--dcheck', dest='dcheck', help='dcheck', action='store_true')
         parser.add_argument('--is-debug', dest='is_debug', help='is debug', action='store_true')
 
-        parser.add_argument('--is-official-build', dest='is_official_build', help='is official build', action='store_true')
+        parser.add_argument(
+            '--is-official-build', dest='is_official_build', help='is official build', action='store_true'
+        )
         parser.add_argument('--vulkan-only', dest='vulkan_only', help='gn args with vulkan only', action='store_true')
 
         parser.add_argument('--special-out-dir', dest='special_out_dir', help='special out dir', action='store_true')
@@ -71,9 +75,21 @@ class Gnp(Program):
         parser.add_argument('--batch', dest='batch', help='batch', action='store_true')
         parser.add_argument('--download', dest='download', help='download', action='store_true')
 
-        parser.add_argument('--disable-component-build', dest='disable_component_build', help='disable component build', action='store_true')
-        parser.add_argument('--disable-warning-as-error', dest='disable_warning_as_error', help='disable warning as error', action='store_true')
-        parser.add_argument('--disable-exit-on-error', dest='disable_exit_on_error', help='disable exit on error', action='store_true')
+        parser.add_argument(
+            '--disable-component-build',
+            dest='disable_component_build',
+            help='disable component build',
+            action='store_true',
+        )
+        parser.add_argument(
+            '--disable-warning-as-error',
+            dest='disable_warning_as_error',
+            help='disable warning as error',
+            action='store_true',
+        )
+        parser.add_argument(
+            '--disable-exit-on-error', dest='disable_exit_on_error', help='disable exit on error', action='store_true'
+        )
 
         parser.add_argument('--sync', dest='sync', help='sync', action='store_true')
         parser.add_argument('--sync-reset', dest='sync_reset', help='do a reset before syncing', action='store_true')
@@ -82,9 +98,16 @@ class Gnp(Program):
         parser.add_argument('--makefile', dest='makefile', help='generate makefile', action='store_true')
         parser.add_argument('--makefile-vs', dest='makefile_vs', help='generate visual studio sln', action='store_true')
         parser.add_argument('--build', dest='build', help='build', action='store_true')
-        parser.add_argument('--build-max-fail', dest='build_max_fail', help='build keeps going until N jobs fail', type=int, default=1)
+        parser.add_argument(
+            '--build-max-fail', dest='build_max_fail', help='build keeps going until N jobs fail', type=int, default=1
+        )
         parser.add_argument('--build-target', dest='build_target', help='build target')
-        parser.add_argument('--build-verbose', dest='build_verbose', help='output verbose info. Find log at out/Release/.ninja_log', action='store_true')
+        parser.add_argument(
+            '--build-verbose',
+            dest='build_verbose',
+            help='output verbose info. Find log at out/Release/.ninja_log',
+            action='store_true',
+        )
         parser.add_argument('--backup', dest='backup', help='backup', action='store_true')
         parser.add_argument('--backup-inplace', dest='backup_inplace', help='backup inplace', action='store_true')
         parser.add_argument('--backup-symbol', dest='backup_symbol', help='backup symbol', action='store_true')
@@ -102,10 +125,12 @@ class Gnp(Program):
         parser.epilog = '''
 examples:
 {0} {1} --sync --runhooks --makefile --build --backup --build --run --download
-{0} {1} --backup --root-dir d:\workspace\chrome
+{0} {1} --backup --root-dir d:/workspace/chrome
 {0} {1} --disable-component-build --symbol-level 2 --build --build-target chrome,chromedriver --backup --backup-target chrome,chromedriver --backup-symbol # debug
 {0} {1} --target-os android --disable-component-build --sync --runhooks --build # android
-'''.format(Util.PYTHON, parser.prog)
+'''.format(
+            Util.PYTHON, parser.prog
+        )
 
         python_ver = Util.get_python_ver()
         if python_ver[0] == 3:
@@ -150,7 +175,9 @@ examples:
                 args.symbol_level = 0
 
         if self.args.special_out_dir:
-            out_dir = Util.cal_relative_out_dir(self.target_arch, self.target_os, args.symbol_level, args.disable_component_build, args.dcheck)
+            out_dir = Util.cal_relative_out_dir(
+                self.target_arch, self.target_os, args.symbol_level, args.disable_component_build, args.dcheck
+            )
         else:
             out_dir = 'out'
         # capitalize() is required by WebGPU CTS
@@ -192,7 +219,9 @@ examples:
                 integer_rev = int(float(min_rev)) + 1
                 self.integer_rev = integer_rev
                 self.repo.get_info(integer_rev, integer_rev, 'main')
-                roll_count = self.repo.info[ChromiumRepo.INFO_INDEX_REV_INFO][integer_rev][ChromiumRepo.REV_INFO_INDEX_ROLL_COUNT]
+                roll_count = self.repo.info[ChromiumRepo.INFO_INDEX_REV_INFO][integer_rev][
+                    ChromiumRepo.REV_INFO_INDEX_ROLL_COUNT
+                ]
                 if roll_count <= 1:
                     Util.error('Rev %s cannot be built as a roll')
 
@@ -207,7 +236,7 @@ examples:
                 max_rev = int(max_rev)
                 tmp_rev = min_rev
                 while tmp_rev <= max_rev:
-                    if (tmp_rev % args.rev_stride == 0):
+                    if tmp_rev % args.rev_stride == 0:
                         self.rev = str(tmp_rev)
                         self.integer_rev = int(self.rev)
                         self.decimal_rev = 0
@@ -287,10 +316,12 @@ examples:
 
         if self.args.vulkan_only:
             if self.project == 'angle':
-                #angle_enable_glsl=false angle_enable_essl=false angle_enable_hlsl=false
+                # angle_enable_glsl=false angle_enable_essl=false angle_enable_hlsl=false
                 gn_args += ' angle_enable_gl=false angle_enable_metal=false angle_enable_d3d9=false angle_enable_d3d11=false angle_enable_null=false'
             elif self.project == 'dawn':
-                gn_args += ' dawn_enable_d3d12=false dawn_enable_metal=false dawn_enable_null=false dawn_enable_opengles=false'
+                gn_args += (
+                    ' dawn_enable_d3d12=false dawn_enable_metal=false dawn_enable_null=false dawn_enable_opengles=false'
+                )
 
         if self.args.target_os == 'android':
             if Util.HOST_OS == Util.WINDOWS:
@@ -328,7 +359,12 @@ examples:
             self._execute('%s lastchange.py -o LASTCHANGE' % Util.PYTHON, exit_on_error=self.exit_on_error)
             Util.chdir(self.root_dir)
 
-        cmd = 'ninja -k%s -j%s -C %s %s' % (str(self.args.build_max_fail), str(Util.CPU_COUNT * 2), self.out_dir, ' '.join(targets))
+        cmd = 'ninja -k%s -j%s -C %s %s' % (
+            str(self.args.build_max_fail),
+            str(Util.CPU_COUNT * 2),
+            self.out_dir,
+            ' '.join(targets),
+        )
         if self.args.build_verbose:
             cmd += ' -v'
         self._execute(cmd, show_duration=True)
@@ -376,7 +412,15 @@ examples:
                 tmp_files.append(tmp_file)
         else:
             for target in targets:
-                target_files = self._execute('gn desc %s %s runtime_deps' % (self.out_dir, target), exit_on_error=self.exit_on_error, return_out=True)[1].rstrip('\n').split('\n')
+                target_files = (
+                    self._execute(
+                        'gn desc %s %s runtime_deps' % (self.out_dir, target),
+                        exit_on_error=self.exit_on_error,
+                        return_out=True,
+                    )[1]
+                    .rstrip('\n')
+                    .split('\n')
+                )
                 tmp_files = Util.union_list(tmp_files, target_files)
 
         # 'gen/', 'obj/', '../../testing/test_env.py', '../../testing/location_tags.json', '../../.vpython'
@@ -428,7 +472,7 @@ examples:
             self._execute(cmd, exit_on_error=False, show_cmd=False)
 
             # permission denied
-            #shutil.copyfile(file, dst_dir)
+            # shutil.copyfile(file, dst_dir)
 
     def upload(self):
         if self.rev:
@@ -447,11 +491,16 @@ examples:
             if not os.path.exists(rev_backup_file):
                 shutil.make_archive(rev_dir, 'zip', rev_dir)
 
-        relative_path = self.root_dir[self.root_dir.index('project') + len('project') + 1:].replace('\\', '/').replace('/src', '')
+        relative_path = (
+            self.root_dir[self.root_dir.index('project') + len('project') + 1 :].replace('\\', '/').replace('/src', '')
+        )
         if Util.check_server_backup(relative_path, os.path.basename(rev_backup_file)):
             Util.info('Server already has rev %s' % rev_backup_file)
         else:
-            Util.execute('scp %s wp@%s:/workspace/backup/%s/%s/' % (rev_backup_file, Util.BACKUP_SERVER, Util.HOST_OS, relative_path))
+            Util.execute(
+                'scp %s wp@%s:/workspace/backup/%s/%s/'
+                % (rev_backup_file, Util.BACKUP_SERVER, Util.HOST_OS, relative_path)
+            )
 
     def run(self):
         if Util.HOST_OS == Util.LINUX and self.args.run_mesa_rev == 'latest':
@@ -518,11 +567,21 @@ examples:
             if self.target_os == Util.ANDROID:
                 # https://commondatastorage.googleapis.com/chromium-browser-snapshots/index.html?prefix=Android/
                 # https://www.googleapis.com/download/storage/v1/b/chromium-browser-snapshots/o/Android%2F607944%2Fchrome-android.zip?generation=1542192867201693&alt=media
-                archive_url = '"https://www.googleapis.com/download/storage/v1/b/chromium-browser-snapshots/o/Android%2F' + rev + '%2Fchrome-android.zip?generation=1542192867201693&alt=media"'
+                archive_url = (
+                    '"https://www.googleapis.com/download/storage/v1/b/chromium-browser-snapshots/o/Android%2F'
+                    + rev
+                    + '%2Fchrome-android.zip?generation=1542192867201693&alt=media"'
+                )
             else:
-                archive_url = 'http://commondatastorage.googleapis.com/chromium-browser-snapshots/%s%s/%s/chrome-%s.zip' % (target_os_tmp, target_arch_tmp, rev, target_os_tmp2)
-            self._execute('%s %s --show-progress -O %s' % (ScriptRepo.WGET_FILE, archive_url, rev_zip), exit_on_error=self.exit_on_error)
-            if (os.path.getsize(rev_zip) == 0):
+                archive_url = (
+                    'http://commondatastorage.googleapis.com/chromium-browser-snapshots/%s%s/%s/chrome-%s.zip'
+                    % (target_os_tmp, target_arch_tmp, rev, target_os_tmp2)
+                )
+            self._execute(
+                '%s %s --show-progress -O %s' % (ScriptRepo.WGET_FILE, archive_url, rev_zip),
+                exit_on_error=self.exit_on_error,
+            )
+            if os.path.getsize(rev_zip) == 0:
                 Util.warning('Could not find revision %s' % rev)
                 self._execute('rm %s' % rev_zip, exit_on_error=self.exit_on_error)
             else:
@@ -561,7 +620,9 @@ examples:
 
     def _chromium_sync_integer_rev(self):
         if self.integer_rev:
-            roll_repo = self.repo.info[ChromiumRepo.INFO_INDEX_REV_INFO][self.integer_rev][ChromiumRepo.REV_INFO_INDEX_ROLL_REPO]
+            roll_repo = self.repo.info[ChromiumRepo.INFO_INDEX_REV_INFO][self.integer_rev][
+                ChromiumRepo.REV_INFO_INDEX_ROLL_REPO
+            ]
             if self.decimal_rev and not roll_repo:
                 Util.error('Rev %s is not a roll' % self.integer_rev)
 
@@ -582,8 +643,12 @@ examples:
             self._execute_gclient(cmd_type='sync', extra_cmd=extra_cmd)
 
     def _chromium_sync_decimal_rev(self):
-        roll_repo = self.repo.info[ChromiumRepo.INFO_INDEX_REV_INFO][self.integer_rev][ChromiumRepo.REV_INFO_INDEX_ROLL_REPO]
-        roll_count = self.repo.info[ChromiumRepo.INFO_INDEX_REV_INFO][self.integer_rev][ChromiumRepo.REV_INFO_INDEX_ROLL_COUNT]
+        roll_repo = self.repo.info[ChromiumRepo.INFO_INDEX_REV_INFO][self.integer_rev][
+            ChromiumRepo.REV_INFO_INDEX_ROLL_REPO
+        ]
+        roll_count = self.repo.info[ChromiumRepo.INFO_INDEX_REV_INFO][self.integer_rev][
+            ChromiumRepo.REV_INFO_INDEX_ROLL_COUNT
+        ]
         if roll_repo:
             if self.decimal_rev:
                 if self.decimal_rev >= roll_count:
@@ -596,7 +661,9 @@ examples:
             else:
                 return
 
-        roll_hash = self.repo.info[ChromiumRepo.INFO_INDEX_REV_INFO][self.integer_rev][ChromiumRepo.REV_INFO_INDEX_ROLL_HASH]
+        roll_hash = self.repo.info[ChromiumRepo.INFO_INDEX_REV_INFO][self.integer_rev][
+            ChromiumRepo.REV_INFO_INDEX_ROLL_HASH
+        ]
         roll_count_diff = roll_count - self.decimal_rev
         if roll_count_diff < 0:
             Util.error('The decimal part of rev should be less than %s' % roll_count)
@@ -616,7 +683,7 @@ examples:
             if Util.HOST_OS == Util.WINDOWS:
                 cmd += '.bat'
                 # Workaround for content shell crash on Windows when building webgpu_blink_web_tests with is_official_build which is configured in makefile().
-                #cmd += ' --additional-driver-flag=--disable-gpu-sandbox'
+                # cmd += ' --additional-driver-flag=--disable-gpu-sandbox'
         else:
             cmd = '%s/%s%s' % (os.getcwd(), target, Util.EXEC_SUFFIX)
         if Util.HOST_OS == Util.WINDOWS:
@@ -668,6 +735,7 @@ examples:
             self.batch()
         if args.download:
             self.download()
+
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='GN Script')

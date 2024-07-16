@@ -169,48 +169,51 @@ class TestExpectation:
         ],
     }
 
-    # Match intel tag in the gpu tags, such as '[ webgpu-adapter-default intel ]',
-    # '[ intel-gen-9 win10 ]' and '[ intel-0x9bc5 ]'.
-    intel_tag_pattern = re.compile(r'intel\S*')
-
     @staticmethod
-    def _update_gpu_tag(line, intel_expectations=[]):
-        # Comment line
-        if line.startswith('#'):
-            return line
+    def _update_gpu_tag(line, new_line_keys):
+        new_line = line
 
-        # Get first matching tags, which may be gpu tags or may not.
-        gpu_tags_match = re.search(r'\[.*?\]', line)
-        if not gpu_tags_match:
-            return line
+        # Ignore commented lines
+        if new_line.startswith('#'):
+            return new_line
 
-        gpu_tags = gpu_tags_match.group()
-        new_gpu_tags = gpu_tags
-        if gpu_tags.find('win10') != -1:
-            # Replace 'win10' with 'win' in the gpu tags
-            new_gpu_tags = new_gpu_tags.replace('win10', 'win')
+        # Do special changes
+        # We try to remove some tags to make the rules more general
+        changes = {
+            'crbug.com/dawn/0000 [ dawn-backend-validation intel-0x4680 ubuntu webgpu-adapter-default webgpu-no-worker ] webgpu:web_platform,copyToTexture,video:copy_from_video:videoName="four-colors-h264-bt601.mp4";sourceType="VideoFrame";srcDoFlipYDuringCopy=true;dstColorSpace="display-p3" [ RetryOnFailure ]': 'crbug.com/dawn/0000 [ intel-0x4680 ubuntu webgpu-adapter-default ] webgpu:web_platform,copyToTexture,video:copy_from_video:videoName="four-colors-h264-bt601.mp4";sourceType="VideoFrame";srcDoFlipYDuringCopy=true;dstColorSpace="display-p3" [ RetryOnFailure ]',
+            'crbug.com/dawn/0000 [ dawn-backend-validation intel-0x4680 ubuntu webgpu-adapter-default webgpu-no-worker ] webgpu:web_platform,copyToTexture,video:copy_from_video:videoName="four-colors-h264-bt601.mp4";sourceType="VideoFrame";srcDoFlipYDuringCopy=true;dstColorSpace="srgb" [ Failure ]': 'crbug.com/dawn/0000 [ intel-0x4680 ubuntu webgpu-adapter-default ] webgpu:web_platform,copyToTexture,video:copy_from_video:videoName="four-colors-h264-bt601.mp4";sourceType="VideoFrame";srcDoFlipYDuringCopy=true;dstColorSpace="srgb" [ Failure ]',
+            'crbug.com/dawn/0000 [ dawn-backend-validation intel-0x4680 ubuntu webgpu-adapter-default webgpu-no-worker ] webgpu:web_platform,copyToTexture,video:copy_from_video:videoName="four-colors-vp9-bt601-rotate-180.mp4";sourceType="VideoFrame";srcDoFlipYDuringCopy=false;dstColorSpace="display-p3" [ RetryOnFailure ]': 'crbug.com/dawn/0000 [ intel-0x4680 ubuntu webgpu-adapter-default ] webgpu:web_platform,copyToTexture,video:copy_from_video:videoName="four-colors-vp9-bt601-rotate-180.mp4";sourceType="VideoFrame";srcDoFlipYDuringCopy=false;dstColorSpace="display-p3" [ RetryOnFailure ]',
+            'crbug.com/dawn/1879 [ dawn-backend-validation intel-0x9bc5 ubuntu webgpu-adapter-default ] webgpu:api,operation,command_buffer,copyTextureToTexture:color_textures,compressed,non_array:* [ Failure ]': 'crbug.com/dawn/1879 [ dawn-backend-validation intel-0x9bc5 ubuntu ] webgpu:api,operation,command_buffer,copyTextureToTexture:color_textures,compressed,non_array:* [ Failure ]',
+        }
+        for origin in changes:
+            if new_line.startswith(origin):
+                new_line = new_line.replace(origin, changes[origin])
+                break
 
-        if TestExpectation.intel_tag_pattern.search(gpu_tags):
-            # Replace 'intel*' with 'intel' in the gpu tags
-            new_gpu_tags = TestExpectation.intel_tag_pattern.sub('intel', new_gpu_tags)
+        # Do general changes
+        ## Replace 'win10' with 'win'
+        new_line = new_line.replace('win10', 'win')
+        ## Replace 'ubuntu' with 'linux'
+        new_line = new_line.replace('ubuntu', 'linux')
+        ## Replace intel* tags, such as intel-gen-9 or intel-0x9bc5, with intel
+        match = re.search(f'intel\S*', new_line)
+        if match:
+            new_line = new_line.replace(match.group(), 'intel')
 
-        if new_gpu_tags != gpu_tags:
-            new_gpu_tags = new_gpu_tags.replace('dawn-backend-validation ', '').replace(
-                'dawn-no-backend-validation ', ''
-            )
+        new_line_key_match = re.search(r'(\[.*) \[', new_line)
+        if not new_line_key_match:
+            return new_line
 
-        new_line = line.replace(gpu_tags, new_gpu_tags)
-
+        new_line_key = new_line_key_match.group(1)
         # If the updated line already exists, just comment the line,
         # otherwise comment the line and append the updated line.
-        # For the line already with 'intel' tag, keep as is if there is no duplicate line.
-        if new_line in intel_expectations:
-            line = '# ' + line
+        if new_line_key in new_line_keys:
+            new_line = '# ' + new_line
         else:
-            if new_gpu_tags != gpu_tags:
-                line = '# ' + line + new_line
-            intel_expectations.append(new_line)
-        return line
+            if new_line != line:
+                new_line = '# ' + line + new_line
+            new_line_keys.append(new_line_key)
+        return new_line
 
     @staticmethod
     def update(target, root_dir):
@@ -228,10 +231,7 @@ class TestExpectation:
                 Util.warning(f'{file_path} does not exist')
                 return
 
-            # Hold the expectations with the 'intel' tag for duplication check.
-            # Because there may be some expectations with same case, but different device ids,
-            # after the update, there will be duplicate record, which is not allowed.
-            intel_expectations = []
+            new_line_keys = []
 
             line_comment = '#'
             if target in ['angle_end2end_tests']:
@@ -257,7 +257,7 @@ class TestExpectation:
                         if re.search('END TAG HEADER', line):
                             tag_header_scope = False
                     else:
-                        line = TestExpectation._update_gpu_tag(line, intel_expectations)
+                        line = TestExpectation._update_gpu_tag(line, new_line_keys)
                 sys.stdout.write(line)
             fileinput.close()
 
@@ -268,7 +268,7 @@ class TestExpectation:
             if append_expectations:
                 expectations_str = ''
                 for expectation in append_expectations:
-                    if expectation not in intel_expectations:
+                    if expectation not in new_line_keys:
                         expectations_str = expectations_str + f'{expectation}\n'
                 if expectations_str != '':
                     f = open(file_path, 'a')
