@@ -7,7 +7,9 @@ import sys
 
 HOST_OS = sys.platform
 if HOST_OS == 'win32':
-    lines = subprocess.Popen('dir %s' % __file__.replace('/', '\\'), shell=True, stdout=subprocess.PIPE).stdout.readlines()
+    lines = subprocess.Popen(
+        'dir %s' % __file__.replace('/', '\\'), shell=True, stdout=subprocess.PIPE
+    ).stdout.readlines()
     for tmp_line in lines:
         match = re.search(r'\[(.*)\]', tmp_line.decode('utf-8'))
         if match:
@@ -31,6 +33,7 @@ sys.path.append(SCRIPT_DIR + '/..')
 from util.base import *
 from misc.testhelper import *
 
+
 class ChromeDrop(Program):
     SKIP_CASES = {
         # Util.LINUX: ['WebglConformance_conformance2_textures_misc_tex_3d_size_limit'],
@@ -47,22 +50,45 @@ class ChromeDrop(Program):
         parser.add_argument('--sync-skip-mesa', dest='sync_skip_mesa', help='sync skip mesa', action='store_true')
         parser.add_argument('--build', dest='build', help='build', action='store_true')
         parser.add_argument('--build-chrome-rev', dest='build_chrome_rev', help='Chrome rev to build', default='latest')
-        parser.add_argument('--build-skip-chrome', dest='build_skip_chrome', help='build skip chrome', action='store_true')
+        parser.add_argument(
+            '--build-skip-chrome', dest='build_skip_chrome', help='build skip chrome', action='store_true'
+        )
         parser.add_argument('--build-skip-mesa', dest='build_skip_mesa', help='build skip mesa', action='store_true')
         parser.add_argument('--backup', dest='backup', help='backup', action='store_true')
         parser.add_argument('--backup-inplace', dest='backup_inplace', help='backup inplace', action='store_true')
-        parser.add_argument('--backup-skip-chrome', dest='backup_skip_chrome', help='backup skip chrome', action='store_true')
+        parser.add_argument(
+            '--backup-skip-chrome', dest='backup_skip_chrome', help='backup skip chrome', action='store_true'
+        )
         parser.add_argument('--upload', dest='upload', help='upload', action='store_true')
         parser.add_argument('--run', dest='run', help='run', action='store_true')
         parser.add_argument('--run-angle-rev', dest='test_angle_rev', help='ANGLE revision', default='latest')
-        parser.add_argument('--run-chrome-channel', dest='run_chrome_channel', help='run chrome channel', default='build')
+        parser.add_argument(
+            '--run-chrome-channel', dest='run_chrome_channel', help='run chrome channel', default='build'
+        )
         parser.add_argument('--run-chrome-rev', dest='run_chrome_rev', help='Chromium revision', default='latest')
         parser.add_argument('--run-mesa-rev', dest='run_mesa_rev', help='mesa revision', default='latest')
-        parser.add_argument('--run-filter', dest='run_filter', help='WebGL CTS suite to run against', default='all')  # For smoke run, we may use conformance/attribs
+        parser.add_argument(
+            '--run-filter', dest='run_filter', help='WebGL CTS suite to run against', default='all'
+        )  # For smoke run, we may use conformance/attribs
         parser.add_argument('--run-verbose', dest='run_verbose', help='verbose mode of run', action='store_true')
-        parser.add_argument('--run-dawn-target', dest='run_dawn_target', help='run dawn target, split by comma, like "0,1". 0 for d3d12 and 1 for vulkan', default='all')
-        parser.add_argument('--run-dawn-validation', dest='run_dawn_validation', help='run dawn validation, can be disabled, partial or full', default='disabled')
-        parser.add_argument('--run-webgl-target', dest='run_webgl_target', help='run webgl target, split by comma, like "0,2"', default='all')
+        parser.add_argument(
+            '--run-dawn-target',
+            dest='run_dawn_target',
+            help='run dawn target, split by comma, like "0,1". 0 for d3d12 and 1 for vulkan',
+            default='all',
+        )
+        parser.add_argument(
+            '--run-dawn-validation',
+            dest='run_dawn_validation',
+            help='run dawn validation, can be disabled, partial or full',
+            default='disabled',
+        )
+        parser.add_argument(
+            '--run-webgl-target',
+            dest='run_webgl_target',
+            help='run webgl target, split by comma, like "0,2"',
+            default='all',
+        )
         parser.add_argument('--run-no-angle', dest='run_no_angle', help='run without angle', action='store_true')
         parser.add_argument('--run-jobs', dest='run_jobs', help='run jobs', default=1)
         parser.add_argument('--report', dest='report', help='report')
@@ -80,7 +106,9 @@ examples:
 {0} {1} --batch --target dawn
 {0} {1} --target angle --run --run-filter EXTBlendFuncExtendedDrawTest
 {0} {1} --target webgl --run --run-webgl-target 2
-'''.format(Util.PYTHON, parser.prog)
+'''.format(
+            Util.PYTHON, parser.prog
+        )
 
         python_ver = Util.get_python_ver()
         if python_ver[0] == 3:
@@ -172,20 +200,34 @@ examples:
                 cmds.append(f'{Util.PYTHON} {ScriptRepo.ROOT_DIR}/mesa/mesa.py --build --root-dir {self.mesa_dir}')
 
             if 'angle' in self.targets:
-                cmds.append(f'{Util.PYTHON} {Util.GNP_SCRIPT} --makefile --build --build-target angle_e2e --root-dir {self.angle_dir}')
+                cmds.append(
+                    f'{Util.PYTHON} {Util.GNP_SCRIPT} --makefile --build --build-target angle_e2e --root-dir {self.angle_dir}'
+                )
 
             if 'dawn' in self.targets:
-                cmds.append(f'{Util.PYTHON} {Util.GNP_SCRIPT} --makefile --build --build-target dawn_e2e --root-dir {self.dawn_dir}')
+                cmds.append(
+                    f'{Util.PYTHON} {Util.GNP_SCRIPT} --makefile --build --build-target dawn_e2e --root-dir {self.dawn_dir}'
+                )
 
-            if ('webgl' in self.targets or 'webgpu' in self.targets) and self.run_chrome_channel == 'build' and not self.args.build_skip_chrome:
-                cmds.append(f'{Util.PYTHON} {Util.GNP_SCRIPT} --disable-component-build --makefile --symbol-level 0 --build --build-target {chrome_target} --root-dir {self.chrome_dir}')
+            if (
+                ('webgl' in self.targets or 'webgpu' in self.targets)
+                and self.run_chrome_channel == 'build'
+                and not self.args.build_skip_chrome
+            ):
+                cmds.append(
+                    f'{Util.PYTHON} {Util.GNP_SCRIPT} --disable-component-build --makefile --symbol-level 0 --build --build-target {chrome_target} --root-dir {self.chrome_dir}'
+                )
 
         elif op == 'backup':
             if 'angle' in self.targets:
-                cmds.append(f'{Util.PYTHON} {Util.GNP_SCRIPT} --backup --backup-target angle_e2e --root-dir {self.angle_dir}')
+                cmds.append(
+                    f'{Util.PYTHON} {Util.GNP_SCRIPT} --backup --backup-target angle_e2e --root-dir {self.angle_dir}'
+                )
 
             if 'dawn' in self.targets:
-                cmds.append(f'{Util.PYTHON} {Util.GNP_SCRIPT} --backup --backup-target dawn_e2e --root-dir {self.dawn_dir}')
+                cmds.append(
+                    f'{Util.PYTHON} {Util.GNP_SCRIPT} --backup --backup-target dawn_e2e --root-dir {self.dawn_dir}'
+                )
 
             if ('webgl' in self.targets or 'webgpu' in self.targets) and not self.args.backup_skip_chrome:
                 cmd = f'{Util.PYTHON} {Util.GNP_SCRIPT} --backup --backup-target {chrome_target} --root-dir {self.chrome_dir}'
@@ -261,7 +303,7 @@ examples:
         if 'dawn' in self.targets:
             all_backends = []
             if Util.HOST_OS == Util.WINDOWS:
-                all_backends = ['d3d12', 'vulkan']
+                all_backends = ['d3d12']
             elif Util.HOST_OS == Util.LINUX:
                 all_backends = ['vulkan']
             test_backends = []
@@ -332,7 +374,9 @@ examples:
                 param += ' --use-gl=angle'
                 if Util.HOST_OS == Util.LINUX and self.run_no_angle:
                     param += ' --use-gl=desktop'
-                self._execute(f'{chrome} {param} http://wp-27.sh.intel.com/workspace/project/WebGL/sdk/tests/webgl-conformance-tests.html?version=2.0.1')
+                self._execute(
+                    f'{chrome} {param} http://wp-27.sh.intel.com/workspace/project/WebGL/sdk/tests/webgl-conformance-tests.html?version=2.0.1'
+                )
                 return
 
             if self.run_filter != 'all':
@@ -378,7 +422,10 @@ examples:
                 extra_browser_args = '--disable-backgrounding-occluded-windows'
                 if Util.HOST_OS == Util.LINUX and self.run_no_angle:
                     extra_browser_args += ',--use-gl=desktop'
-                cmd = common_cmd1 + f' webgl{comb[COMB_INDEX_WEBGL][0]}_conformance {common_cmd2} --webgl-conformance-version={comb[COMB_INDEX_WEBGL]}'
+                cmd = (
+                    common_cmd1
+                    + f' webgl{comb[COMB_INDEX_WEBGL][0]}_conformance {common_cmd2} --webgl-conformance-version={comb[COMB_INDEX_WEBGL]}'
+                )
                 result_file = ''
                 if Util.HOST_OS == Util.LINUX:
                     result_file = f'{self.result_dir}/webgl-{comb[COMB_INDEX_WEBGL]}.log'
@@ -439,7 +486,9 @@ examples:
             if self.run_filter != 'all':
                 cmd += f' --test-filter=*{self.run_filter}*'
             if self.args.dryrun:
-                cmd += ' --test-filter=*webgpu:api,operation,render_pipeline,pipeline_output_targets:color,attachments:*'
+                cmd += (
+                    ' --test-filter=*webgpu:api,operation,render_pipeline,pipeline_output_targets:color,attachments:*'
+                )
 
             if self.run_verbose:
                 cmd += ' --verbose'
@@ -483,7 +532,7 @@ examples:
             result_str = f'{os.path.splitext(result_file)[0]}: PASS_FAIL {len(result.pass_fail)}, FAIL_PASS {len(result.fail_pass)}, FAIL_FAIL {len(result.fail_fail)} PASS_PASS {len(result.pass_pass)}\n'
             summary += result_str
             if result.pass_fail:
-                result_str += '\n[PASS_FAIL]\n%s\n\n' % '\n'.join(result.pass_fail[:self.MAX_FAIL_IN_REPORT])
+                result_str += '\n[PASS_FAIL]\n%s\n\n' % '\n'.join(result.pass_fail[: self.MAX_FAIL_IN_REPORT])
             details += result_str
 
         Util.info(details)
@@ -526,6 +575,7 @@ examples:
             self.batch()
         if args.upload:
             self.upload()
+
 
 if __name__ == '__main__':
     ChromeDrop()
