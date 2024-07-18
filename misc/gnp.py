@@ -361,7 +361,7 @@ examples:
 
         cmd = 'ninja -k%s -j%s -C %s %s' % (
             str(self.args.build_max_fail),
-            str(Util.CPU_COUNT * 2),
+            str(Util.CPU_COUNT),
             self.out_dir,
             ' '.join(targets),
         )
