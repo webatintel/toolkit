@@ -67,7 +67,7 @@ class TestExpectation:
             '[ win intel ] VideoPathTraceTest_DirectComposition_Video_VP9_YUY2 [ Failure ]',
         ],
         'content/test/gpu/gpu_tests/test_expectations/webgl2_conformance_expectations.txt': [
-            'crbug.com/1131224 [ angle-d3d11 desktop no-asan oop-c passthrough release win11 intel ] conformance2/rendering/framebuffer-mismatched-attachment-targets.html [ Failure ]',
+            # 'crbug.com/1131224 [ angle-d3d11 desktop no-asan oop-c passthrough release win11 intel ] conformance2/rendering/framebuffer-mismatched-attachment-targets.html [ Failure ]',
         ],
         'third_party/dawn/webgpu-cts/expectations.txt': [
             'crbug.com/1301808 [ intel ubuntu ] webgpu:web_platform,canvas,configure:viewFormats:canvasType="onscreen";format="rgba16float";* [ Failure ]',
@@ -170,7 +170,7 @@ class TestExpectation:
     }
 
     @staticmethod
-    def _update_gpu_tag(line, new_line_keys):
+    def _update_gpu_tag(target, line, new_line_keys):
         new_line = line
 
         # Ignore commented lines
@@ -180,6 +180,7 @@ class TestExpectation:
         # Do special changes
         # We try to remove some tags to make the rules more general
         case_tags = {
+            # webgpu CTS
             'webgpu:shader,execution,expression,call,builtin,dpdx:*': [
                 'angle-d3d11',
                 'graphite-enabled',
@@ -250,6 +251,15 @@ class TestExpectation:
                 'dawn-backend-validation',
                 'webgpu-adapter-default',
             ],
+            # webgl2 CTS
+            'conformance2/rendering/framebuffer-mismatched-attachment-targets.html': [
+                'qualcomm-0x41333430',
+                'desktop',
+                'no-asan',
+                'oop-c',
+                'passthrough',
+                'release',
+            ],
         }
         for case in case_tags:
             if re.search(case, line):
@@ -259,7 +269,8 @@ class TestExpectation:
 
         # Do general changes
         ## Replace 'win10' with 'win'
-        new_line = new_line.replace('win10', 'win')
+        if target != 'webgl2_cts_tests':
+            new_line = new_line.replace('win10', 'win')
         ## Replace 'ubuntu' with 'linux'
         new_line = new_line.replace('ubuntu', 'linux')
         ## Replace intel* tags, such as intel-gen-9 or intel-0x9bc5, with intel
@@ -319,12 +330,12 @@ class TestExpectation:
                     else:
                         line = f'{update_comment}\n' + line
 
-                if target in ['info_collection_tests', 'trace_test', 'webgpu_cts_tests']:
+                if target in ['info_collection_tests', 'trace_test', 'webgl2_cts_tests', 'webgpu_cts_tests']:
                     if tag_header_scope:
                         if re.search('END TAG HEADER', line):
                             tag_header_scope = False
                     else:
-                        line = TestExpectation._update_gpu_tag(line, new_line_keys)
+                        line = TestExpectation._update_gpu_tag(target, line, new_line_keys)
                 sys.stdout.write(line)
             fileinput.close()
 
