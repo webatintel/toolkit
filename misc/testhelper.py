@@ -179,16 +179,81 @@ class TestExpectation:
 
         # Do special changes
         # We try to remove some tags to make the rules more general
-        cases = [
-            'webgpu:api,operation,command_buffer,copyTextureToTexture:color_textures,compressed,non_array:*',
-            'webgpu:web_platform,copyToTexture,video:copy_from_video:videoName="four-colors-h264-bt601.mp4";sourceType="VideoFrame";srcDoFlipYDuringCopy=true;dstColorSpace="display-p3"',
-            'webgpu:web_platform,copyToTexture,video:copy_from_video:videoName="four-colors-h264-bt601.mp4";sourceType="VideoFrame";srcDoFlipYDuringCopy=true;dstColorSpace="srgb"',
-            'webgpu:web_platform,copyToTexture,video:copy_from_video:videoName="four-colors-vp9-bt601-rotate-180.mp4";sourceType="VideoFrame";srcDoFlipYDuringCopy=false;dstColorSpace="display-p3"',
-            'webgpu:web_platform,copyToTexture,video:copy_from_video:videoName="four-colors-vp9-bt601-vflip.mp4";sourceType="VideoFrame";srcDoFlipYDuringCopy=true;dstColorSpace="srgb"',
-        ]
-        for case in cases:
+        case_tags = {
+            'webgpu:shader,execution,expression,call,builtin,dpdx:*': [
+                'angle-d3d11',
+                'graphite-enabled',
+                'release-x64',
+                'renderer-skia-gl',
+                'win10',
+            ],
+            'webgpu:shader,execution,expression,call,builtin,dpdy:*': [
+                'angle-d3d11',
+                'graphite-enabled',
+                'release-x64',
+                'renderer-skia-gl',
+                'win10',
+            ],
+            'webgpu:shader,execution,expression,call,builtin,dpdxCoarse:*': [
+                'angle-d3d11',
+                'graphite-enabled',
+                'release-x64',
+                'renderer-skia-gl',
+                'win10',
+            ],
+            'webgpu:shader,execution,expression,call,builtin,dpdyCoarse:*': [
+                'angle-d3d11',
+                'graphite-enabled',
+                'release-x64',
+                'renderer-skia-gl',
+                'win10',
+            ],
+            'webgpu:shader,execution,expression,call,builtin,dpdxFine': [
+                'angle-d3d11',
+                'graphite-enabled',
+                'release-x64',
+                'renderer-skia-gl',
+                'win10',
+            ],
+            'webgpu:shader,execution,expression,call,builtin,dpdyFine': [
+                'angle-d3d11',
+                'graphite-enabled',
+                'release-x64',
+                'renderer-skia-gl',
+                'win10',
+            ],
+            'webgpu:web_platform,copyToTexture,video:copy_from_video:videoName="four-colors-h264-bt601.mp4";sourceType="VideoFrame";srcDoFlipYDuringCopy=true;dstColorSpace="display-p3"': [
+                'dawn-backend-validation',
+                'webgpu-adapter-default',
+            ],
+            'webgpu:web_platform,copyToTexture,video:copy_from_video:videoName="four-colors-h264-bt601.mp4";sourceType="VideoFrame";srcDoFlipYDuringCopy=true;dstColorSpace="srgb"': [
+                'dawn-backend-validation',
+                'webgpu-adapter-default',
+            ],
+            'webgpu:web_platform,copyToTexture,video:copy_from_video:videoName="four-colors-vp9-bt601-rotate-180.mp4";sourceType="VideoFrame";srcDoFlipYDuringCopy=false;dstColorSpace="display-p3"': [
+                'dawn-backend-validation',
+                'webgpu-adapter-default',
+            ],
+            'webgpu:web_platform,copyToTexture,video:copy_from_video:videoName="four-colors-vp9-bt601-rotate-180.mp4";sourceType="VideoFrame";srcDoFlipYDuringCopy=true;dstColorSpace="display-p3"': [
+                'dawn-backend-validation',
+                'webgpu-adapter-default',
+            ],
+            'webgpu:web_platform,copyToTexture,video:copy_from_video:videoName="four-colors-vp9-bt601.webm";sourceType="VideoFrame";srcDoFlipYDuringCopy=true;dstColorSpace="display-p3"': [
+                'dawn-backend-validation',
+                'webgpu-adapter-default',
+            ],
+            'webgpu:web_platform,copyToTexture,video:copy_from_video:videoName="four-colors-vp9-bt601.webm";sourceType="VideoFrame";srcDoFlipYDuringCopy=true;dstColorSpace="srgb"': [
+                'dawn-backend-validation',
+                'webgpu-adapter-default',
+            ],
+            'webgpu:api,operation,command_buffer,copyTextureToTexture:color_textures,compressed,non_array:*': [
+                'dawn-backend-validation',
+                'webgpu-adapter-default',
+            ],
+        }
+        for case in case_tags:
             if re.search(case, line):
-                for tag in ['dawn-backend-validation', 'webgpu-adapter-default', 'webgpu-no-worker']:
+                for tag in case_tags[case]:
                     new_line = new_line.replace(f'{tag} ', '')
                 break
 
