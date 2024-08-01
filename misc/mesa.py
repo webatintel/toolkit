@@ -2,6 +2,7 @@ import os
 import re
 import subprocess
 import sys
+
 lines = subprocess.Popen('dir %s' % __file__, shell=True, stdout=subprocess.PIPE).stdout.readlines()
 for line in lines:
     match = re.search('\\[(.*)\\]', line.decode('utf-8'))
@@ -14,19 +15,22 @@ else:
 sys.path.append(script_dir)
 sys.path.append(script_dir + '/..')
 
-from util.base import * # pylint: disable=unused-wildcard-import
+from util.base import *  # pylint: disable=unused-wildcard-import
+
 
 class Mesa(Program):
     def __init__(self):
         parser = argparse.ArgumentParser(description='mesa')
-        parser.epilog='''
+        parser.epilog = '''
 examples:
 {0} {1} --sync --build
 {0} {1} --build --rev-stride 50 --rev 96700-96900
 {0} {1} --build --build-force
 {0} {1} --hashtorev e58a10af640ba58b6001f5c5ad750b782547da76
 {0} {1} --revtohash 1
-'''.format(Util.PYTHON, parser.prog)
+'''.format(
+            Util.PYTHON, parser.prog
+        )
 
         parser.add_argument('--repo', dest='repo', help='repo, can be freedesktop or chromeos', default='freedesktop')
         parser.add_argument('--init', dest='init', help='init', action='store_true')
@@ -37,7 +41,9 @@ examples:
         parser.add_argument('--upload', dest='upload', help='upload', action='store_true')
         parser.add_argument('--run', dest='run', help='run')
         parser.add_argument('--type', dest='type', help='type', default='iris')
-        parser.add_argument('--rev', dest='rev', help='rev, can be system, latest, or any specific revision', default='latest')
+        parser.add_argument(
+            '--rev', dest='rev', help='rev, can be system, latest, or any specific revision', default='latest'
+        )
         parser.add_argument('--rev-stride', dest='rev_stride', help='rev stride', type=int, default=1)
         parser.add_argument('--revtohash', dest='revtohash', help='get hash of commit rev starting from 1', type=int)
         parser.add_argument('--hashtorev', dest='hashtorev', help='get commit rev starting from 1 of hash')
@@ -81,9 +87,13 @@ examples:
 
         print(Util.HOST_OS_RELEASE)
         if Util.HOST_OS == 'linux' and Util.HOST_OS_RELEASE == 'ubuntu':
-            Util.ensure_pkg('meson python3-mako glslang-tools libomxil-bellagio-dev libpciaccess-dev libclc-18-dev libclc-18')
+            Util.ensure_pkg(
+                'meson python3-mako glslang-tools libomxil-bellagio-dev libpciaccess-dev libclc-18-dev libclc-18 libllvmspirvlib-18-dev libclang-18-dev'
+            )
             # x11
-            Util.ensure_pkg('libx11-xcb-dev libxext-dev libxfixes-dev libxcb-shm0-dev libxrandr-dev xutils-dev libxcb-dri3-dev libxcb-present-dev libxshmfence-dev libxcb-glx0-dev libxcb-dri2-0-dev libxxf86vm-dev')
+            Util.ensure_pkg(
+                'libx11-xcb-dev libxext-dev libxfixes-dev libxcb-shm0-dev libxrandr-dev xutils-dev libxcb-dri3-dev libxcb-present-dev libxshmfence-dev libxcb-glx0-dev libxcb-dri2-0-dev libxxf86vm-dev'
+            )
             # wayland
             Util.ensure_pkg('libwayland-dev wayland-protocols libwayland-egl-backend-dev')
 
@@ -123,7 +133,9 @@ examples:
         if Util.check_server_backup('mesa', os.path.basename(rev_backup_file)):
             Util.info('Server already has rev %s' % rev_backup_file)
         else:
-            Util.execute('scp %s wp@%s:/workspace/backup/%s/mesa/' % (rev_backup_file, Util.BACKUP_SERVER, Util.HOST_OS))
+            Util.execute(
+                'scp %s wp@%s:/workspace/backup/%s/mesa/' % (rev_backup_file, Util.BACKUP_SERVER, Util.HOST_OS)
+            )
 
     def revtohash(self):
         tmp_rev = self.args.revtohash
@@ -167,7 +179,10 @@ examples:
         Util.chdir('%s/%s' % (self.root_dir, self.drm_dir))
         Util.ensure_nodir('build')
         Util.ensure_dir('build')
-        build_cmd = 'meson setup build/ -Dprefix=%s --auto-features=disabled -Dintel=enabled -Dvmwgfx=disabled -Dradeon=disabled -Damdgpu=disabled -Dnouveau=disabled' % rev_dir
+        build_cmd = (
+            'meson setup build/ -Dprefix=%s --auto-features=disabled -Dintel=enabled -Dvmwgfx=disabled -Dradeon=disabled -Damdgpu=disabled -Dnouveau=disabled'
+            % rev_dir
+        )
         if self.build_type == 'release':
             build_cmd += ' -Dbuildtype=release'
         elif self.build_type == 'debug':
@@ -183,7 +198,10 @@ examples:
         Util.ensure_nodir('build')
         Util.ensure_dir('build')
         self._execute('echo "#define MESA_GIT_SHA1 \\\"git-%s\\\"" >src/mesa/main/git_sha1.h' % hash)
-        build_cmd = 'PKG_CONFIG_PATH=%s/lib/x86_64-linux-gnu/pkgconfig meson setup build/ -Dprefix=%s -Dvulkan-drivers=intel -Dgles1=enabled -Dgles2=enabled -Dshared-glapi=enabled -Dgbm=enabled -Ddri3=enabled -Dgallium-drivers=iris -Dplatforms=x11,wayland' % (rev_dir, rev_dir)
+        build_cmd = (
+            'PKG_CONFIG_PATH=%s/lib/x86_64-linux-gnu/pkgconfig meson setup build/ -Dprefix=%s -Dvulkan-drivers=intel -Dgles1=enabled -Dgles2=enabled -Dshared-glapi=enabled -Dgbm=enabled -Ddri3=enabled -Dgallium-drivers=iris -Dplatforms=x11,wayland'
+            % (rev_dir, rev_dir)
+        )
         if self.build_type == 'release':
             build_cmd += ' -Dbuildtype=release'
         elif self.build_type == 'debug':
@@ -230,6 +248,6 @@ examples:
         if args.run:
             self.run()
 
+
 if __name__ == '__main__':
     Mesa()
-
