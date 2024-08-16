@@ -50,6 +50,9 @@ class Ort(Program):
         parser.add_argument("--sync", dest="sync", help="sync", action="store_true")
         parser.add_argument("--build", dest="build", help="build", action="store_true")
         parser.add_argument(
+            "--build-small", dest="build_small", help="build if only WebGPU EP is changed", action="store_true"
+        )
+        parser.add_argument(
             "--build-type",
             dest="build_type",
             help="build type, can be Debug, MinSizeRel, Release or RelWithDebInfo",
@@ -103,8 +106,9 @@ examples:
         build_type = self.args.build_type
         build_dir = f"build/{os_dir}"
 
-        if not self.args.build_skip_wasm:
-            cmd = f"{build_cmd} --config {build_type} --build_wasm --enable_wasm_simd --enable_wasm_threads --skip_tests --parallel --skip_submodule_sync --disable_wasm_exception_catching --disable_rtti --enable_wasm_debug_info --use_jsep --use_webnn --target onnxruntime_webassembly"
+        if not self.args.build_skip_wasm and not self.args.build_small:
+            # --enable_wasm_debug_info may cause unit test crash
+            cmd = f"{build_cmd} --config {build_type} --build_wasm --enable_wasm_simd --enable_wasm_threads --parallel --skip_tests --skip_submodule_sync --disable_wasm_exception_catching --use_jsep --target onnxruntime_webassembly --disable_rtti"
             Util.execute(cmd, show_cmd=True, show_duration=True)
 
         if not self.args.build_skip_ci:
@@ -117,7 +121,7 @@ examples:
             Util.chdir(f"{root_dir}/js/web", verbose=True)
             Util.execute("npm ci", show_cmd=True)
 
-        if not self.args.build_skip_pull_wasm:
+        if not self.args.build_skip_pull_wasm and not self.args.build_small:
             Util.chdir(f"{root_dir}/js/web", verbose=True)
             Util.execute("npm run pull:wasm", show_cmd=True, exit_on_error=False)
 
@@ -153,6 +157,8 @@ examples:
         if args.sync:
             self.sync()
         if args.build:
+            self.build()
+        if args.build_small:
             self.build()
         if args.lint:
             self.lint()
