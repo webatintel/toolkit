@@ -28,9 +28,7 @@ if HOST_OS == "win32":
     else:
         SCRIPT_DIR = sys.path[0]
 else:
-    lines = subprocess.Popen(
-        "ls -l %s" % __file__, shell=True, stdout=subprocess.PIPE
-    ).stdout.readlines()
+    lines = subprocess.Popen("ls -l %s" % __file__, shell=True, stdout=subprocess.PIPE).stdout.readlines()
     for tmp_line in lines:
         match = re.search(r".* -> (.*)", tmp_line.decode("utf-8"))
         if match:
@@ -76,18 +74,6 @@ class Ort(Program):
             action="store_true",
         )
         parser.add_argument("--lint", dest="lint", help="lint", action="store_true")
-        parser.add_argument(
-            "--enable-wasm-simd",
-            dest="enable_wasm_simd",
-            help="enable wasm simd",
-            action="store_true",
-        )
-        parser.add_argument(
-            "--enable-wasm-threads",
-            dest="enable_wasm_threads",
-            help="enable wasm threads",
-            action="store_true",
-        )
 
         parser.epilog = """
 examples:
@@ -114,20 +100,11 @@ examples:
             build_cmd = "./build.sh"
             os_dir = "Linux"
 
-        if Util.HOST_NAME == "wp-27":
-            self.args.enable_wasm_simd = True
-            self.args.enable_wasm_threads = True
         build_type = self.args.build_type
-        enable_wasm_simd = self.args.enable_wasm_simd
-        enable_wasm_threads = self.args.enable_wasm_threads
         build_dir = f"build/{os_dir}"
 
         if not self.args.build_skip_wasm:
-            cmd = f"{build_cmd} --config {build_type} --build_wasm --skip_tests --parallel --skip_submodule_sync --disable_wasm_exception_catching --use_jsep --use_webnn --target onnxruntime_webassembly"
-            if enable_wasm_simd:
-                cmd += " --enable_wasm_simd"
-            if enable_wasm_threads:
-                cmd += " --enable_wasm_threads"
+            cmd = f"{build_cmd} --config {build_type} --build_wasm --enable_wasm_simd --enable_wasm_threads --skip_tests --parallel --skip_submodule_sync --disable_wasm_exception_catching --disable_rtti --enable_wasm_debug_info --use_jsep --use_webnn --target onnxruntime_webassembly"
             Util.execute(cmd, show_cmd=True, show_duration=True)
 
         if not self.args.build_skip_ci:
@@ -144,11 +121,7 @@ examples:
             Util.chdir(f"{root_dir}/js/web", verbose=True)
             Util.execute("npm run pull:wasm", show_cmd=True, exit_on_error=False)
 
-        file_name = "ort-wasm"
-        if enable_wasm_simd:
-            file_name += "-simd"
-        if enable_wasm_threads:
-            file_name += "-threaded"
+        file_name = "ort-wasm-simd-threaded"
         Util.copy_file(
             f"{root_dir}/{build_dir}/{build_type}",
             f"{file_name}.jsep.mjs",
