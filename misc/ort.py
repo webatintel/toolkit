@@ -102,12 +102,13 @@ examples:
 
         self._handle_ops()
 
-    def split_data(self):
+    def split_model(self):
         import onnx
 
         model_path = self.args.split_model
-        model_name = os.path.basename(model_path)
-        onnx_model = onnx.load(model_name)
+        model_name = os.path.basename(model_path).replace('.onnx', '')
+        Util.chdir(os.path.dirname(model_path), verbose=True)
+        onnx_model = onnx.load(f'{model_name}.onnx')
         onnx.save_model(
             onnx_model,
             f'{model_name}-ext.onnx',
@@ -192,8 +193,8 @@ examples:
             self.build()
         if args.lint:
             self.lint()
-        if args.split_data:
-            self.split_data()
+        if args.split_model:
+            self.split_model()
 
 
 if __name__ == "__main__":
