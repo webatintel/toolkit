@@ -48,7 +48,8 @@ class Ort(Program):
         parser = argparse.ArgumentParser(description="ORT")
 
         parser.add_argument("--sync", dest="sync", help="sync", action="store_true")
-        parser.add_argument("--build", dest="build", help="build", action="store_true")
+        parser.add_argument("--build-web", dest="build_web", help="build web", action="store_true")
+        parser.add_argument("--build-wgpu", dest="build_wgpu", help="build wgpu", action="store_true")
         parser.add_argument(
             "--build-small", dest="build_small", help="build if only WebGPU EP is changed", action="store_true"
         )
@@ -77,6 +78,7 @@ class Ort(Program):
             action="store_true",
         )
         parser.add_argument("--lint", dest="lint", help="lint", action="store_true")
+        parser.add_argument("--split-model", dest="split_model", help="split model for a external data file")
 
         parser.epilog = """
 examples:
@@ -86,82 +88,110 @@ examples:
         )
 
         super().__init__(parser)
+
+        Util.chdir(self.root_dir, verbose=True)
+        if Util.HOST_OS == Util.WINDOWS:
+            self.build_cmd = "build.bat"
+            os_dir = "Windows"
+        else:
+            self.build_cmd = "./build.sh"
+            os_dir = "Linux"
+
+        self.build_type = self.args.build_type
+        self.build_dir = f"build/{os_dir}"
+
         self._handle_ops()
+
+    def split_data(self):
+        import onnx
+
+        model_path = self.args.split_model
+        model_name = os.path.basename(model_path)
+        onnx_model = onnx.load(model_name)
+        onnx.save_model(
+            onnx_model,
+            f'{model_name}-ext.onnx',
+            save_as_external_data=True,
+            all_tensors_to_one_file=True,
+            location=f'{model_name}-ext.data',
+            size_threshold=1024,
+            convert_attribute=False,
+        )
 
     def sync(self):
         pass
 
-    def build(self):
+    def build_web(self):
         timer = Timer()
-        root_dir = self.root_dir
-
-        Util.chdir(root_dir, verbose=True)
-        if Util.HOST_OS == Util.WINDOWS:
-            build_cmd = "build.bat"
-            os_dir = "Windows"
-        else:
-            build_cmd = "./build.sh"
-            os_dir = "Linux"
-
-        build_type = self.args.build_type
-        build_dir = f"build/{os_dir}"
 
         if not self.args.build_skip_wasm and not self.args.build_small:
             # --enable_wasm_debug_info may cause unit test crash
-            cmd = f"{build_cmd} --config {build_type} --build_wasm --enable_wasm_simd --enable_wasm_threads --parallel --skip_tests --skip_submodule_sync --disable_wasm_exception_catching --use_jsep --target onnxruntime_webassembly --disable_rtti"
+            cmd = f"{self.build_cmd} --config {self.build_type} --build_wasm --enable_wasm_simd --enable_wasm_threads --parallel --skip_tests --skip_submodule_sync --disable_wasm_exception_catching --use_jsep --target onnxruntime_webassembly"
+            if self.args.build_type == "Debug":
+                cmd += " --enable_wasm_debug_info"
             Util.execute(cmd, show_cmd=True, show_duration=True)
 
         if not self.args.build_skip_ci:
-            Util.chdir(f"{root_dir}/js", verbose=True)
+            Util.chdir(f"{self.root_dir}/js", verbose=True)
             Util.execute("npm ci", show_cmd=True)
 
-            Util.chdir(f"{root_dir}/js/common", verbose=True)
+            Util.chdir(f"{self.root_dir}/js/common", verbose=True)
             Util.execute("npm ci", show_cmd=True)
 
-            Util.chdir(f"{root_dir}/js/web", verbose=True)
+            Util.chdir(f"{self.root_dir}/js/web", verbose=True)
             Util.execute("npm ci", show_cmd=True)
 
         if not self.args.build_skip_pull_wasm and not self.args.build_small:
-            Util.chdir(f"{root_dir}/js/web", verbose=True)
+            Util.chdir(f"{self.root_dir}/js/web", verbose=True)
             Util.execute("npm run pull:wasm", show_cmd=True, exit_on_error=False)
 
         file_name = "ort-wasm-simd-threaded"
         Util.copy_file(
-            f"{root_dir}/{build_dir}/{build_type}",
+            f"{self.root_dir}/{self.build_dir}/{self.build_type}",
             f"{file_name}.jsep.mjs",
-            f"{root_dir}/js/web/dist",
+            f"{self.root_dir}/js/web/dist",
             f"{file_name}.jsep.mjs",
             need_bk=False,
             show_cmd=True,
         )
         Util.copy_file(
-            f"{root_dir}/{build_dir}/{build_type}",
+            f"{self.root_dir}/{self.build_dir}/{self.build_type}",
             f"{file_name}.jsep.wasm",
-            f"{root_dir}/js/web/dist",
+            f"{self.root_dir}/js/web/dist",
             f"{file_name}.jsep.wasm",
             need_bk=False,
             show_cmd=True,
         )
 
-        Util.chdir(f"{root_dir}/js/web", verbose=True)
+        Util.chdir(f"{self.root_dir}/js/web", verbose=True)
         Util.execute("npm run build", show_cmd=True)
 
         Util.info(f"{timer.stop()} was spent to build")
 
+    def build_wgpu(self):
+        timer = Timer()
+        cmd = f"{self.build_cmd} --config {self.build_type} --parallel --skip_tests --skip_submodule_sync --use_webgpu"
+        Util.execute(cmd, show_cmd=True, show_duration=True)
+        Util.info(f"{timer.stop()} was spent to build")
+
     def lint(self):
-        Util.chdir(f"{self.root_dir}/js", verbose=True)
+        Util.chdir(f"{self.self.root_dir}/js", verbose=True)
         Util.execute("npm run lint", show_cmd=True)
 
     def _handle_ops(self):
         args = self.args
         if args.sync:
             self.sync()
-        if args.build:
-            self.build()
+        if args.build_web:
+            self.build_web()
+        if args.build_wgpu:
+            self.build_wgpu()
         if args.build_small:
             self.build()
         if args.lint:
             self.lint()
+        if args.split_data:
+            self.split_data()
 
 
 if __name__ == "__main__":
