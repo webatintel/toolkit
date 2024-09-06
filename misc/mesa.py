@@ -199,7 +199,7 @@ examples:
         Util.ensure_dir('build')
         self._execute('echo "#define MESA_GIT_SHA1 \\\"git-%s\\\"" >src/mesa/main/git_sha1.h' % hash)
         build_cmd = (
-            'PKG_CONFIG_PATH=%s/lib/x86_64-linux-gnu/pkgconfig meson setup build/ -Dprefix=%s -Dvulkan-drivers=intel -Dgles1=enabled -Dgles2=enabled -Dshared-glapi=enabled -Dgbm=enabled -Ddri3=enabled -Dgallium-drivers=iris -Dplatforms=x11,wayland'
+            'PKG_CONFIG_PATH=%s/lib/x86_64-linux-gnu/pkgconfig meson setup build/ -Dprefix=%s -Dvulkan-drivers=intel -Dgles1=enabled -Dgles2=enabled -Dshared-glapi=enabled -Dgbm=enabled -Dgallium-drivers=iris -Dplatforms=x11,wayland'
             % (rev_dir, rev_dir)
         )
         if self.build_type == 'release':
