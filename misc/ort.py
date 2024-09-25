@@ -178,7 +178,7 @@ examples:
         Util.info(f"{timer.stop()} was spent to build")
 
     def lint(self):
-        Util.chdir(f"{self.self.root_dir}/js", verbose=True)
+        Util.chdir(f"{self.root_dir}/js", verbose=True)
         Util.execute("npm run lint", show_cmd=True)
 
     def _handle_ops(self):
