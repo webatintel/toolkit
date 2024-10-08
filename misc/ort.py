@@ -50,6 +50,7 @@ class Ort(Program):
         parser.add_argument("--sync", dest="sync", help="sync", action="store_true")
         parser.add_argument("--build-web", dest="build_web", help="build web", action="store_true")
         parser.add_argument("--build-wgpu", dest="build_wgpu", help="build wgpu", action="store_true")
+        parser.add_argument("--build-wasm64", dest="build_wasm64", help="build wasm64", action="store_true")
         parser.add_argument(
             "--build-small", dest="build_small", help="build if only WebGPU EP is changed", action="store_true"
         )
@@ -132,6 +133,9 @@ examples:
                 cmd += " --enable_wasm_debug_info"
             else:
                 cmd += " --disable_wasm_exception_catching --disable_rtti"
+
+            if self.args.build_wasm64:
+                cmd += " --enable_wasm_memory64"
             Util.execute(cmd, show_cmd=True, show_duration=True)
 
         if not self.args.build_skip_ci:
