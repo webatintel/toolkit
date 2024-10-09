@@ -170,14 +170,14 @@ class TestExpectation:
     }
 
     @staticmethod
-    def _update_gpu_tag(target, line, new_line_keys):
+    def _update_gpu_tag(target, line, new_line_keys, conflicts_allowed):
         new_line = line
 
         # Ignore commented lines
         if new_line.startswith('#'):
             return new_line
 
-        # Do special changes
+        # Do special changes if the expectations do not allow conflicts.
         # We try to remove some tags to make the rules more general
         case_tags = {
             # webgpu CTS
@@ -261,11 +261,12 @@ class TestExpectation:
                 'release',
             ],
         }
-        for case in case_tags:
-            if re.search(case, line):
-                for tag in case_tags[case]:
-                    new_line = new_line.replace(f'{tag} ', '')
-                break
+        if not conflicts_allowed:
+            for case in case_tags:
+                if re.search(case, line):
+                    for tag in case_tags[case]:
+                        new_line = new_line.replace(f'{tag} ', '')
+                    break
 
         # Do general changes
         ## Replace 'win10' with 'win'
@@ -282,6 +283,7 @@ class TestExpectation:
         if not new_line_key_match:
             return new_line
 
+
         new_line_key = new_line_key_match.group(1)
         # If the updated line already exists, just comment the line,
         # otherwise comment the line and append the updated line.
@@ -290,7 +292,9 @@ class TestExpectation:
         else:
             if new_line != line:
                 new_line = '# ' + line + new_line
-            new_line_keys.append(new_line_key)
+            # Append the updated line for checking conflicts if the expectations do not allow conflicts.
+            if not conflicts_allowed:
+                new_line_keys.append(new_line_key)
         return new_line
 
     @staticmethod
@@ -318,6 +322,7 @@ class TestExpectation:
             update_comment = f'{line_comment} LOCAL UPDATE FOR INTEL GPUS'
             has_update_comment = False
             tag_header_scope = True
+            conflicts_allowed = False
             for line in fileinput.input(file_path, inplace=True):
                 # Skip if the expectation file has been updated.
                 if has_update_comment:
@@ -331,11 +336,12 @@ class TestExpectation:
                         line = f'{update_comment}\n' + line
 
                 if target in ['info_collection_tests', 'trace_test', 'webgl2_cts_tests', 'webgpu_cts_tests']:
-                    if tag_header_scope:
-                        if re.search('END TAG HEADER', line):
-                            tag_header_scope = False
+                    if tag_header_scope and re.search('END TAG HEADER', line):
+                        tag_header_scope = False
+                    elif re.search(f'{line_comment} conflicts_allowed: true', line):
+                        conflicts_allowed = True
                     else:
-                        line = TestExpectation._update_gpu_tag(target, line, new_line_keys)
+                        line = TestExpectation._update_gpu_tag(target, line, new_line_keys, conflicts_allowed)
                 sys.stdout.write(line)
             fileinput.close()
 
