@@ -135,7 +135,7 @@ examples:
                 cmd += " --disable_wasm_exception_catching --disable_rtti"
 
             if self.args.build_wasm64:
-                cmd += " --enable_wasm_memory64"
+                cmd += " --enable_wasm_memory64 --compile_no_warning_as_error"
             Util.execute(cmd, show_cmd=True, show_duration=True)
 
         if not self.args.build_skip_ci:
@@ -177,7 +177,7 @@ examples:
 
     def build_wgpu(self):
         timer = Timer()
-        cmd = f"{self.build_cmd} --config {self.build_type} --parallel --skip_tests --skip_submodule_sync --use_webgpu"
+        cmd = f"{self.build_cmd} --config {self.build_type} --parallel --skip_tests --skip_submodule_sync --use_webgpu --build_nodejs"
         Util.execute(cmd, show_cmd=True, show_duration=True)
         Util.info(f"{timer.stop()} was spent to build")
 
