@@ -169,136 +169,57 @@ class TestExpectation:
         ],
     }
 
+    # Match intel* tags, such as intel, intel-gen-9 and intel-0x9bc5.
+    intel_pattern = re.compile(r'intel\S*')
+
+
     @staticmethod
-    def _update_gpu_tag(target, line, new_line_keys, conflicts_allowed):
-        new_line = line
-
+    def _update_gpu_tag(line):
         # Ignore commented lines
-        if new_line.startswith('#'):
-            return new_line
+        if line.startswith('#'):
+            return line
 
-        # Do special changes if the expectations do not allow conflicts.
-        # We try to remove some tags to make the rules more general
-        case_tags = {
-            # webgpu CTS
-            'webgpu:shader,execution,expression,call,builtin,dpdx:*': [
-                'angle-d3d11',
-                'graphite-enabled',
-                'release-x64',
-                'renderer-skia-gl',
-                'win10',
-            ],
-            'webgpu:shader,execution,expression,call,builtin,dpdy:*': [
-                'angle-d3d11',
-                'graphite-enabled',
-                'release-x64',
-                'renderer-skia-gl',
-                'win10',
-            ],
-            'webgpu:shader,execution,expression,call,builtin,dpdxCoarse:*': [
-                'angle-d3d11',
-                'graphite-enabled',
-                'release-x64',
-                'renderer-skia-gl',
-                'win10',
-            ],
-            'webgpu:shader,execution,expression,call,builtin,dpdyCoarse:*': [
-                'angle-d3d11',
-                'graphite-enabled',
-                'release-x64',
-                'renderer-skia-gl',
-                'win10',
-            ],
-            'webgpu:shader,execution,expression,call,builtin,dpdxFine': [
-                'angle-d3d11',
-                'graphite-enabled',
-                'release-x64',
-                'renderer-skia-gl',
-                'win10',
-            ],
-            'webgpu:shader,execution,expression,call,builtin,dpdyFine': [
-                'angle-d3d11',
-                'graphite-enabled',
-                'release-x64',
-                'renderer-skia-gl',
-                'win10',
-            ],
-            'webgpu:web_platform,copyToTexture,video:copy_from_video:videoName="four-colors-h264-bt601.mp4";sourceType="VideoFrame";srcDoFlipYDuringCopy=true;dstColorSpace="display-p3"': [
-                'dawn-backend-validation',
-                'webgpu-adapter-default',
-            ],
-            'webgpu:web_platform,copyToTexture,video:copy_from_video:videoName="four-colors-h264-bt601.mp4";sourceType="VideoFrame";srcDoFlipYDuringCopy=true;dstColorSpace="srgb"': [
-                'dawn-backend-validation',
-                'webgpu-adapter-default',
-            ],
-            'webgpu:web_platform,copyToTexture,video:copy_from_video:videoName="four-colors-vp9-bt601-rotate-180.mp4";sourceType="VideoFrame";srcDoFlipYDuringCopy=false;dstColorSpace="display-p3"': [
-                'dawn-backend-validation',
-                'webgpu-adapter-default',
-            ],
-            'webgpu:web_platform,copyToTexture,video:copy_from_video:videoName="four-colors-vp9-bt601-rotate-180.mp4";sourceType="VideoFrame";srcDoFlipYDuringCopy=true;dstColorSpace="display-p3"': [
-                'dawn-backend-validation',
-                'webgpu-adapter-default',
-            ],
-            'webgpu:web_platform,copyToTexture,video:copy_from_video:videoName="four-colors-vp9-bt601.webm";sourceType="VideoFrame";srcDoFlipYDuringCopy=true;dstColorSpace="display-p3"': [
-                'dawn-backend-validation',
-                'webgpu-adapter-default',
-            ],
-            'webgpu:web_platform,copyToTexture,video:copy_from_video:videoName="four-colors-vp9-bt601.webm";sourceType="VideoFrame";srcDoFlipYDuringCopy=true;dstColorSpace="srgb"': [
-                'dawn-backend-validation',
-                'webgpu-adapter-default',
-            ],
-            'webgpu:api,operation,command_buffer,copyTextureToTexture:color_textures,compressed,non_array:*': [
-                'dawn-backend-validation',
-                'webgpu-adapter-default',
-            ],
-            # webgl2 CTS
-            'conformance2/rendering/framebuffer-mismatched-attachment-targets.html': [
-                'qualcomm-0x41333430',
-                'desktop',
-                'no-asan',
-                'oop-c',
-                'passthrough',
-                'release',
-            ],
-        }
-        if not conflicts_allowed:
-            for case in case_tags:
-                if re.search(case, line):
-                    for tag in case_tags[case]:
-                        new_line = new_line.replace(f'{tag} ', '')
-                    break
+        # Search the tags field we need to update
+        match = re.search(r' (\[ .+? \]) ', line)
+        if not match:
+            return line
 
-        # Do general changes
-        ## Replace 'win10' with 'win'
-        if target != 'webgl2_cts_tests':
-            new_line = new_line.replace('win10', 'win')
-        ## Replace 'ubuntu' with 'linux'
-        new_line = new_line.replace('ubuntu', 'linux')
-        ## Replace intel* tags, such as intel-gen-9 or intel-0x9bc5, with intel
-        match = re.search(f'intel\S*', new_line)
-        if match:
-            new_line = new_line.replace(match.group(), 'intel')
+        tags = match.group(1)
+        new_tags = tags
 
-        new_line_key_match = re.search(r'(\[.*) \[', new_line)
-        if not new_line_key_match:
-            return new_line
+        # Replace 'win10' with 'win'
+        new_tags = new_tags.replace('win10', 'win')
+        # Replace 'ubuntu' with 'linux'
+        new_tags = new_tags.replace('ubuntu', 'linux')
+        # Replace 'intel*' with 'intel'
+        if TestExpectation.intel_pattern.search(new_tags):
+            new_tags = TestExpectation.intel_pattern.sub('intel', new_tags)
 
+        # No updates in the tags
+        if new_tags == tags:
+            return line
 
-        new_line_key = new_line_key_match.group(1)
-        # If the updated line already exists, just comment the line,
-        # otherwise comment the line and append the updated line.
-        if new_line_key in new_line_keys:
-            new_line = '# ' + new_line
-        else:
-            if new_line != line:
-                new_line = '# ' + line + new_line
-            # Append the updated line for checking conflicts if the expectations do not allow conflicts.
-            if not conflicts_allowed:
-                new_line_keys.append(new_line_key)
+        # Comment the line and append the updated line
+        new_line = '# ' + line + line.replace(tags, new_tags)
+
         return new_line
 
     @staticmethod
+    def update_target(target):
+        if target in ['webgl2_conformance_d3d11_passthrough_tests', 'webgl2_conformance_gl_passthrough_tests']:
+            return 'webgl2_cts_tests'
+        elif target in ['webgl_conformance_d3d11_passthrough_tests', 'webgl_conformance_gl_passthrough_tests']:
+            return 'webgl_cts_tests'
+        elif target in ['webgpu_cts_with_validation_tests']:
+            return 'webgpu_cts_tests'
+        else:
+            return target
+
+    @staticmethod
     def update(target, root_dir):
+        # Update target alias
+        target = TestExpectation.update_target(target)
+
         if not os.path.exists(root_dir):
             Util.warning(f'{root_dir} does not exist')
             return
@@ -313,13 +234,12 @@ class TestExpectation:
                 Util.warning(f'{file_path} does not exist')
                 return
 
-            new_line_keys = []
-
             line_comment = '#'
             if target in ['angle_end2end_tests']:
                 line_comment = '//'
 
             update_comment = f'{line_comment} LOCAL UPDATE FOR INTEL GPUS'
+            conflicts_allowed_str = f'{line_comment} conflicts_allowed: true'
             has_update_comment = False
             tag_header_scope = True
             conflicts_allowed = False
@@ -335,13 +255,13 @@ class TestExpectation:
                     else:
                         line = f'{update_comment}\n' + line
 
-                if target in ['info_collection_tests', 'trace_test', 'webgl2_cts_tests', 'webgpu_cts_tests']:
+                if target in ['info_collection_tests', 'trace_test', 'webgl_cts_tests', 'webgl2_cts_tests', 'webgpu_cts_tests']:
                     if tag_header_scope and re.search('END TAG HEADER', line):
                         tag_header_scope = False
-                    elif re.search(f'{line_comment} conflicts_allowed: true', line):
-                        conflicts_allowed = True
                     else:
-                        line = TestExpectation._update_gpu_tag(target, line, new_line_keys, conflicts_allowed)
+                        if re.search(conflicts_allowed_str, line):
+                            conflicts_allowed = True
+                        line = TestExpectation._update_gpu_tag(line)
                 sys.stdout.write(line)
             fileinput.close()
 
@@ -349,16 +269,18 @@ class TestExpectation:
             if has_update_comment:
                 return
             append_expectations = TestExpectation.LOCAL_EXPECTATIONS.get(expectation_file)
+            if not append_expectations and conflicts_allowed:
+                return
+            f = open(file_path, 'a')
+            f.write(f'\n{line_comment} Locally maintained expectation items\n')
+            if not conflicts_allowed:
+                f.write(f'{conflicts_allowed_str}\n')
             if append_expectations:
                 expectations_str = ''
                 for expectation in append_expectations:
-                    if expectation not in new_line_keys:
-                        expectations_str = expectations_str + f'{expectation}\n'
-                if expectations_str != '':
-                    f = open(file_path, 'a')
-                    f.write(f'\n{line_comment} Locally maintained expectation items\n')
-                    f.write(expectations_str)
-                    f.close()
+                    expectations_str += f'{expectation}\n'
+                f.write(expectations_str)
+            f.close()
 
 
 class TestResult:
