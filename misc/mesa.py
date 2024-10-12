@@ -88,7 +88,7 @@ examples:
         print(Util.HOST_OS_RELEASE)
         if Util.HOST_OS == 'linux' and Util.HOST_OS_RELEASE == 'ubuntu':
             Util.ensure_pkg(
-                'meson python3-mako glslang-tools libomxil-bellagio-dev libpciaccess-dev libclc-18-dev libclc-18 libllvmspirvlib-18-dev libclang-18-dev'
+                'meson python3-mako glslang-tools libomxil-bellagio-dev libpciaccess-dev libclc-19-dev libclc-19 libllvmspirvlib-19-dev libclang-19-dev'
             )
             # x11
             Util.ensure_pkg(
