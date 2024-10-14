@@ -128,7 +128,7 @@ examples:
 
         if not self.args.build_skip_wasm and not self.args.build_small:
             # --enable_wasm_debug_info may cause unit test crash
-            cmd = f"{self.build_cmd} --config {self.build_type} --build_wasm --enable_wasm_simd --enable_wasm_threads --parallel --skip_tests --skip_submodule_sync --use_jsep --target onnxruntime_webassembly"
+            cmd = f"{self.build_cmd} --config {self.build_type} --build_wasm --enable_wasm_simd --enable_wasm_threads --parallel --skip_tests --skip_submodule_sync --use_jsep --use_webnn --target onnxruntime_webassembly"
             if self.args.build_type == "Debug":
                 cmd += " --enable_wasm_debug_info"
             else:
