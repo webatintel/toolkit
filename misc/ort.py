@@ -48,18 +48,9 @@ class Ort(Program):
         parser = argparse.ArgumentParser(description="ORT")
 
         parser.add_argument("--sync", dest="sync", help="sync", action="store_true")
+
         parser.add_argument("--build-web", dest="build_web", help="build web", action="store_true")
-        parser.add_argument("--build-wgpu", dest="build_wgpu", help="build wgpu", action="store_true")
         parser.add_argument("--build-wasm64", dest="build_wasm64", help="build wasm64", action="store_true")
-        parser.add_argument(
-            "--build-small", dest="build_small", help="build if only WebGPU EP is changed", action="store_true"
-        )
-        parser.add_argument(
-            "--build-type",
-            dest="build_type",
-            help="build type, can be Debug, MinSizeRel, Release or RelWithDebInfo",
-            default="MinSizeRel",
-        )
         parser.add_argument(
             "--build-skip-wasm",
             dest="build_skip_wasm",
@@ -77,6 +68,17 @@ class Ort(Program):
             dest="build_skip_pull_wasm",
             help="build skip pull wasm",
             action="store_true",
+        )
+
+        parser.add_argument("--build-wgpu", dest="build_wgpu", help="build wgpu", action="store_true")
+        parser.add_argument("--build-genai", dest="build_genai", help="build genai", action="store_true")
+
+        parser.add_argument("--build-small", dest="build_small", help="skip the major build", action="store_true")
+        parser.add_argument(
+            "--build-type",
+            dest="build_type",
+            help="build type, can be Debug, MinSizeRel, Release or RelWithDebInfo",
+            default="default",
         )
         parser.add_argument("--lint", dest="lint", help="lint", action="store_true")
         parser.add_argument("--split-model", dest="split_model", help="split model for a external data file")
@@ -100,6 +102,7 @@ examples:
 
         self.build_type = self.args.build_type
         self.build_dir = f"build/{os_dir}"
+        self.install_dir = f'{Util.PROJECT_DIR}/ort-wgpu-install'
 
         self._handle_ops()
 
@@ -126,6 +129,8 @@ examples:
     def build_web(self):
         timer = Timer()
 
+        if self.build_type == 'default':
+            self.build_type = 'MinSizeRel'
         if not self.args.build_skip_wasm and not self.args.build_small:
             # --enable_wasm_debug_info may cause unit test crash
             cmd = f"{self.build_cmd} --config {self.build_type} --build_wasm --enable_wasm_simd --enable_wasm_threads --parallel --skip_tests --skip_submodule_sync --use_jsep --use_webnn --target onnxruntime_webassembly"
@@ -177,7 +182,28 @@ examples:
 
     def build_wgpu(self):
         timer = Timer()
-        cmd = f"{self.build_cmd} --config {self.build_type} --parallel --skip_tests --skip_submodule_sync --use_webgpu --build_nodejs"
+        if self.build_type == 'default':
+            self.build_type = 'Release'
+
+        if not self.args.build_small:
+            cmd = f'{self.build_cmd} --config {self.build_type} --parallel --skip_tests --skip_submodule_sync --use_webgpu --build_nodejs --build_shared_lib  --enable_pybind --build_wheel --cmake_extra_defines onnxruntime_BUILD_UNIT_TESTS=OFF --cmake_generator "Visual Studio 17 2022"'
+            Util.execute(cmd, show_cmd=True, show_duration=True)
+            Util.info(f"{timer.stop()} was spent to build")
+
+        Util.chdir(f"{self.root_dir}/{self.build_dir}", verbose=True)
+        Util.execute(
+            f'cmake --install Release --config Release --prefix {self.install_dir}', show_cmd=True, show_duration=True
+        )
+        Util.chdir(f"{self.install_dir}", verbose=True)
+        Util.execute("cp bin/* lib/", show_cmd=True, show_duration=True)
+        Util.execute("cp -r include/onnxruntime/* include/", show_cmd=True, show_duration=True)
+
+    def build_genai(self):
+        # branch gs/wgpu
+        timer = Timer()
+        if self.build_type == 'default':
+            self.build_type = 'Release'
+        cmd = f'{self.build_cmd} --config {self.build_type} --use_webgpu'
         Util.execute(cmd, show_cmd=True, show_duration=True)
         Util.info(f"{timer.stop()} was spent to build")
 
@@ -193,8 +219,8 @@ examples:
             self.build_web()
         if args.build_wgpu:
             self.build_wgpu()
-        if args.build_small:
-            self.build()
+        if args.build_genai:
+            self.build_genai()
         if args.lint:
             self.lint()
         if args.split_model:
