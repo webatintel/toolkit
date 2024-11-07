@@ -71,6 +71,10 @@ class Ort(Program):
         )
 
         parser.add_argument("--build-wgpu", dest="build_wgpu", help="build wgpu", action="store_true")
+        parser.add_argument("--build-cuda", dest="build_cuda", help="build cuda", action="store_true")
+        parser.add_argument("--cuda-home", dest="cuda_home", help="cuda home", default="C:/Program Files/NVIDIA GPU Computing Toolkit/CUDA/v12.6")
+        parser.add_argument("--cudnn-home", dest="cudnn_home", help="cudnn home", default="C:/Program Files/NVIDIA/CUDNN/v9.0")
+
         parser.add_argument("--build-genai", dest="build_genai", help="build genai", action="store_true")
 
         parser.add_argument("--build-small", dest="build_small", help="skip the major build", action="store_true")
@@ -125,6 +129,23 @@ examples:
 
     def sync(self):
         pass
+
+    def build_cuda(self):
+        timer = Timer()
+        if self.build_type == 'default':
+            self.build_type = 'Debug'
+        cmd = f'{self.build_cmd} --config {self.build_type} --use_cuda --compile_no_warning_as_error --enable_cuda_nhwc_ops --skip_tests --cuda_home "{self.args.cuda_home}" --cudnn_home "{self.args.cudnn_home}"'
+        Util.execute(cmd, show_cmd=True, show_duration=True)
+        Util.info(f"{timer.stop()} was spent to build")
+
+    def build_genai(self):
+        # branch gs/wgpu
+        timer = Timer()
+        if self.build_type == 'default':
+            self.build_type = 'Release'
+        cmd = f'{self.build_cmd} --config {self.build_type} --use_webgpu'
+        Util.execute(cmd, show_cmd=True, show_duration=True)
+        Util.info(f"{timer.stop()} was spent to build")
 
     def build_web(self):
         timer = Timer()
@@ -198,15 +219,6 @@ examples:
         Util.execute("cp bin/* lib/", show_cmd=True, show_duration=True)
         Util.execute("cp -r include/onnxruntime/* include/", show_cmd=True, show_duration=True)
 
-    def build_genai(self):
-        # branch gs/wgpu
-        timer = Timer()
-        if self.build_type == 'default':
-            self.build_type = 'Release'
-        cmd = f'{self.build_cmd} --config {self.build_type} --use_webgpu'
-        Util.execute(cmd, show_cmd=True, show_duration=True)
-        Util.info(f"{timer.stop()} was spent to build")
-
     def lint(self):
         Util.chdir(f"{self.root_dir}/js", verbose=True)
         Util.execute("npm run lint", show_cmd=True)
@@ -215,12 +227,14 @@ examples:
         args = self.args
         if args.sync:
             self.sync()
+        if args.build_cuda:
+            self.build_cuda()
+        if args.build_genai:
+            self.build_genai()
         if args.build_web:
             self.build_web()
         if args.build_wgpu:
             self.build_wgpu()
-        if args.build_genai:
-            self.build_genai()
         if args.lint:
             self.lint()
         if args.split_model:
