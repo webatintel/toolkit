@@ -37,10 +37,21 @@ class GPUTest(Program):
 
     PROJECT_INFO_INDEX_ROOT_DIR = 0
     PROJECT_INFO_INDEX_CONFIG_FILES = 1
+    CHROMIUM_CONFIG_FILES = []
+    if Util.HOST_OS == Util.WINDOWS:
+        CHROMIUM_CONFIG_FILES = [
+            'infra/config/generated/builders/try/dawn-win10-x64-deps-rel/targets/chromium.dawn.json',
+            'infra/config/generated/builders/try/gpu-fyi-try-win10-intel-rel-64/targets/chromium.gpu.fyi.json'
+        ]
+    elif Util.HOST_OS == Util.LINUX:
+        CHROMIUM_CONFIG_FILES = [
+            'infra/config/generated/builders/try/dawn-linux-x64-deps-rel/targets/chromium.dawn.json',
+            'infra/config/generated/builders/try/gpu-fyi-try-linux-intel-rel/targets/chromium.gpu.fyi.json'
+        ]
     PROJECT_INFO = {
-        'angle': ['%s/%s/angle' % (Util.PROJECT_DIR, GPUTEST_FOLDER), ['angle.json']],
+        'angle': ['%s/%s/angle' % (Util.PROJECT_DIR, GPUTEST_FOLDER), ['infra/specs/angle.json']],
         #'aquarium': ['%s/%s/aquarium' % (Util.PROJECT_DIR, GPUTEST_FOLDER)],
-        'chromium': ['%s/%s/chromium/src' % (Util.PROJECT_DIR, GPUTEST_FOLDER), ['chromium.dawn.json', 'chromium.gpu.fyi.json']],
+        'chromium': ['%s/%s/chromium/src' % (Util.PROJECT_DIR, GPUTEST_FOLDER), CHROMIUM_CONFIG_FILES],
     }
     AQUARIUM_BASE = {
         Util.WINDOWS: {
@@ -621,11 +632,6 @@ examples:
                     rev_name, _, _ = Util.get_server_backup(relative_path, 'latest')
 
                 config_dir = '%s/%s/%s' % (Util.BACKUP_DIR, relative_path, rev_name)
-
-            if project == 'angle':
-                config_dir += '/infra/specs'
-            else:
-                config_dir += '/testing/buildbot'
 
             if project == 'aquarium':
                 os_backends = {
