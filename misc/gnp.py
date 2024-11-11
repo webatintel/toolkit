@@ -451,11 +451,17 @@ examples:
         elif self.project == 'aquarium':
             src_files += ['assets/', 'shaders/']
         elif self.project == 'chromium':
-            src_files += [
-                'out/%s/args.gn' % self.build_type_cap,
-                'out/%s/../../testing/buildbot/chromium.gpu.fyi.json' % self.build_type_cap,
-                'out/%s/../../testing/buildbot/chromium.dawn.json' % self.build_type_cap,
-            ]
+            src_files += ['out/%s/args.gn' % self.build_type_cap]
+            if Util.HOST_OS == Util.WINDOWS:
+                src_files += [
+                    'infra/config/generated/builders/try/dawn-win10-x64-deps-rel/targets/chromium.dawn.json',
+                    'infra/config/generated/builders/try/gpu-fyi-try-win10-intel-rel-64/targets/chromium.gpu.fyi.json'
+                ]
+            elif Util.HOST_OS == Util.LINUX:
+                src_files += [
+                    'infra/config/generated/builders/try/dawn-linux-x64-deps-rel/targets/chromium.dawn.json',
+                    'infra/config/generated/builders/try/gpu-fyi-try-linux-intel-rel/targets/chromium.gpu.fyi.json'
+                ]
 
         src_file_count = len(src_files)
         for index, src_file in enumerate(src_files):
