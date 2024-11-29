@@ -127,6 +127,8 @@ class TestExpectation:
             'crbug.com/0000 [ intel win ] webgpu:shader,execution,shader_io,fragment_builtins:inputs,interStage,centroid:* [ Failure ]',
             'crbug.com/0000 [ intel win ] webgpu:shader,execution,shader_io,fragment_builtins:inputs,sample_mask:* [ Failure ]',
             'crbug.com/0000 [ intel win ] webgpu:shader,execution,zero_init:compute,zero_init:addressSpace="private";* [ Failure ]',
+            # Chrome drop flaky on ARL
+            'crbug.com/0000 [ intel win ] webgpu:shader,execution,expression,unary,u32_conversion:f16:inputSource="const";vectorize=2 [ Failure ]',
         ],
         # There is no expectation file for dawn_end2end_tests. The expectations will be used to suppress the dawn e2e failures in test report.
         # Example: '[ Util.HOST_OS ] ComputeStorageBufferBarrierTests.UniformToStorageAddPingPong/D3D11_Intel_R_Arc_TM_A770_Graphics'
