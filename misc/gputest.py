@@ -518,6 +518,9 @@ examples:
       border: 1px solid black;
       vertical-align: top;
     }
+    .collapse {
+      display: none;
+    }
   </style>
 </head>
 <body>
@@ -576,11 +579,17 @@ examples:
 
                 regression_count += len(result.pass_fail)
                 time = fields[1]
-                pass_fail_info = '%s<p>%s' % (len(result.pass_fail), '<p>'.join(result.pass_fail[:self.MAX_FAIL_IN_REPORT]))
-                fail_pass_info = '%s<p>%s' % (len(result.fail_pass), '<p>'.join(result.fail_pass[:self.MAX_FAIL_IN_REPORT]))
+                pass_fail_info = '%s<br/>%s' % (len(result.pass_fail), '<br/>'.join(result.pass_fail[:self.MAX_FAIL_IN_REPORT]))
+                # Flod pass_fail results that exceeds the maximum limit
+                if len(result.pass_fail) > self.MAX_FAIL_IN_REPORT:
+                    pass_fail_info += '<div id="pass_fail" class="collapse">%s</div><p><div onclick="show(\'pass_fail\')">More...</div>' % '<br/>'.join(result.pass_fail[self.MAX_FAIL_IN_REPORT:])
+                fail_pass_info = '%s<br/>%s' % (len(result.fail_pass), '<br/>'.join(result.fail_pass[:self.MAX_FAIL_IN_REPORT]))
+                # Flod fail_pass results that exceeds the maximum limit
+                if len(result.fail_pass) > self.MAX_FAIL_IN_REPORT:
+                    fail_pass_info += '<div id="fail_pass" class="collapse">%s</div><p><div onclick="show(\'fail_pass\')">More...</div>' % '<br/>'.join(result.fail_pass[self.MAX_FAIL_IN_REPORT:])
                 fail_fail_info = len(result.fail_fail)
                 if re.search('aquarium', op) and result.pass_pass:
-                    pass_pass_info = '%s<p>%s' % (len(result.pass_pass), '<p>'.join(result.pass_pass[:self.MAX_FAIL_IN_REPORT]))
+                    pass_pass_info = '%s<br/>%s' % (len(result.pass_pass), '<br/>'.join(result.pass_pass[:self.MAX_FAIL_IN_REPORT]))
                 else:
                     pass_pass_info = len(result.pass_pass)
 
@@ -607,6 +616,11 @@ examples:
         if has_details:
             html += details_html
         html += '''
+  <script>
+    function show(id) {
+      document.getElementById(id).classList.toggle('collapse');
+    }
+  </script>
 </body>'''
         report_file = '%s/report.html' % self.result_dir
         Util.ensure_nofile(report_file)
