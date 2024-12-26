@@ -133,7 +133,7 @@ class GPUTest(Program):
 
     RESULT_FILE_SUFFIX = '.json'
     RESULT_FILE_PATTERN = r'^.*-(.*)%s$' % RESULT_FILE_SUFFIX
-    MAX_FAIL_IN_REPORT = 30000
+    MAX_FAIL_IN_REPORT = 30
 
     SEPARATOR = '|'
 
