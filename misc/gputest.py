@@ -582,11 +582,11 @@ examples:
                 pass_fail_info = '%s<br/>%s' % (len(result.pass_fail), '<br/>'.join(result.pass_fail[:self.MAX_FAIL_IN_REPORT]))
                 # Flod pass_fail results that exceeds the maximum limit
                 if len(result.pass_fail) > self.MAX_FAIL_IN_REPORT:
-                    pass_fail_info += '<div id="pass_fail" class="collapse">%s</div><p><div onclick="show(\'pass_fail\')">More...</div>' % '<br/>'.join(result.pass_fail[self.MAX_FAIL_IN_REPORT:])
+                    pass_fail_info += '<div id="%s_pass_fail" class="collapse">%s</div><p><div onclick="show(\'%s_pass_fail\')">More...</div>' % (op, '<br/>'.join(result.pass_fail[self.MAX_FAIL_IN_REPORT:]), op)
                 fail_pass_info = '%s<br/>%s' % (len(result.fail_pass), '<br/>'.join(result.fail_pass[:self.MAX_FAIL_IN_REPORT]))
                 # Flod fail_pass results that exceeds the maximum limit
                 if len(result.fail_pass) > self.MAX_FAIL_IN_REPORT:
-                    fail_pass_info += '<div id="fail_pass" class="collapse">%s</div><p><div onclick="show(\'fail_pass\')">More...</div>' % '<br/>'.join(result.fail_pass[self.MAX_FAIL_IN_REPORT:])
+                    fail_pass_info += '<div id="%s_fail_pass" class="collapse">%s</div><p><div onclick="show(\'%s_fail_pass\')">More...</div>' % (op, '<br/>'.join(result.fail_pass[self.MAX_FAIL_IN_REPORT:]), op)
                 fail_fail_info = len(result.fail_fail)
                 if re.search('aquarium', op) and result.pass_pass:
                     pass_pass_info = '%s<br/>%s' % (len(result.pass_pass), '<br/>'.join(result.pass_pass[:self.MAX_FAIL_IN_REPORT]))
