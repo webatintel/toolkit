@@ -87,8 +87,10 @@ examples:
 
         print(Util.HOST_OS_RELEASE)
         if Util.HOST_OS == 'linux' and Util.HOST_OS_RELEASE == 'ubuntu':
+            # Requirements at https://docs.mesa3d.org/meson.html
+            # Install latest version of spirv-tools by manual
             Util.ensure_pkg(
-                'meson python3-mako glslang-tools libomxil-bellagio-dev libpciaccess-dev libclc-19-dev libclc-19 libllvmspirvlib-19-dev libclang-19-dev'
+                'meson python3-mako glslang-tools libpciaccess-dev libclc-19-dev libclc-19 libllvmspirvlib-19-dev libclang-19-dev llvm byacc flex'
             )
             # x11
             Util.ensure_pkg(
@@ -199,7 +201,7 @@ examples:
         Util.ensure_dir('build')
         self._execute('echo "#define MESA_GIT_SHA1 \\\"git-%s\\\"" >src/mesa/main/git_sha1.h' % hash)
         build_cmd = (
-            'PKG_CONFIG_PATH=%s/lib/x86_64-linux-gnu/pkgconfig meson setup build/ -Dprefix=%s -Dvulkan-drivers=intel -Dgles1=enabled -Dgles2=enabled -Dshared-glapi=enabled -Dgbm=enabled -Dgallium-drivers=iris -Dplatforms=x11,wayland'
+            'PKG_CONFIG_PATH=%s/lib/x86_64-linux-gnu/pkgconfig meson setup build/ -Dprefix=%s -Dvulkan-drivers=intel -Dgallium-drivers=iris -Dgles1=enabled -Dgles2=enabled -Dshared-glapi=enabled -Dgbm=enabled -Dplatforms=x11,wayland -Dmesa-clc=enabled -Dinstall-mesa-clc=true'
             % (rev_dir, rev_dir)
         )
         if self.build_type == 'release':
