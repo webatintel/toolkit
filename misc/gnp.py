@@ -172,7 +172,7 @@ examples:
             if args.is_debug:
                 args.symbol_level = 2
             else:
-                args.symbol_level = 0
+                args.symbol_level = 0 if args.is_official_build else 1
 
         if self.args.special_out_dir:
             out_dir = Util.cal_relative_out_dir(
@@ -301,6 +301,8 @@ examples:
             gn_args += ' is_clang=true'
 
         if self.project == 'chromium':
+            gn_args += ' dawn_enable_opengles = true'
+            gn_args += ' dawn_use_built_dxc = true'
             if self.args.symbol_level == 0:
                 gn_args += ' blink_symbol_level=0'
 
