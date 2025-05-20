@@ -215,7 +215,7 @@ examples:
                 and not self.args.build_skip_chrome
             ):
                 cmds.append(
-                    f'{Util.PYTHON} {Util.GNP_SCRIPT} --disable-component-build --makefile --symbol-level 0 --build --build-target {chrome_target} --root-dir {self.chrome_dir}'
+                    f'{Util.PYTHON} {Util.GNP_SCRIPT} --disable-component-build --makefile --symbol-level 1 --build --build-target {chrome_target} --root-dir {self.chrome_dir}'
                 )
 
         elif op == 'backup':
