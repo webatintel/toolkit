@@ -430,6 +430,9 @@ examples:
         src_files = []
         for tmp_file in tmp_files:
             tmp_file = tmp_file.rstrip('\r')
+            # tmp_file may be None or empty string
+            if not tmp_file:
+                continue
             if not self.args.backup_symbol and tmp_file.endswith('.pdb'):
                 continue
 
