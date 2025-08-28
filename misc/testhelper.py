@@ -26,6 +26,9 @@ class TestExpectation:
             '0000 WIN : GPUTestConfigTest.GPUTestConfigConditions_D3D11/ES2_D3D9 = SKIP',
             '0000 WIN : ProgramBinariesAcrossPlatforms.CreateAndReloadBinary/ES2_D3D11_to_ES2_D3D9 = SKIP',
             '0000 WIN : ProgramBinariesAcrossPlatforms.CreateAndReloadBinary/ES2_D3D9_to_ES2_D3D11 = SKIP',
+            # Test regression
+            '441612846 WIN : PixelLocalStorageTest.DrawCommandValidation/ES3_D3D11_DisableRasterizerOrderViews_EmulatePixelLocalStorage  = SKIP',
+            '441612846 WIN : PixelLocalStorageTest.DrawCommandValidation/ES3_D3D11_EmulatePixelLocalStorage = SKIP',
         ],
         'content/test/gpu/gpu_tests/test_expectations/trace_test_expectations.txt': [
             # https://github.com/webatintel/webconformance/issues/24
@@ -362,9 +365,14 @@ class TestExpectation:
                     if tag_header_scope and re.search('END TAG HEADER', line):
                         tag_header_scope = False
                     else:
-                        if re.search(conflicts_allowed_str, line):
-                            conflicts_allowed = True
-                        line = TestExpectation._update_gpu_tag(line)
+                        if tag_header_scope and target == 'webgpu_cts_tests':
+                            if line.find('intel-0x3e9b intel-0x4680 intel-0x46a8 intel-0x5912 intel-0x9bc5') != -1:
+                                line += f'#             intel-0x64a0 intel-0xe221 intel-0xe20b intel-0xe20c intel-0xb0b0\n'
+                                line += f'#             intel-0xb082 intel-0xb083 intel-0xb08f\n'
+                        else:
+                            if re.search(conflicts_allowed_str, line):
+                                conflicts_allowed = True
+                            line = TestExpectation._update_gpu_tag(line)
                 sys.stdout.write(line)
             fileinput.close()
 
