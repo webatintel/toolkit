@@ -376,7 +376,7 @@ class TestExpectation:
                         if tag_header_scope and target == 'webgpu_cts_tests':
                             if line.find('intel-0x3e9b intel-0x4680 intel-0x46a8 intel-0x5912 intel-0x9bc5') != -1:
                                 line += f'#             intel-0x64a0 intel-0xe221 intel-0xe20b intel-0xe20c intel-0xb0b0\n'
-                                line += f'#             intel-0xb082 intel-0xb083 intel-0xb08f\n'
+                                line += f'#             intel-0xb082 intel-0xb083 intel-0xb08f intel-0xfd80\n'
                         else:
                             if re.search(conflicts_allowed_str, line):
                                 conflicts_allowed = True
