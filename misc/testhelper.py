@@ -221,6 +221,14 @@ class TestExpectation:
             'crbug.com/0000 [ intel-0xb08f win ] webgpu:shader,execution,memory_model,weak:2_plus_2_write:memType="atomic_workgroup" [ Failure ]',
             'crbug.com/0000 [ intel-0xb08f win ] webgpu:shader,execution,memory_model,weak:load_buffer:memType="atomic_workgroup" [ Failure ]',
             'crbug.com/0000 [ intel-0xb08f win ] webgpu:shader,execution,memory_model,weak:read:memType="atomic_workgroup" [ Failure ]',
+
+            # WCL: https://hsdes.intel.com/appstore/article-one/#/article/18038845701
+            'crbug.com/0000 [ intel-0xfd80 win ] webgpu:api,operation,command_buffer,copyTextureToTexture:copy_depth_stencil:format="depth24plus-stencil8" [ Failure ]',
+            'crbug.com/0000 [ intel-0xfd80 win ] webgpu:api,operation,command_buffer,copyTextureToTexture:copy_depth_stencil:format="depth32float-stencil8" [ Failure ]',
+            'crbug.com/0000 [ intel-0xfd80 win ] webgpu:shader,execution,expression,call,builtin,textureSampleCompare:2d_coords:* [ Failure ]',
+            'crbug.com/0000 [ intel-0xfd80 win ] webgpu:shader,execution,expression,call,builtin,textureSampleCompare:arrayed_2d_coords:* [ Failure ]',
+            'crbug.com/0000 [ intel-0xfd80 win ] webgpu:shader,execution,memory_model,weak:load_buffer:memType="atomic_workgroup" [ Failure ]',
+            'crbug.com/0000 [ intel-0xfd80 win ] webgpu:shader,execution,memory_model,weak:read:memType="atomic_workgroup" [ Failure ]',
             # Untriaged failures
             'crbug.com/0000 [ intel win ] webgpu:shader,execution,memory_model,barrier:workgroup_barrier_load_store:* [ Failure ]',
             'crbug.com/0000 [ intel win ] webgpu:shader,execution,memory_model,barrier:workgroup_barrier_load_store:accessValueType="f16";memType="non_atomic_storage";accessPair="rw" [ Failure ]',
