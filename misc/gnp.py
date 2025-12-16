@@ -312,7 +312,7 @@ examples:
             else:
                 gn_args += ' ffmpeg_branding="Chrome"'
 
-            gn_args += ' enable_nacl=false proprietary_codecs=true'
+            gn_args += ' proprietary_codecs=true'
             if self.args.is_official_build:
                 gn_args += ' is_official_build=true use_cfi_icall=false chrome_pgo_phase=0'
 
@@ -361,8 +361,7 @@ examples:
             self._execute('%s lastchange.py -o LASTCHANGE' % Util.PYTHON, exit_on_error=self.exit_on_error)
             Util.chdir(self.root_dir)
 
-        cmd = 'ninja -k%s -j%s -C %s %s' % (
-            str(self.args.build_max_fail),
+        cmd = 'autoninja -j%s -C %s %s' % (
             str(Util.CPU_COUNT),
             self.out_dir,
             ' '.join(targets),
