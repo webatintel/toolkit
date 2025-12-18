@@ -79,6 +79,9 @@ class TestExpectation:
             # disabled this due to conflict with a existing rule
             'crbug.com/0000 [ intel webgpu-adapter-default ] webgpu:web_platform,external_texture,video:importExternalTexture,sampleWithVideoFrameWithVisibleRectParam:* [ Failure ]',
 
+            # https://github.com/webatintel/webconformance/issues/27
+            'crbug.com/0000 [ intel webgpu-adapter-default ] webgpu:api,operation,command_buffer,copyTextureToTexture:copy_depth_stencil:format="stencil8" [ Failure ]',
+            'crbug.com/0000 [ intel webgpu-adapter-default ] webgpu:api,operation,resource_init,texture_zero:uninitialized_texture_is_zero:dimension="2d";readMethod="CopyToTexture";format="stencil8" [ Failure ]',
             # https://github.com/webatintel/webconformance/issues/28
             'crbug.com/0000 [ intel webgpu-adapter-default ] webgpu:api,operation,command_buffer,image_copy:rowsPerImage_and_bytesPerRow_depth_stencil:format="stencil8";* [ Failure ]',
             'crbug.com/0000 [ intel webgpu-adapter-default ] webgpu:api,operation,resource_init,texture_zero:uninitialized_texture_is_zero:dimension="2d";readMethod="CopyToBuffer";format="stencil8" [ Failure ]',
