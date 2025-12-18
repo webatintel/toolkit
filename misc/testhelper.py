@@ -75,18 +75,12 @@ class TestExpectation:
         'third_party/dawn/webgpu-cts/expectations.txt': [
             'crbug.com/1301808 [ intel ubuntu ] webgpu:web_platform,canvas,configure:viewFormats:canvasType="onscreen";format="rgba16float";* [ Failure ]',
             'crbug.com/1301808 [ intel ubuntu ] webgpu:web_platform,canvas,configure:viewFormats:canvasType="offscreen";format="rgba16float";* [ Failure ]',
-            # Tracking at https://github.com/webatintel/webconformance/issues/26
-            'crbug.com/0000 [ intel webgpu-adapter-default ] webgpu:web_platform,external_texture,video:importExternalTexture,compute:videoName="four-colors-h264-bt601-rotate-270.mp4";* [ Failure ]',
-            'crbug.com/0000 [ intel webgpu-adapter-default ] webgpu:web_platform,external_texture,video:importExternalTexture,compute:videoName="four-colors-h264-bt601-rotate-90.mp4";* [ Failure ]',
+
             # disabled this due to conflict with a existing rule
-            'crbug.com/0000 [ intel webgpu-adapter-default ] webgpu:web_platform,external_texture,video:importExternalTexture,sample:* [ Failure ]',
             'crbug.com/0000 [ intel webgpu-adapter-default ] webgpu:web_platform,external_texture,video:importExternalTexture,sampleWithVideoFrameWithVisibleRectParam:* [ Failure ]',
-            # https://github.com/webatintel/webconformance/issues/27
-            'crbug.com/0000 [ intel webgpu-adapter-default ] webgpu:api,operation,command_buffer,copyTextureToTexture:copy_depth_stencil:format="stencil8" [ Failure ]',
-            'crbug.com/0000 [ intel webgpu-adapter-default ] webgpu:api,operation,resource_init,texture_zero:uninitialized_texture_is_zero:dimension="2d";readMethod="CopyToTexture";format="stencil8" [ Failure ]',
+
             # https://github.com/webatintel/webconformance/issues/28
             'crbug.com/0000 [ intel webgpu-adapter-default ] webgpu:api,operation,command_buffer,image_copy:rowsPerImage_and_bytesPerRow_depth_stencil:format="stencil8";* [ Failure ]',
-            'crbug.com/0000 [ intel webgpu-adapter-default ] webgpu:api,operation,command_buffer,image_copy:offsets_and_sizes_copy_depth_stencil:format="stencil8";* [ Failure ]',
             'crbug.com/0000 [ intel webgpu-adapter-default ] webgpu:api,operation,resource_init,texture_zero:uninitialized_texture_is_zero:dimension="2d";readMethod="CopyToBuffer";format="stencil8" [ Failure ]',
             'crbug.com/0000 [ intel webgpu-adapter-default ] webgpu:api,operation,resource_init,texture_zero:uninitialized_texture_is_zero:dimension="2d";readMethod="StencilTest";format="stencil8" [ Failure ]',
             # https://github.com/webatintel/webconformance/issues/29
@@ -229,16 +223,7 @@ class TestExpectation:
             'crbug.com/0000 [ intel-0xfd80 win ] webgpu:shader,execution,expression,call,builtin,textureSampleCompare:arrayed_2d_coords:* [ Failure ]',
             'crbug.com/0000 [ intel-0xfd80 win ] webgpu:shader,execution,memory_model,weak:load_buffer:memType="atomic_workgroup" [ Failure ]',
             'crbug.com/0000 [ intel-0xfd80 win ] webgpu:shader,execution,memory_model,weak:read:memType="atomic_workgroup" [ Failure ]',
-            # Untriaged failures
-            'crbug.com/0000 [ intel win ] webgpu:shader,execution,memory_model,barrier:workgroup_barrier_load_store:* [ Failure ]',
-            'crbug.com/0000 [ intel win ] webgpu:shader,execution,memory_model,barrier:workgroup_barrier_load_store:accessValueType="f16";memType="non_atomic_storage";accessPair="rw" [ Failure ]',
-            'crbug.com/0000 [ intel win ] webgpu:shader,execution,memory_model,barrier:workgroup_barrier_load_store:accessValueType="u32";memType="non_atomic_storage";accessPair="rw" [ Failure ]',
-            'crbug.com/0000 [ intel win ] webgpu:shader,execution,memory_model,barrier:workgroup_barrier_store_load:accessValueType="f16";memType="non_atomic_storage";accessPair="wr" [ Failure ]',
-            'crbug.com/0000 [ intel win ] webgpu:shader,execution,memory_model,barrier:workgroup_barrier_store_load:accessValueType="u32";memType="non_atomic_storage";accessPair="wr" [ Failure ]',
-            'crbug.com/0000 [ intel win ] webgpu:shader,execution,shader_io,fragment_builtins:inputs,front_facing:* [ Failure ]',
-            'crbug.com/0000 [ intel win ] webgpu:shader,execution,shader_io,fragment_builtins:inputs,interStage,centroid:* [ Failure ]',
-            'crbug.com/0000 [ intel win ] webgpu:shader,execution,shader_io,fragment_builtins:inputs,sample_mask:* [ Failure ]',
-            'crbug.com/0000 [ intel win ] webgpu:shader,execution,zero_init:compute,zero_init:addressSpace="private";* [ Failure ]',
+
             # Chrome drop flaky on ARL
             'crbug.com/0000 [ intel win ] webgpu:shader,execution,expression,unary,u32_conversion:f16:inputSource="const";vectorize=2 [ Failure ]',
         ],
