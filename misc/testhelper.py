@@ -1,6 +1,5 @@
 from util.base import *
 
-
 class TestExpectation:
     EXPECTATION_FILES = {
         'angle_end2end_tests': ['src/tests/angle_end2end_tests_expectations.txt'],
@@ -110,7 +109,7 @@ class TestExpectation:
             'crbug.com/0000 [ intel win ] webgpu:shader,execution,memory_layout:write_layout:case="mat4x4f_size";aspace="workgroup" [ Failure ]',
             'crbug.com/0000 [ intel win ] webgpu:shader,execution,memory_layout:write_layout:case="mat4x4h_align8";aspace="workgroup" [ Failure ]',
             'crbug.com/0000 [ intel win ] webgpu:shader,execution,memory_layout:write_layout:case="mat4x4h_size";aspace="workgroup" [ Failure ]',
-            # D3D12 debug layer bug (https://issues.chromium.org/issues/425560775)
+            # Windows RDP WARP bug (https://issues.chromium.org/issues/425560775)
             'crbug.com/0000 [ intel win ] webgpu:api,operation,command_buffer,image_copy:mip_levels:initMethod="CopyB2T";checkMethod="FullCopyT2B";format="bc1-rgba-unorm";dimension="3d" [ Failure ]',
             'crbug.com/0000 [ intel win ] webgpu:api,operation,command_buffer,image_copy:mip_levels:initMethod="CopyB2T";checkMethod="FullCopyT2B";format="bc1-rgba-unorm-srgb";dimension="3d" [ Failure ]',
             'crbug.com/0000 [ intel win ] webgpu:api,operation,command_buffer,image_copy:mip_levels:initMethod="CopyB2T";checkMethod="FullCopyT2B";format="bc2-rgba-unorm";dimension="3d" [ Failure ]',
@@ -158,74 +157,54 @@ class TestExpectation:
             'crbug.com/0000 [ intel-0xe20b win ] webgpu:api,operation,command_buffer,copyTextureToTexture:copy_depth_stencil:format="depth32float-stencil8" [ Failure ]',
             'crbug.com/0000 [ intel-0xe20b win ] webgpu:shader,execution,expression,call,builtin,textureSampleCompare:2d_coords:* [ Failure ]',
             'crbug.com/0000 [ intel-0xe20b win ] webgpu:shader,execution,expression,call,builtin,textureSampleCompare:arrayed_2d_coords:* [ Failure ]',
-            'crbug.com/0000 [ intel-0xe20b win ] webgpu:shader,execution,memory_model,weak:2_plus_2_write:memType="atomic_workgroup" [ Failure ]',
-            'crbug.com/0000 [ intel-0xe20b win ] webgpu:shader,execution,memory_model,weak:load_buffer:memType="atomic_workgroup" [ Failure ]',
-            'crbug.com/0000 [ intel-0xe20b win ] webgpu:shader,execution,memory_model,weak:read:memType="atomic_workgroup" [ Failure ]',
 
             'crbug.com/0000 [ intel-0xe20c win ] webgpu:api,operation,command_buffer,copyTextureToTexture:copy_depth_stencil:format="depth24plus-stencil8" [ Failure ]',
             'crbug.com/0000 [ intel-0xe20c win ] webgpu:api,operation,command_buffer,copyTextureToTexture:copy_depth_stencil:format="depth32float-stencil8" [ Failure ]',
             'crbug.com/0000 [ intel-0xe20c win ] webgpu:shader,execution,expression,call,builtin,textureSampleCompare:2d_coords:* [ Failure ]',
             'crbug.com/0000 [ intel-0xe20c win ] webgpu:shader,execution,expression,call,builtin,textureSampleCompare:arrayed_2d_coords:* [ Failure ]',
-            'crbug.com/0000 [ intel-0xe20c win ] webgpu:shader,execution,memory_model,weak:2_plus_2_write:memType="atomic_workgroup" [ Failure ]',
-            'crbug.com/0000 [ intel-0xe20c win ] webgpu:shader,execution,memory_model,weak:load_buffer:memType="atomic_workgroup" [ Failure ]',
-            'crbug.com/0000 [ intel-0xe20c win ] webgpu:shader,execution,memory_model,weak:read:memType="atomic_workgroup" [ Failure ]',
 
             'crbug.com/0000 [ intel-0xe221 win ] webgpu:api,operation,command_buffer,copyTextureToTexture:copy_depth_stencil:format="depth24plus-stencil8" [ Failure ]',
             'crbug.com/0000 [ intel-0xe221 win ] webgpu:api,operation,command_buffer,copyTextureToTexture:copy_depth_stencil:format="depth32float-stencil8" [ Failure ]',
             'crbug.com/0000 [ intel-0xe221 win ] webgpu:shader,execution,expression,call,builtin,textureSampleCompare:2d_coords:* [ Failure ]',
             'crbug.com/0000 [ intel-0xe221 win ] webgpu:shader,execution,expression,call,builtin,textureSampleCompare:arrayed_2d_coords:* [ Failure ]',
-            'crbug.com/0000 [ intel-0xe221 win ] webgpu:shader,execution,memory_model,weak:2_plus_2_write:memType="atomic_workgroup" [ Failure ]',
-            'crbug.com/0000 [ intel-0xe221 win ] webgpu:shader,execution,memory_model,weak:load_buffer:memType="atomic_workgroup" [ Failure ]',
-            'crbug.com/0000 [ intel-0xe221 win ] webgpu:shader,execution,memory_model,weak:read:memType="atomic_workgroup" [ Failure ]',
 
             # LNL: https://hsdes.intel.com/appstore/article-one/#/article/18038845701
             'crbug.com/0000 [ intel-0x64a0 win ] webgpu:api,operation,command_buffer,copyTextureToTexture:copy_depth_stencil:format="depth24plus-stencil8" [ Failure ]',
             'crbug.com/0000 [ intel-0x64a0 win ] webgpu:api,operation,command_buffer,copyTextureToTexture:copy_depth_stencil:format="depth32float-stencil8" [ Failure ]',
             'crbug.com/0000 [ intel-0x64a0 win ] webgpu:shader,execution,expression,call,builtin,textureSampleCompare:2d_coords:* [ Failure ]',
             'crbug.com/0000 [ intel-0x64a0 win ] webgpu:shader,execution,expression,call,builtin,textureSampleCompare:arrayed_2d_coords:* [ Failure ]',
-            'crbug.com/0000 [ intel-0x64a0 win ] webgpu:shader,execution,memory_model,weak:2_plus_2_write:memType="atomic_workgroup" [ Failure ]',
-            'crbug.com/0000 [ intel-0x64a0 win ] webgpu:shader,execution,memory_model,weak:load_buffer:memType="atomic_workgroup" [ Failure ]',
-            'crbug.com/0000 [ intel-0x64a0 win ] webgpu:shader,execution,memory_model,weak:read:memType="atomic_workgroup" [ Failure ]',
 
             # PTL: https://hsdes.intel.com/appstore/article-one/#/article/18038845701
             'crbug.com/0000 [ intel-0xb0b0 win ] webgpu:api,operation,command_buffer,copyTextureToTexture:copy_depth_stencil:format="depth24plus-stencil8" [ Failure ]',
             'crbug.com/0000 [ intel-0xb0b0 win ] webgpu:api,operation,command_buffer,copyTextureToTexture:copy_depth_stencil:format="depth32float-stencil8" [ Failure ]',
             'crbug.com/0000 [ intel-0xb0b0 win ] webgpu:shader,execution,expression,call,builtin,textureSampleCompare:2d_coords:* [ Failure ]',
             'crbug.com/0000 [ intel-0xb0b0 win ] webgpu:shader,execution,expression,call,builtin,textureSampleCompare:arrayed_2d_coords:* [ Failure ]',
-            'crbug.com/0000 [ intel-0xb0b0 win ] webgpu:shader,execution,memory_model,weak:load_buffer:memType="atomic_workgroup" [ Failure ]',
-            'crbug.com/0000 [ intel-0xb0b0 win ] webgpu:shader,execution,memory_model,weak:read:memType="atomic_workgroup" [ Failure ]',
+
+            'crbug.com/0000 [ intel-0xb080 win ] webgpu:api,operation,command_buffer,copyTextureToTexture:copy_depth_stencil:format="depth24plus-stencil8" [ Failure ]',
+            'crbug.com/0000 [ intel-0xb080 win ] webgpu:api,operation,command_buffer,copyTextureToTexture:copy_depth_stencil:format="depth32float-stencil8" [ Failure ]',
+            'crbug.com/0000 [ intel-0xb080 win ] webgpu:shader,execution,expression,call,builtin,textureSampleCompare:2d_coords:* [ Failure ]',
+            'crbug.com/0000 [ intel-0xb080 win ] webgpu:shader,execution,expression,call,builtin,textureSampleCompare:arrayed_2d_coords:* [ Failure ]',
 
             'crbug.com/0000 [ intel-0xb082 win ] webgpu:api,operation,command_buffer,copyTextureToTexture:copy_depth_stencil:format="depth24plus-stencil8" [ Failure ]',
             'crbug.com/0000 [ intel-0xb082 win ] webgpu:api,operation,command_buffer,copyTextureToTexture:copy_depth_stencil:format="depth32float-stencil8" [ Failure ]',
             'crbug.com/0000 [ intel-0xb082 win ] webgpu:shader,execution,expression,call,builtin,textureSampleCompare:2d_coords:* [ Failure ]',
             'crbug.com/0000 [ intel-0xb082 win ] webgpu:shader,execution,expression,call,builtin,textureSampleCompare:arrayed_2d_coords:* [ Failure ]',
-            'crbug.com/0000 [ intel-0xb082 win ] webgpu:shader,execution,memory_model,weak:2_plus_2_write:memType="atomic_workgroup" [ Failure ]',
-            'crbug.com/0000 [ intel-0xb082 win ] webgpu:shader,execution,memory_model,weak:load_buffer:memType="atomic_workgroup" [ Failure ]',
-            'crbug.com/0000 [ intel-0xb082 win ] webgpu:shader,execution,memory_model,weak:read:memType="atomic_workgroup" [ Failure ]',
 
             'crbug.com/0000 [ intel-0xb083 win ] webgpu:api,operation,command_buffer,copyTextureToTexture:copy_depth_stencil:format="depth24plus-stencil8" [ Failure ]',
             'crbug.com/0000 [ intel-0xb083 win ] webgpu:api,operation,command_buffer,copyTextureToTexture:copy_depth_stencil:format="depth32float-stencil8" [ Failure ]',
             'crbug.com/0000 [ intel-0xb083 win ] webgpu:shader,execution,expression,call,builtin,textureSampleCompare:2d_coords:* [ Failure ]',
             'crbug.com/0000 [ intel-0xb083 win ] webgpu:shader,execution,expression,call,builtin,textureSampleCompare:arrayed_2d_coords:* [ Failure ]',
-            'crbug.com/0000 [ intel-0xb083 win ] webgpu:shader,execution,memory_model,weak:2_plus_2_write:memType="atomic_workgroup" [ Failure ]',
-            'crbug.com/0000 [ intel-0xb083 win ] webgpu:shader,execution,memory_model,weak:load_buffer:memType="atomic_workgroup" [ Failure ]',
-            'crbug.com/0000 [ intel-0xb083 win ] webgpu:shader,execution,memory_model,weak:read:memType="atomic_workgroup" [ Failure ]',
 
             'crbug.com/0000 [ intel-0xb08f win ] webgpu:api,operation,command_buffer,copyTextureToTexture:copy_depth_stencil:format="depth24plus-stencil8" [ Failure ]',
             'crbug.com/0000 [ intel-0xb08f win ] webgpu:api,operation,command_buffer,copyTextureToTexture:copy_depth_stencil:format="depth32float-stencil8" [ Failure ]',
             'crbug.com/0000 [ intel-0xb08f win ] webgpu:shader,execution,expression,call,builtin,textureSampleCompare:2d_coords:* [ Failure ]',
             'crbug.com/0000 [ intel-0xb08f win ] webgpu:shader,execution,expression,call,builtin,textureSampleCompare:arrayed_2d_coords:* [ Failure ]',
-            'crbug.com/0000 [ intel-0xb08f win ] webgpu:shader,execution,memory_model,weak:2_plus_2_write:memType="atomic_workgroup" [ Failure ]',
-            'crbug.com/0000 [ intel-0xb08f win ] webgpu:shader,execution,memory_model,weak:load_buffer:memType="atomic_workgroup" [ Failure ]',
-            'crbug.com/0000 [ intel-0xb08f win ] webgpu:shader,execution,memory_model,weak:read:memType="atomic_workgroup" [ Failure ]',
 
             # WCL: https://hsdes.intel.com/appstore/article-one/#/article/18038845701
             'crbug.com/0000 [ intel-0xfd80 win ] webgpu:api,operation,command_buffer,copyTextureToTexture:copy_depth_stencil:format="depth24plus-stencil8" [ Failure ]',
             'crbug.com/0000 [ intel-0xfd80 win ] webgpu:api,operation,command_buffer,copyTextureToTexture:copy_depth_stencil:format="depth32float-stencil8" [ Failure ]',
             'crbug.com/0000 [ intel-0xfd80 win ] webgpu:shader,execution,expression,call,builtin,textureSampleCompare:2d_coords:* [ Failure ]',
             'crbug.com/0000 [ intel-0xfd80 win ] webgpu:shader,execution,expression,call,builtin,textureSampleCompare:arrayed_2d_coords:* [ Failure ]',
-            'crbug.com/0000 [ intel-0xfd80 win ] webgpu:shader,execution,memory_model,weak:load_buffer:memType="atomic_workgroup" [ Failure ]',
-            'crbug.com/0000 [ intel-0xfd80 win ] webgpu:shader,execution,memory_model,weak:read:memType="atomic_workgroup" [ Failure ]',
 
             # Chrome drop flaky on ARL
             'crbug.com/0000 [ intel win ] webgpu:shader,execution,expression,unary,u32_conversion:f16:inputSource="const";vectorize=2 [ Failure ]',
