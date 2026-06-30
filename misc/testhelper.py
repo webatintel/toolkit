@@ -90,7 +90,9 @@ class TestExpectation:
             'crbug.com/0000 [ intel win ] webgpu:shader,execution,expression,binary,i32_arithmetic:addition_vector_scalar_compound:inputSource="const";* [ Failure ]',
             'crbug.com/0000 [ intel win ] webgpu:shader,execution,expression,binary,i32_arithmetic:multiplication_scalar_vector:inputSource="const";* [ Failure ]',
             'crbug.com/0000 [ intel win ] webgpu:shader,execution,expression,binary,i32_arithmetic:subtraction_vector_scalar_compound:inputSource="const";* [ Failure ]',
+
             # https://github.com/webatintel/webconformance/issues/31
+            '# https://hsdes.intel.com/appstore/article-one/#/article/15018574639',
             'crbug.com/0000 [ intel win ] webgpu:shader,execution,memory_layout:write_layout:case="mat2x3f_size";aspace="workgroup" [ Failure ]',
             'crbug.com/0000 [ intel win ] webgpu:shader,execution,memory_layout:write_layout:case="mat2x4f_size";aspace="workgroup" [ Failure ]',
             'crbug.com/0000 [ intel win ] webgpu:shader,execution,memory_layout:write_layout:case="mat3x2f_size";aspace="workgroup" [ Failure ]',
@@ -106,7 +108,8 @@ class TestExpectation:
             'crbug.com/0000 [ intel win ] webgpu:shader,execution,memory_layout:write_layout:case="mat4x4f_size";aspace="workgroup" [ Failure ]',
             'crbug.com/0000 [ intel win ] webgpu:shader,execution,memory_layout:write_layout:case="mat4x4h_align8";aspace="workgroup" [ Failure ]',
             'crbug.com/0000 [ intel win ] webgpu:shader,execution,memory_layout:write_layout:case="mat4x4h_size";aspace="workgroup" [ Failure ]',
-            # Windows RDP WARP bug (https://issues.chromium.org/issues/425560775)
+
+            '# Windows RDP WARP bug (https://issues.chromium.org/issues/425560775)',
             'crbug.com/0000 [ intel win ] webgpu:api,operation,command_buffer,image_copy:mip_levels:initMethod="CopyB2T";checkMethod="FullCopyT2B";format="bc1-rgba-unorm";dimension="3d" [ Failure ]',
             'crbug.com/0000 [ intel win ] webgpu:api,operation,command_buffer,image_copy:mip_levels:initMethod="CopyB2T";checkMethod="FullCopyT2B";format="bc1-rgba-unorm-srgb";dimension="3d" [ Failure ]',
             'crbug.com/0000 [ intel win ] webgpu:api,operation,command_buffer,image_copy:mip_levels:initMethod="CopyB2T";checkMethod="FullCopyT2B";format="bc2-rgba-unorm";dimension="3d" [ Failure ]',
@@ -149,7 +152,7 @@ class TestExpectation:
             'crbug.com/0000 [ intel win ] webgpu:api,operation,command_buffer,image_copy:mip_levels:initMethod="WriteTexture";checkMethod="PartialCopyT2B";format="bc6h-rgb-ufloat";dimension="3d" [ Failure ]',
             'crbug.com/0000 [ intel win ] webgpu:api,operation,command_buffer,image_copy:mip_levels:initMethod="WriteTexture";checkMethod="PartialCopyT2B";format="bc7-rgba-unorm";dimension="3d" [ Failure ]',
             'crbug.com/0000 [ intel win ] webgpu:api,operation,command_buffer,image_copy:mip_levels:initMethod="WriteTexture";checkMethod="PartialCopyT2B";format="bc7-rgba-unorm-srgb";dimension="3d" [ Failure ]',
-            # BMG: https://hsdes.intel.com/appstore/article-one/#/article/18038845701
+            '# BMG: https://hsdes.intel.com/appstore/article-one/#/article/18038845701',
             'crbug.com/0000 [ intel-0xe20b win ] webgpu:api,operation,command_buffer,copyTextureToTexture:copy_depth_stencil:format="depth24plus-stencil8" [ Failure ]',
             'crbug.com/0000 [ intel-0xe20b win ] webgpu:api,operation,command_buffer,copyTextureToTexture:copy_depth_stencil:format="depth32float-stencil8" [ Failure ]',
             'crbug.com/0000 [ intel-0xe20b win ] webgpu:shader,execution,expression,call,builtin,textureSampleCompare:2d_coords:* [ Failure ]',
@@ -165,13 +168,13 @@ class TestExpectation:
             'crbug.com/0000 [ intel-0xe221 win ] webgpu:shader,execution,expression,call,builtin,textureSampleCompare:2d_coords:* [ Failure ]',
             'crbug.com/0000 [ intel-0xe221 win ] webgpu:shader,execution,expression,call,builtin,textureSampleCompare:arrayed_2d_coords:* [ Failure ]',
 
-            # LNL: https://hsdes.intel.com/appstore/article-one/#/article/18038845701
+            '# LNL: https://hsdes.intel.com/appstore/article-one/#/article/18038845701',
             'crbug.com/0000 [ intel-0x64a0 win ] webgpu:api,operation,command_buffer,copyTextureToTexture:copy_depth_stencil:format="depth24plus-stencil8" [ Failure ]',
             'crbug.com/0000 [ intel-0x64a0 win ] webgpu:api,operation,command_buffer,copyTextureToTexture:copy_depth_stencil:format="depth32float-stencil8" [ Failure ]',
             'crbug.com/0000 [ intel-0x64a0 win ] webgpu:shader,execution,expression,call,builtin,textureSampleCompare:2d_coords:* [ Failure ]',
             'crbug.com/0000 [ intel-0x64a0 win ] webgpu:shader,execution,expression,call,builtin,textureSampleCompare:arrayed_2d_coords:* [ Failure ]',
 
-            # PTL: https://hsdes.intel.com/appstore/article-one/#/article/18038845701
+            '# PTL: https://hsdes.intel.com/appstore/article-one/#/article/18038845701',
             'crbug.com/0000 [ intel-0xb0b0 win ] webgpu:api,operation,command_buffer,copyTextureToTexture:copy_depth_stencil:format="depth24plus-stencil8" [ Failure ]',
             'crbug.com/0000 [ intel-0xb0b0 win ] webgpu:api,operation,command_buffer,copyTextureToTexture:copy_depth_stencil:format="depth32float-stencil8" [ Failure ]',
             'crbug.com/0000 [ intel-0xb0b0 win ] webgpu:shader,execution,expression,call,builtin,textureSampleCompare:2d_coords:* [ Failure ]',
@@ -197,13 +200,16 @@ class TestExpectation:
             'crbug.com/0000 [ intel-0xb08f win ] webgpu:shader,execution,expression,call,builtin,textureSampleCompare:2d_coords:* [ Failure ]',
             'crbug.com/0000 [ intel-0xb08f win ] webgpu:shader,execution,expression,call,builtin,textureSampleCompare:arrayed_2d_coords:* [ Failure ]',
 
-            # WCL: https://hsdes.intel.com/appstore/article-one/#/article/18038845701
+            '# WCL: https://hsdes.intel.com/appstore/article-one/#/article/18038845701',
             'crbug.com/0000 [ intel-0xfd80 win ] webgpu:api,operation,command_buffer,copyTextureToTexture:copy_depth_stencil:format="depth24plus-stencil8" [ Failure ]',
             'crbug.com/0000 [ intel-0xfd80 win ] webgpu:api,operation,command_buffer,copyTextureToTexture:copy_depth_stencil:format="depth32float-stencil8" [ Failure ]',
             'crbug.com/0000 [ intel-0xfd80 win ] webgpu:shader,execution,expression,call,builtin,textureSampleCompare:2d_coords:* [ Failure ]',
             'crbug.com/0000 [ intel-0xfd80 win ] webgpu:shader,execution,expression,call,builtin,textureSampleCompare:arrayed_2d_coords:* [ Failure ]',
 
-            # Chrome drop flaky on ARL
+            '# The HSDES was closed as "Won\'t Fix" because of low priority on Xe. See https://hsdes.intel.com/appstore/article-one/#/article/18042616767',
+            'crbug.com/0000 [ intel win ] webgpu:api,operation,render_pass,storeOp:render_pass_store_op,depth_stencil_attachment_only:depthStencilFormat="stencil8";storeOperation="store" [ Failure ]',
+
+            '# Chrome drop flaky on ARL',
             'crbug.com/0000 [ intel win ] webgpu:shader,execution,expression,unary,u32_conversion:f16:inputSource="const";vectorize=2 [ Failure ]',
         ],
         # There is no expectation file for dawn_end2end_tests. The expectations will be used to suppress the dawn e2e failures in test report.
