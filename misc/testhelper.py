@@ -75,9 +75,6 @@ class TestExpectation:
             'crbug.com/1301808 [ intel ubuntu ] webgpu:web_platform,canvas,configure:viewFormats:canvasType="onscreen";format="rgba16float";* [ Failure ]',
             'crbug.com/1301808 [ intel ubuntu ] webgpu:web_platform,canvas,configure:viewFormats:canvasType="offscreen";format="rgba16float";* [ Failure ]',
 
-            # disabled this due to conflict with a existing rule
-            'crbug.com/0000 [ intel webgpu-adapter-default ] webgpu:web_platform,external_texture,video:importExternalTexture,sampleWithVideoFrameWithVisibleRectParam:* [ Failure ]',
-
             # https://github.com/webatintel/webconformance/issues/27
             'crbug.com/0000 [ intel webgpu-adapter-default ] webgpu:api,operation,command_buffer,copyTextureToTexture:copy_depth_stencil:format="stencil8" [ Failure ]',
             'crbug.com/0000 [ intel webgpu-adapter-default ] webgpu:api,operation,resource_init,texture_zero:uninitialized_texture_is_zero:dimension="2d";readMethod="CopyToTexture";format="stencil8" [ Failure ]',
@@ -343,7 +340,7 @@ class TestExpectation:
                         if tag_header_scope and target == 'webgpu_cts_tests':
                             if line.find('intel-0x3e9b intel-0x4680 intel-0x46a8 intel-0x5912 intel-0x9bc5') != -1:
                                 line += f'#             intel-0x64a0 intel-0xe221 intel-0xe20b intel-0xe20c intel-0xb0b0\n'
-                                line += f'#             intel-0xb082 intel-0xb083 intel-0xb08f intel-0xfd80\n'
+                                line += f'#             intel-0xb080 intel-0xb082 intel-0xb083 intel-0xb08f intel-0xfd80\n'
                         else:
                             if re.search(conflicts_allowed_str, line):
                                 conflicts_allowed = True
