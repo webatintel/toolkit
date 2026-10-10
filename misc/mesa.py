@@ -24,6 +24,7 @@ class Mesa(Program):
         parser.epilog = '''
 examples:
 {0} {1} --sync --build
+{0} {1} --setup
 {0} {1} --build --rev-stride 50 --rev 96700-96900
 {0} {1} --build --build-force
 {0} {1} --hashtorev e58a10af640ba58b6001f5c5ad750b782547da76
@@ -35,6 +36,7 @@ examples:
         parser.add_argument('--repo', dest='repo', help='repo, can be freedesktop or chromeos', default='freedesktop')
         parser.add_argument('--init', dest='init', help='init', action='store_true')
         parser.add_argument('--sync', dest='sync', help='sync', action='store_true')
+        parser.add_argument('--setup', dest='setup', help='install build dependencies', action='store_true')
         parser.add_argument('--build', dest='build', help='build', action='store_true')
         parser.add_argument('--build-type', dest='build_type', help='build type', default='release')
         parser.add_argument('--build-force', dest='build_force', help='no reset of source code', action='store_true')
@@ -85,20 +87,6 @@ examples:
     def build(self):
         self._init_hash()
 
-        print(Util.HOST_OS_RELEASE)
-        if Util.HOST_OS == 'linux' and Util.HOST_OS_RELEASE == 'ubuntu':
-            # Requirements at https://docs.mesa3d.org/meson.html
-            # Install latest version of spirv-tools by manual
-            Util.ensure_pkg(
-                'meson python3-mako glslang-tools libpciaccess-dev libclc-19-dev libclc-19 libllvmspirvlib-19-dev libclang-19-dev llvm byacc flex'
-            )
-            # x11
-            Util.ensure_pkg(
-                'libx11-xcb-dev libxext-dev libxfixes-dev libxcb-shm0-dev libxrandr-dev xutils-dev libxcb-dri3-dev libxcb-present-dev libxshmfence-dev libxcb-glx0-dev libxcb-dri2-0-dev libxxf86vm-dev'
-            )
-            # wayland
-            Util.ensure_pkg('libwayland-dev wayland-protocols libwayland-egl-backend-dev')
-
         if re.search('-', str(self.rev)):
             tmp_revs = self.rev.split('-')
             min_rev = self._unify_to_rev(tmp_revs[0])
@@ -138,6 +126,38 @@ examples:
             Util.execute(
                 'scp %s wp@%s:/workspace/backup/%s/mesa/' % (rev_backup_file, Util.BACKUP_SERVER, Util.HOST_OS)
             )
+
+    def setup(self):
+        print(Util.HOST_OS_RELEASE)
+        if Util.HOST_OS == 'linux' and Util.HOST_OS_RELEASE == 'ubuntu':
+            llvm_major = '21'
+            try:
+                llvm_ver = subprocess.check_output('llvm-config --version', shell=True).decode('utf-8').strip()
+                match = re.match(r'(\d+)', llvm_ver)
+                if match:
+                    llvm_major = match.group(1)
+            except Exception:
+                # Keep a sensible default when llvm-config is unavailable.
+                pass
+
+            Util.info('Use LLVM major version %s for mesa dependencies' % llvm_major)
+            # Requirements at https://docs.mesa3d.org/meson.html
+            # Install latest version of spirv-tools by manual
+            Util.ensure_pkg(
+                'pkg-config cmake ninja-build meson python3-mako glslang-tools spirv-tools-dev libpciaccess-dev libudev-dev bison flex'
+            )
+            Util.ensure_pkg(
+                'libclc-%s-dev libclc-%s libllvmspirvlib-%s-dev libclang-%s-dev llvm-%s'
+                % (llvm_major, llvm_major, llvm_major, llvm_major, llvm_major)
+            )
+            # x11
+            Util.ensure_pkg(
+                'libx11-xcb-dev libxext-dev libxfixes-dev libxcb-shm0-dev libxrandr-dev xutils-dev libxcb-dri3-dev libxcb-present-dev libxshmfence-dev libxcb-glx0-dev libxcb-dri2-0-dev libxxf86vm-dev'
+            )
+            # wayland
+            Util.ensure_pkg('libwayland-dev wayland-protocols libwayland-egl-backend-dev')
+        else:
+            Util.warning('No setup package list for host %s/%s' % (Util.HOST_OS, Util.HOST_OS_RELEASE))
 
     def revtohash(self):
         tmp_rev = self.args.revtohash
@@ -201,7 +221,7 @@ examples:
         Util.ensure_dir('build')
         self._execute('echo "#define MESA_GIT_SHA1 \\\"git-%s\\\"" >src/mesa/main/git_sha1.h' % hash)
         build_cmd = (
-            'PKG_CONFIG_PATH=%s/lib/x86_64-linux-gnu/pkgconfig meson setup build/ -Dprefix=%s -Dvulkan-drivers=intel -Dgallium-drivers=iris -Dgles1=enabled -Dgles2=enabled -Dshared-glapi=enabled -Dgbm=enabled -Dplatforms=x11,wayland -Dmesa-clc=enabled -Dinstall-mesa-clc=true'
+            'YACC=bison PKG_CONFIG_PATH=%s/lib/x86_64-linux-gnu/pkgconfig meson setup build/ -Dprefix=%s -Dvulkan-drivers=intel -Dgallium-drivers=iris -Dgles1=enabled -Dgles2=enabled -Dshared-glapi=enabled -Dgbm=enabled -Dplatforms=x11,wayland -Dmesa-clc=enabled -Dinstall-mesa-clc=true'
             % (rev_dir, rev_dir)
         )
         if self.build_type == 'release':
@@ -239,6 +259,8 @@ examples:
             self.init()
         if args.sync:
             self.sync()
+        if args.setup:
+            self.setup()
         if args.build:
             self.build()
         if args.upload:
