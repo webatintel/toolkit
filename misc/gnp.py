@@ -709,8 +709,6 @@ examples:
         if Util.HOST_OS == Util.LINUX:
             if target == 'telemetry_gpu_integration_test':
                 cmd += ' --browser=exact --browser-executable=./chrome'
-            if target not in ['telemetry_gpu_integration_test', 'webgpu_blink_web_tests']:
-                cmd = './' + cmd
 
         if target in ['angle_end2end_tests', 'angle_white_box_tests']:
             if 'test-launcher-bot-mode' not in cmd:
