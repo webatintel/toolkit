@@ -165,7 +165,7 @@ examples:
 
     def hashtorev(self):
         tmp_hash = self.args.hashtorev
-        Util.info('The rev of hash %s is %s' % (tmp_hash, _hash_to_rev(tmp_hash)))
+        Util.info('The rev of hash %s is %s' % (tmp_hash, self._hash_to_rev(tmp_hash)))
 
     def run(self):
         Util.set_mesa('%s/backup' % self.root_dir, self.rev, self.type)
