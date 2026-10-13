@@ -154,6 +154,31 @@ examples:
         else:
             self.targets = args.target.split(',')
 
+        self.chrome_backup_extra_copy_list = []
+        self.chrome_pre_test_setup_steps = []
+        if Util.HOST_OS == Util.LINUX:
+            self.chrome_backup_extra_copy_list = [
+                'build/update-linux-sandbox.sh',
+            ]
+            self.chrome_pre_test_setup_steps = [
+                {
+                    'type': 'cmd',
+                    'cmd': 'if [ -f ./out/Release/chrome_sandbox ]; then BUILDTYPE=Release ./build/update-linux-sandbox.sh; else echo "[WARN] Skip update-linux-sandbox.sh because ./out/Release/chrome_sandbox is missing"; fi',
+                    'required_file': 'build/update-linux-sandbox.sh',
+                },
+                {
+                    'type': 'env',
+                    'name': 'CHROME_DEVEL_SANDBOX',
+                    'value': '/usr/local/sbin/chrome-devel-sandbox',
+                },
+                {
+                    'type': 'cmd',
+                    'cmd': './out/Release/chrome --version',
+                    'required_file': 'out/Release/chrome',
+                    'exit_on_error': False,
+                },
+            ]
+
         self.chrome_rev = 0
 
         self._handle_ops()
@@ -169,6 +194,59 @@ examples:
 
     def upload(self):
         self._op('upload')
+
+    def _copy_chrome_backup_extra_files(self):
+        if not self.chrome_backup_extra_copy_list:
+            return
+
+        rev_name, _ = Util.get_backup_dir(self.chrome_backup_dir, 'latest')
+        if not rev_name:
+            Util.warning(f'Could not find chrome backup under {self.chrome_backup_dir}')
+            return
+
+        for copy_item in self.chrome_backup_extra_copy_list:
+            if isinstance(copy_item, str):
+                src_rel_path = copy_item
+                dst_rel_path = copy_item
+            elif isinstance(copy_item, (list, tuple)) and len(copy_item) == 2:
+                src_rel_path, dst_rel_path = copy_item
+            else:
+                Util.warning(f'Invalid chrome backup copy item: {copy_item}')
+                continue
+
+            src_file = f'{self.chrome_dir}/{src_rel_path}'
+            if not os.path.exists(src_file):
+                Util.warning(f'Could not find file to copy from chrome source: {src_file}')
+                continue
+
+            dst_file = f'{self.chrome_backup_dir}/{rev_name}/{dst_rel_path}'
+            Util.ensure_dir(os.path.dirname(dst_file))
+            shutil.copy2(src_file, dst_file)
+            Util.info(f'Copied chrome backup extra file: {dst_file}')
+
+    def _run_chrome_pre_test_setup(self, chrome_root_dir):
+        for step in self.chrome_pre_test_setup_steps:
+            step_type = step.get('type')
+
+            if step_type == 'env':
+                Util.set_env(step['name'], step['value'], verbose=True)
+                continue
+
+            if step_type == 'cmd':
+                required_file = step.get('required_file')
+                if required_file:
+                    required_path = f'{chrome_root_dir}/{required_file}'
+                    if not os.path.exists(required_path):
+                        Util.warning(f'Skipped setup command due to missing file: {required_path}')
+                        continue
+
+                self._execute(
+                    f"cd {chrome_root_dir} && {step['cmd']}",
+                    exit_on_error=step.get('exit_on_error', True),
+                )
+                continue
+
+            Util.warning(f'Unknown pre-test setup step type: {step_type}')
 
     def _op(self, op):
         chrome_targets = []
@@ -253,6 +331,9 @@ examples:
         for cmd in cmds:
             self._execute(cmd, exit_on_error=False)
 
+        if op == 'backup' and ('webgl' in self.targets or 'webgpu' in self.targets) and not self.args.backup_skip_chrome:
+            self._copy_chrome_backup_extra_files()
+
     def run(self):
         if self.target_os == Util.CHROMEOS:
             return
@@ -269,6 +350,8 @@ examples:
         Util.append_file(self.exec_log, f'GPU device id{self.SEPARATOR}{gpu_device_id}')
         os_ver = Util.get_os_info()
         Util.append_file(self.exec_log, f'OS version{self.SEPARATOR}{os_ver}')
+
+        chrome_pre_test_setup_done = False
 
         if 'angle' in self.targets:
             rev_name, _ = Util.get_backup_dir(f'{self.angle_dir}/backup', 'latest')
@@ -340,6 +423,9 @@ examples:
                 chrome_rev_dir = f'{self.chrome_backup_dir}/{chrome_rev_dir}'
                 Util.chdir(chrome_rev_dir, verbose=True)
                 Util.info(f'Use Chrome at {chrome_rev_dir}')
+                if not chrome_pre_test_setup_done:
+                    self._run_chrome_pre_test_setup(chrome_rev_dir)
+                    chrome_pre_test_setup_done = True
 
                 if Util.HOST_OS == Util.WINDOWS:
                     chrome = 'out\\Release\\chrome.exe'
@@ -454,6 +540,9 @@ examples:
                 TestExpectation.update('webgpu_cts_tests', chrome_rev_dir)
                 Util.chdir(chrome_rev_dir, verbose=True)
                 Util.info(f'Use Chrome at {chrome_rev_dir}')
+                if not chrome_pre_test_setup_done:
+                    self._run_chrome_pre_test_setup(chrome_rev_dir)
+                    chrome_pre_test_setup_done = True
 
                 if Util.HOST_OS == Util.WINDOWS:
                     chrome = 'out\\Release\\chrome.exe'
